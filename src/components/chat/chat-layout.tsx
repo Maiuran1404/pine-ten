@@ -123,6 +123,7 @@ interface ChatLayoutProps {
   // Error recovery for storyboard generation
   lastSendError?: string | null
   onRetryGeneration?: () => void
+  onEditNarrative?: () => void
   // Briefing stage (used by structure panel for fidelity)
   briefingStage?: string | null
   // Optional customization
@@ -200,6 +201,7 @@ export function ChatLayout({
   onNarrativeFieldEdit,
   lastSendError,
   onRetryGeneration,
+  onEditNarrative,
   briefingStage,
   showProgress = true,
   showMoodboard = true,
@@ -338,6 +340,7 @@ export function ChatLayout({
                     onNarrativeFieldEdit={onNarrativeFieldEdit}
                     lastSendError={lastSendError}
                     onRetryGeneration={onRetryGeneration}
+                    onEditNarrative={onEditNarrative}
                   />
                 </div>
               </ResizablePanel>
@@ -382,6 +385,7 @@ export function ChatLayout({
                     onNarrativeFieldEdit={onNarrativeFieldEdit}
                     lastSendError={lastSendError}
                     onRetryGeneration={onRetryGeneration}
+                    onEditNarrative={onEditNarrative}
                   />
                 </div>
               </SheetContent>

@@ -35,17 +35,31 @@ export interface SceneImageData {
   techniqueRef?: { name: string; url: string } // Eyecannndy technique link (if present)
 }
 
+export type DalleSceneStatus = 'pending' | 'generating' | 'done' | 'error'
+
 interface UseStoryboardOptions {
   inputRef: React.RefObject<HTMLTextAreaElement | null>
   handleSendOption: (text: string, stateOverrides?: Partial<SerializedBriefingState>) => void
   briefingState?: BriefingState | null
+  csrfFetch?: (url: string, options?: RequestInit) => Promise<Response>
 }
 
-export function useStoryboard({ inputRef, handleSendOption, briefingState }: UseStoryboardOptions) {
+export function useStoryboard({
+  inputRef,
+  handleSendOption,
+  briefingState,
+  csrfFetch,
+}: UseStoryboardOptions) {
   const [storyboardScenes, setStoryboardScenes] = useState<StructureData | null>(null)
   const [sceneReferences, setSceneReferences] = useState<SceneReference[]>([])
   const [_sceneImageData, setSceneImageData] = useState<Map<number, SceneImageData>>(new Map())
   const latestStoryboardRef = useRef<StructureData | null>(null)
+
+  // DALL-E image generation state
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false)
+  const [imageGenerationProgress, setImageGenerationProgress] = useState<
+    Map<number, DalleSceneStatus>
+  >(new Map())
 
   // Website global styles (populated from AI [GLOBAL_STYLES] marker)
   const [globalStyles, setGlobalStyles] = useState<WebsiteGlobalStyles | null>(null)
@@ -62,8 +76,11 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   const previousScenesRef = useRef<StructureData | null>(null)
 
   // Undo/Redo history (#20) — max 20 entries
-  const [historyStack, setHistoryStack] = useState<StructureData[]>([])
-  const [historyIndex, setHistoryIndex] = useState(-1)
+  // Combined into a single state object for atomic updates (prevents stale closure bugs)
+  const [history, setHistory] = useState<{ stack: StructureData[]; index: number }>({
+    stack: [],
+    index: -1,
+  })
   const isUndoRedoRef = useRef(false)
 
   // Compute structure type from deliverable category
@@ -270,46 +287,46 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   }, [])
 
   // Push current state to history before making changes (#20)
-  const pushHistory = useCallback(
-    (state: StructureData | null) => {
-      if (!state || isUndoRedoRef.current) return
-      setHistoryStack((prev) => {
-        // Discard any future states if we're mid-history
-        const truncated = prev.slice(0, historyIndex + 1)
-        const next = [...truncated, state].slice(-20) // max 20 entries
-        return next
-      })
-      setHistoryIndex((prev) => Math.min(prev + 1, 19))
-    },
-    [historyIndex]
-  )
+  const pushHistory = useCallback((state: StructureData | null) => {
+    if (!state || isUndoRedoRef.current) return
+    setHistory((prev) => {
+      // Discard any future states if we're mid-history
+      const truncated = prev.stack.slice(0, prev.index + 1)
+      const next = [...truncated, state].slice(-20) // max 20 entries
+      return { stack: next, index: Math.min(prev.index + 1, 19) }
+    })
+  }, [])
 
   const undo = useCallback(() => {
-    if (historyIndex <= 0) return
-    const prevIndex = historyIndex - 1
-    const prevState = historyStack[prevIndex]
-    if (!prevState) return
-    isUndoRedoRef.current = true
-    setStoryboardScenes(prevState)
-    latestStoryboardRef.current = prevState
-    setHistoryIndex(prevIndex)
-    isUndoRedoRef.current = false
-  }, [historyIndex, historyStack])
+    setHistory((prev) => {
+      if (prev.index <= 0) return prev
+      const prevIndex = prev.index - 1
+      const prevState = prev.stack[prevIndex]
+      if (!prevState) return prev
+      isUndoRedoRef.current = true
+      setStoryboardScenes(prevState)
+      latestStoryboardRef.current = prevState
+      isUndoRedoRef.current = false
+      return { ...prev, index: prevIndex }
+    })
+  }, [])
 
   const redo = useCallback(() => {
-    if (historyIndex >= historyStack.length - 1) return
-    const nextIndex = historyIndex + 1
-    const nextState = historyStack[nextIndex]
-    if (!nextState) return
-    isUndoRedoRef.current = true
-    setStoryboardScenes(nextState)
-    latestStoryboardRef.current = nextState
-    setHistoryIndex(nextIndex)
-    isUndoRedoRef.current = false
-  }, [historyIndex, historyStack])
+    setHistory((prev) => {
+      if (prev.index >= prev.stack.length - 1) return prev
+      const nextIndex = prev.index + 1
+      const nextState = prev.stack[nextIndex]
+      if (!nextState) return prev
+      isUndoRedoRef.current = true
+      setStoryboardScenes(nextState)
+      latestStoryboardRef.current = nextState
+      isUndoRedoRef.current = false
+      return { ...prev, index: nextIndex }
+    })
+  }, [])
 
-  const canUndo = historyIndex > 0
-  const canRedo = historyIndex < historyStack.length - 1
+  const canUndo = history.index > 0
+  const canRedo = history.index < history.stack.length - 1
 
   // Reorder scenes via drag-and-drop (reassigns sceneNumber values)
   const handleSceneReorder = useCallback(
@@ -515,6 +532,195 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     handleSendOption('Regenerate the story narrative with a fresh approach')
   }, [handleSendOption])
 
+  // ─── DALL-E Image Generation ──────────────────────────────────
+
+  /**
+   * Generate DALL-E images for all scenes in batch.
+   * Called after INSPIRATION stage completes for video projects.
+   */
+  const generateDalleImages = useCallback(
+    async (
+      scenes: import('@/lib/ai/briefing-state-machine').StoryboardScene[],
+      styleContext: string,
+      briefId: string
+    ) => {
+      if (!csrfFetch) return
+      // Guard: skip if scenes already have images
+      const scenesNeedingImages = scenes.filter((s) => !s.resolvedImageUrl)
+      if (scenesNeedingImages.length === 0) return
+
+      setIsGeneratingImages(true)
+      // Initialize progress for all scenes as generating
+      const initialProgress = new Map<number, DalleSceneStatus>()
+      for (const scene of scenesNeedingImages) {
+        initialProgress.set(scene.sceneNumber, 'generating')
+      }
+      setImageGenerationProgress(initialProgress)
+
+      try {
+        const response = await csrfFetch('/api/storyboard-images/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scenes: scenesNeedingImages.map((s) => ({
+              sceneNumber: s.sceneNumber,
+              title: s.title,
+              description: s.description,
+              visualNote: s.visualNote,
+              cameraNote: s.cameraNote,
+              voiceover: s.voiceover,
+              imageGenerationPrompt: s.imageGenerationPrompt,
+            })),
+            styleContext,
+            briefId,
+          }),
+        })
+
+        if (!response.ok) throw new Error('Batch generation failed')
+
+        const data = await response.json()
+        const results: Array<{ sceneNumber: number; imageUrl: string | null; status: string }> =
+          data.data?.results ?? []
+
+        // Update progress and scene image data
+        const dataMap = new Map<number, SceneImageData>()
+        const progressUpdate = new Map<number, DalleSceneStatus>()
+
+        for (const result of results) {
+          if (result.status === 'success' && result.imageUrl) {
+            progressUpdate.set(result.sceneNumber, 'done')
+            dataMap.set(result.sceneNumber, {
+              primaryUrl: result.imageUrl,
+              primarySource: 'dalle',
+              primaryMediaType: 'still',
+              attribution: {
+                sourceName: 'AI Generated',
+                sourceUrl: '',
+              },
+            })
+          } else {
+            progressUpdate.set(result.sceneNumber, 'error')
+          }
+        }
+
+        setImageGenerationProgress((prev) => {
+          const updated = new Map(prev)
+          for (const [key, value] of progressUpdate) {
+            updated.set(key, value)
+          }
+          return updated
+        })
+
+        if (dataMap.size > 0) {
+          setSceneImageData((prev) => {
+            const updated = new Map(prev)
+            for (const [key, value] of dataMap) {
+              updated.set(key, value)
+            }
+            return updated
+          })
+          // Persist image URLs on scene objects
+          setStoryboardScenes((prev) => {
+            if (!prev || prev.type !== 'storyboard') return prev
+            const updated = {
+              ...prev,
+              scenes: prev.scenes.map((scene) => {
+                const img = dataMap.get(scene.sceneNumber)
+                if (!img) return scene
+                return {
+                  ...scene,
+                  resolvedImageUrl: img.primaryUrl,
+                  resolvedImageSource: 'dalle' as const,
+                  resolvedImageAttribution: img.attribution,
+                }
+              }),
+            }
+            latestStoryboardRef.current = updated
+            return updated
+          })
+        }
+      } catch {
+        // Mark all generating as error
+        setImageGenerationProgress((prev) => {
+          const updated = new Map(prev)
+          for (const [key, value] of updated) {
+            if (value === 'pending' || value === 'generating') {
+              updated.set(key, 'error')
+            }
+          }
+          return updated
+        })
+      } finally {
+        setIsGeneratingImages(false)
+      }
+    },
+    [csrfFetch]
+  )
+
+  /**
+   * Regenerate a single scene's image via DALL-E.
+   */
+  const regenerateSceneImage = useCallback(
+    async (
+      scene: import('@/lib/ai/briefing-state-machine').StoryboardScene,
+      styleContext: string,
+      briefId: string,
+      customPrompt?: string
+    ) => {
+      if (!csrfFetch) return
+
+      setImageGenerationProgress((prev) => {
+        const updated = new Map(prev)
+        updated.set(scene.sceneNumber, 'generating')
+        return updated
+      })
+
+      try {
+        const response = await csrfFetch('/api/storyboard-images/regenerate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scene: {
+              sceneNumber: scene.sceneNumber,
+              title: scene.title,
+              description: scene.description,
+              visualNote: scene.visualNote,
+              cameraNote: scene.cameraNote,
+              voiceover: scene.voiceover,
+              imageGenerationPrompt: scene.imageGenerationPrompt,
+            },
+            styleContext,
+            briefId,
+            customPrompt,
+          }),
+        })
+
+        if (!response.ok) throw new Error('Regeneration failed')
+
+        const data = await response.json()
+        const imageUrl: string = data.data?.imageUrl
+
+        if (imageUrl) {
+          setImageGenerationProgress((prev) => {
+            const updated = new Map(prev)
+            updated.set(scene.sceneNumber, 'done')
+            return updated
+          })
+
+          // Update scene image data
+          handleSceneImageReplace(scene.sceneNumber, imageUrl, 'dalle')
+        }
+      } catch {
+        setImageGenerationProgress((prev) => {
+          const updated = new Map(prev)
+          updated.set(scene.sceneNumber, 'error')
+          return updated
+        })
+      }
+    },
+    [csrfFetch, handleSceneImageReplace]
+  )
+
   return {
     storyboardScenes,
     setStoryboardScenes,
@@ -546,6 +752,11 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     redo,
     canUndo,
     canRedo,
+    // DALL-E image generation
+    isGeneratingImages,
+    imageGenerationProgress,
+    generateDalleImages,
+    regenerateSceneImage,
     // Video narrative
     videoNarrative,
     setVideoNarrative,

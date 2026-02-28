@@ -67,9 +67,21 @@ Arguments: $ARGUMENTS
 
 **If `--skip-qa` is set:** Skip to Step 2 in static analysis mode — no browser QA.
 
-**Otherwise:** Dispatch the `qa-stress-test` agent:
+**Otherwise:** Dispatch the QA stress test agent.
+
+**IMPORTANT**: Use `subagent_type: "general-purpose"` (NOT `"qa-stress-test"`). Custom agent types cannot access Chrome MCP tools — only `general-purpose` agents have access to `mcp__claude-in-chrome__*` tools needed for browser automation.
+
+Before dispatching, read the full agent instructions from `.claude/agents/qa-stress-test.md` and include them in the prompt.
+
+Launch a `general-purpose` agent with:
 
 ```
+You are the QA Stress Test agent. Follow the instructions below exactly.
+
+[Paste full contents of .claude/agents/qa-stress-test.md here]
+
+## Test Configuration
+
 Target: [parsed target]
 Depth: [parsed depth]
 Flows: 3
@@ -77,12 +89,14 @@ Viewport: both
 Focus: all
 
 Run autonomous QA stress tests on the Pine Ten application.
-Follow the 5-phase methodology defined in your agent instructions.
+Follow the 5-phase methodology from the instructions above.
+
+IMPORTANT: You MUST use Chrome browser automation. Start by calling mcp__claude-in-chrome__tabs_context_mcp to connect to Chrome, then create a new tab via mcp__claude-in-chrome__tabs_create_mcp. Only fall back to static analysis if Chrome is genuinely unavailable (extension not connected).
 ```
 
 **Browser automation priority**:
 
-1. **Chrome first** — try connecting via `tabs_context_mcp`. If Chrome responds, use the Claude-in-Chrome MCP tools for full interactive testing.
+1. **Chrome first** — try connecting via `mcp__claude-in-chrome__tabs_context_mcp`. If Chrome responds, use the Claude-in-Chrome MCP tools for full interactive testing.
 2. **Playwright fallback** — if Chrome is unavailable (extension not responding, no connection after 2 attempts), fall back to Playwright via Bash. Run headless Chromium tests using the existing `playwright.config.ts` and `e2e/` test directory, or generate ad-hoc Playwright scripts for the target area.
 3. **Static analysis last resort** — if both Chrome and Playwright fail (e.g., no browsers installed, Playwright not available), fall back to code-level static analysis.
 

@@ -10,7 +10,7 @@ import { withRateLimit } from '@/lib/rate-limit'
 import { config } from '@/lib/config'
 import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling } from '@/lib/errors'
-import { searchStoryboardImages, type SceneImageMatch } from '@/lib/ai/storyboard-image-search'
+// Stock image search removed — DALL-E generation now handled client-side after INSPIRATION stage
 import { buildPipelineContext } from '@/lib/ai/chat-pipeline/pre-process'
 import { runPostAiPipeline } from '@/lib/ai/chat-pipeline/post-process'
 import {
@@ -85,43 +85,6 @@ async function handler(request: NextRequest) {
         })
       }
 
-      // Scene image search (storyboard only)
-      let sceneImageMatches: SceneImageMatch[] | undefined = undefined
-      const scenesHaveSearchData =
-        postResult.structureData?.type === 'storyboard' &&
-        postResult.structureData.scenes.some(
-          (s: { imageSearchTerms?: string[]; filmTitleSuggestions?: string[] }) =>
-            (s.imageSearchTerms && s.imageSearchTerms.length > 0) ||
-            (s.filmTitleSuggestions && s.filmTitleSuggestions.length > 0)
-        )
-      if (
-        postResult.structureData?.type === 'storyboard' &&
-        postResult.structureData.scenes.length > 0 &&
-        scenesHaveSearchData
-      ) {
-        try {
-          const imageResult = await searchStoryboardImages(postResult.structureData.scenes, {
-            styleHint: ctx.styleHint,
-          })
-          if (imageResult.sceneMatches.length > 0) {
-            sceneImageMatches = imageResult.sceneMatches
-            logger.debug(
-              {
-                matchCount: sceneImageMatches.length,
-                sourcesUsed: imageResult.sourcesUsed,
-                duration: imageResult.totalDuration,
-              },
-              'Multi-source scene images attached to response'
-            )
-          }
-        } catch (imageErr) {
-          logger.warn(
-            { err: imageErr },
-            'Storyboard image search failed — continuing without scene images'
-          )
-        }
-      }
-
       // Strip structured markers from displayed content
       const cleanContent = stripMarkers(response.content, {
         structureData: postResult.structureData,
@@ -145,7 +108,6 @@ async function handler(request: NextRequest) {
         strategicReviewData: postResult.strategicReviewData,
         globalStyles: postResult.globalStyles,
         videoNarrativeData: postResult.videoNarrativeData,
-        sceneImageMatches,
         assetRequest: response.assetRequest,
         briefingState: postResult.updatedBriefingState ?? ctx.body.briefingState,
         ...(postResult.parseFailures?.length ? { parseFailures: postResult.parseFailures } : {}),

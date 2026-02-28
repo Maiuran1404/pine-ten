@@ -7,6 +7,20 @@ tools:
   - Glob
   - Grep
   - Bash
+  - mcp__claude-in-chrome__tabs_context_mcp
+  - mcp__claude-in-chrome__tabs_create_mcp
+  - mcp__claude-in-chrome__computer
+  - mcp__claude-in-chrome__navigate
+  - mcp__claude-in-chrome__read_page
+  - mcp__claude-in-chrome__find
+  - mcp__claude-in-chrome__form_input
+  - mcp__claude-in-chrome__get_page_text
+  - mcp__claude-in-chrome__javascript_tool
+  - mcp__claude-in-chrome__read_console_messages
+  - mcp__claude-in-chrome__read_network_requests
+  - mcp__claude-in-chrome__resize_window
+  - mcp__claude-in-chrome__upload_image
+  - mcp__claude-in-chrome__gif_creator
 capabilities:
   - End-to-end flow testing via Chrome browser automation
   - Adversarial input generation (empty, long, special chars, emoji, rapid-fire)

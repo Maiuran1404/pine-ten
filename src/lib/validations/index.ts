@@ -174,6 +174,26 @@ export const updateBrandSchema = z.object({
   brandColors: z.array(z.string()).optional().nullable(),
   primaryFont: z.string().max(100).optional().nullable(),
   secondaryFont: z.string().max(100).optional().nullable(),
+  headingFont: z.string().max(100).optional().nullable(),
+  colorScheme: z.enum(['dark', 'light']).optional().nullable(),
+  fontSizes: z
+    .object({
+      h1: z.string().max(20).optional(),
+      h2: z.string().max(20).optional(),
+      body: z.string().max(20).optional(),
+    })
+    .optional()
+    .nullable(),
+  fontWeights: z
+    .object({
+      regular: z.number().int().min(100).max(900).optional(),
+      medium: z.number().int().min(100).max(900).optional(),
+      bold: z.number().int().min(100).max(900).optional(),
+    })
+    .optional()
+    .nullable(),
+  spacingUnit: z.number().int().min(1).max(64).optional().nullable(),
+  borderRadius: z.string().max(20).optional().nullable(),
   tagline: z.string().max(200).optional().nullable(),
   keywords: z.array(z.string()).optional().nullable(),
   contactEmail: z.string().email().optional().nullable(),
@@ -342,6 +362,7 @@ export const createCouponSchema = z.object({
 
 export const extractBrandRequestSchema = z.object({
   websiteUrl: z.string().min(1, 'Website URL is required').max(2000),
+  deep: z.boolean().optional().default(false),
 })
 
 // ============ Freelancer Profile Schema ============
@@ -496,6 +517,26 @@ const clientOnboardingDataSchema = z.object({
     brandColors: z.array(z.string()).optional().default([]),
     primaryFont: z.string().optional().nullable(),
     secondaryFont: z.string().optional().nullable(),
+    headingFont: z.string().optional().nullable(),
+    colorScheme: z.enum(['dark', 'light']).optional().nullable(),
+    fontSizes: z
+      .object({
+        h1: z.string().optional(),
+        h2: z.string().optional(),
+        body: z.string().optional(),
+      })
+      .optional()
+      .nullable(),
+    fontWeights: z
+      .object({
+        regular: z.number().optional(),
+        medium: z.number().optional(),
+        bold: z.number().optional(),
+      })
+      .optional()
+      .nullable(),
+    spacingUnit: z.number().optional().nullable(),
+    borderRadius: z.string().optional().nullable(),
     socialLinks: z.record(z.string(), z.unknown()).optional().default({}),
     contactEmail: z.string().optional().nullable(),
     contactPhone: z.string().optional().nullable(),

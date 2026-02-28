@@ -348,6 +348,7 @@ export function useChatInterfaceData({
       []
     ),
     briefingState: _briefingState,
+    csrfFetch,
   })
 
   // ─── Website inspiration (only active for website projects) ──
@@ -799,6 +800,13 @@ export function useChatInterfaceData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyboard.handleApproveNarrative, chatMessages.setLastSendError])
 
+  // Reset narrative approval to allow re-editing (error recovery escape hatch)
+  const handleEditNarrative = useCallback(() => {
+    chatMessages.setLastSendError(null)
+    storyboard.setNarrativeApproved(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyboard.setNarrativeApproved, chatMessages.setLastSendError])
+
   // Auto-continue confirmation handlers (crash recovery)
   const handleConfirmAutoContinue = useCallback(() => {
     setNeedsAutoContinueConfirmation(false)
@@ -988,6 +996,7 @@ export function useChatInterfaceData({
     handleNarrativeFieldEdit: storyboard.handleNarrativeFieldEdit,
     handleRegenerateNarrative: storyboard.handleRegenerateNarrative,
     handleRetryGeneration,
+    handleEditNarrative,
 
     // Handlers
     handleSend,

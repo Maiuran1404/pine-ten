@@ -114,6 +114,13 @@ interface BrandExtraction {
   brandColors: string[]
   primaryFont: string | null
   secondaryFont: string | null
+  // Branding v2 fields
+  headingFont: string | null
+  colorScheme: 'dark' | 'light' | null
+  fontSizes: { h1?: string; h2?: string; body?: string } | null
+  fontWeights: { regular?: number; medium?: number; bold?: number } | null
+  spacingUnit: number | null
+  borderRadius: string | null
   socialLinks: {
     twitter?: string
     linkedin?: string
@@ -258,17 +265,24 @@ function createDefaultBrandData(
     | undefined,
   branding:
     | {
+        colorScheme?: 'dark' | 'light'
         colors?: {
           primary?: string
           secondary?: string
           accent?: string
           background?: string
           textPrimary?: string
+          textSecondary?: string
           link?: string
           [key: string]: string | undefined
         }
-        typography?: { fontFamilies?: { primary?: string } }
+        typography?: {
+          fontFamilies?: { primary?: string; heading?: string; code?: string }
+          fontSizes?: { h1?: string; h2?: string; body?: string }
+          fontWeights?: { regular?: number; medium?: number; bold?: number }
+        }
         fonts?: Array<{ family: string }>
+        spacing?: { baseUnit?: number; borderRadius?: string }
         images?: { logo?: string | null; favicon?: string | null }
       }
     | undefined,
@@ -336,6 +350,13 @@ function createDefaultBrandData(
     primaryFont:
       branding?.typography?.fontFamilies?.primary || branding?.fonts?.[0]?.family || null,
     secondaryFont: null,
+    // Branding v2 fields
+    headingFont: branding?.typography?.fontFamilies?.heading || null,
+    colorScheme: branding?.colorScheme || null,
+    fontSizes: branding?.typography?.fontSizes || null,
+    fontWeights: branding?.typography?.fontWeights || null,
+    spacingUnit: branding?.spacing?.baseUnit || null,
+    borderRadius: branding?.spacing?.borderRadius || null,
     socialLinks: extractSocialLinks(links),
     contactEmail: null,
     contactPhone: null,
@@ -366,11 +387,24 @@ function createDefaultBrandData(
 }
 
 const EXTRACTION_TIMEOUT_MS = 60_000
+const DEEP_EXTRACTION_TIMEOUT_MS = 120_000 // Agent navigation takes longer
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(
     async () => {
       await requireAuth()
+
+      // Peek at body to determine timeout (deep mode needs more time for agent navigation)
+      const clonedRequest = request.clone()
+      let isDeep = false
+      try {
+        const body = await clonedRequest.json()
+        isDeep = body?.deep === true
+      } catch {
+        // Ignore parse errors, will be caught in extractBrand
+      }
+
+      const timeoutMs = isDeep ? DEEP_EXTRACTION_TIMEOUT_MS : EXTRACTION_TIMEOUT_MS
 
       // Guard against hung requests — fail gracefully before platform timeout
       const result = await Promise.race([
@@ -378,7 +412,7 @@ export async function POST(request: NextRequest) {
         new Promise<never>((_, reject) =>
           setTimeout(
             () => reject(Errors.badRequest('Brand extraction timed out. Please try again.')),
-            EXTRACTION_TIMEOUT_MS
+            timeoutMs
           )
         ),
       ])
@@ -389,14 +423,55 @@ export async function POST(request: NextRequest) {
   )
 }
 
+// Use Firecrawl agent to gather multi-page context for deep extraction
+async function gatherDeepContext(firecrawl: Firecrawl, url: string): Promise<string | null> {
+  try {
+    const result = await firecrawl.agent({
+      prompt: `Navigate ${url} and gather comprehensive brand and company data. Do the following:
+1. Visit the homepage — note the hero messaging, visual style, and value proposition
+2. Find and visit the About/Company page — extract mission, values, team info, company story
+3. Find and visit the Pricing page — note pricing tiers, target customer segments, market positioning
+4. Look for a Careers/Culture page — note company culture signals, team size hints
+5. Check the footer for contact info, social links, office locations
+
+Return a structured summary with sections: HOMEPAGE, ABOUT, PRICING, CAREERS, CONTACT. Include actual quotes and data points you find.`,
+      urls: [url],
+      model: 'spark-1-mini',
+      maxCredits: 500,
+    })
+
+    // Extract the data from agent result
+    if (result.success && result.data) {
+      return typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2)
+    }
+    return null
+  } catch (error) {
+    logger.warn({ error, url }, 'Deep extraction agent failed, falling back to single-page scrape')
+    return null
+  }
+}
+
 async function extractBrand(request: NextRequest) {
   const body = await request.json()
-  const { websiteUrl } = extractBrandRequestSchema.parse(body)
+  const { websiteUrl, deep } = extractBrandRequestSchema.parse(body)
 
   // Normalize URL
   let normalizedUrl = websiteUrl.trim()
   if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
     normalizedUrl = `https://${normalizedUrl}`
+  }
+
+  // Deep extraction: use Firecrawl agent to navigate multiple pages
+  let deepContext: string | null = null
+  if (deep) {
+    logger.info({ url: normalizedUrl }, 'Starting deep brand extraction via agent')
+    deepContext = await gatherDeepContext(getFirecrawl(), normalizedUrl)
+    if (deepContext) {
+      logger.info(
+        { url: normalizedUrl, contextLength: deepContext.length },
+        'Deep extraction agent returned multi-page context'
+      )
+    }
   }
 
   // Scrape the website with Firecrawl - use viewport-sized screenshot to avoid oversized images
@@ -428,21 +503,28 @@ async function extractBrand(request: NextRequest) {
       favicon?: string
     }
     branding?: {
+      colorScheme?: 'dark' | 'light'
       colors?: {
         primary?: string
         secondary?: string
         accent?: string
         background?: string
         textPrimary?: string
+        textSecondary?: string
         link?: string
         [key: string]: string | undefined
       }
       typography?: {
         fontFamilies?: {
           primary?: string
+          heading?: string
+          code?: string
         }
+        fontSizes?: { h1?: string; h2?: string; body?: string }
+        fontWeights?: { regular?: number; medium?: number; bold?: number }
       }
       fonts?: Array<{ family: string }>
+      spacing?: { baseUnit?: number; borderRadius?: string }
       images?: {
         logo?: string | null
         favicon?: string | null
@@ -458,13 +540,22 @@ async function extractBrand(request: NextRequest) {
   // Check if Firecrawl has good branding data with reasonable confidence
   // Firecrawl returns confidence.colors between 0-1, we require at least 0.3 (30%)
   const colorConfidence = branding?.confidence?.colors ?? 0
+  const overallConfidence = branding?.confidence?.overall ?? 0
   const hasColorsWithConfidence =
     branding?.colors && Object.keys(branding.colors).length > 2 && colorConfidence >= 0.3
 
-  // If confidence is too low, use Claude for better color extraction
+  // High confidence = Firecrawl extracted reliable visual data (colors, fonts, logo)
+  // In this case, we skip visual extraction in Claude and only ask for strategic analysis
+  const hasHighConfidenceBranding = hasColorsWithConfidence && overallConfidence >= 0.7
   const hasBrandingColors = hasColorsWithConfidence
   logger.info(
-    { url: normalizedUrl, source: hasBrandingColors ? 'Firecrawl' : 'Claude', colorConfidence },
+    {
+      url: normalizedUrl,
+      source: hasBrandingColors ? 'Firecrawl' : 'Claude',
+      colorConfidence,
+      overallConfidence,
+      highConfidence: hasHighConfidenceBranding,
+    },
     'Brand extraction source selected'
   )
 
@@ -477,8 +568,12 @@ async function extractBrand(request: NextRequest) {
     ? createDefaultBrandData(metadata, branding, links, normalizedUrl)
     : null
 
-  // Otherwise, use Claude for deeper analysis
+  // Use Claude for deeper analysis — scope depends on Firecrawl confidence
   const contentParts: Anthropic.Messages.ContentBlockParam[] = []
+
+  // When Firecrawl has high-confidence visual data, reduce the content sent to Claude
+  // to save tokens and focus analysis on strategic fields only
+  const markdownLimit = hasHighConfidenceBranding ? 4000 : 8000
 
   // Add text content for context (always include this)
   const textPrompt = `Analyze this website and extract comprehensive brand information including visual personality.
@@ -486,10 +581,10 @@ async function extractBrand(request: NextRequest) {
 Website URL: ${normalizedUrl}
 Page Title: ${metadata?.title || 'Unknown'}
 Page Description: ${metadata?.description || 'Unknown'}
-
+${hasHighConfidenceBranding ? '\nNOTE: Visual identity (colors, fonts, logo) has already been extracted with high confidence. Focus your analysis on strategic fields: audiences, competitors, positioning, brand voice, personality sliders, visual style, and brand tone.\n' : ''}
 Website Content (markdown):
-${markdown?.slice(0, 8000) || 'No content available'}
-
+${markdown?.slice(0, markdownLimit) || 'No content available'}
+${deepContext ? `\n--- MULTI-PAGE DEEP SCAN DATA ---\nThe following was gathered by an agent that navigated multiple pages on this website (About, Pricing, Careers, etc.):\n${deepContext.slice(0, 6000)}\n--- END DEEP SCAN DATA ---` : ''}
 Links found on page:
 ${links?.slice(0, 20).join('\n') || 'No links available'}
 
@@ -888,6 +983,26 @@ Return ONLY a valid JSON object with this exact structure:
     brandData.primaryFont = branding.fonts[0].family
   }
 
+  // Branding v2 fields: heading font, color scheme, font sizes/weights, spacing
+  if (branding?.typography?.fontFamilies?.heading && !brandData.headingFont) {
+    brandData.headingFont = branding.typography.fontFamilies.heading
+  }
+  if (branding?.colorScheme && !brandData.colorScheme) {
+    brandData.colorScheme = branding.colorScheme
+  }
+  if (branding?.typography?.fontSizes && !brandData.fontSizes) {
+    brandData.fontSizes = branding.typography.fontSizes
+  }
+  if (branding?.typography?.fontWeights && !brandData.fontWeights) {
+    brandData.fontWeights = branding.typography.fontWeights
+  }
+  if (branding?.spacing?.baseUnit && !brandData.spacingUnit) {
+    brandData.spacingUnit = branding.spacing.baseUnit
+  }
+  if (branding?.spacing?.borderRadius && !brandData.borderRadius) {
+    brandData.borderRadius = branding.spacing.borderRadius
+  }
+
   // Add favicon and logo from branding/metadata if not found
   if (!brandData.faviconUrl) {
     brandData.faviconUrl = branding?.images?.favicon || metadata?.favicon || null
@@ -924,6 +1039,14 @@ Return ONLY a valid JSON object with this exact structure:
   brandDataWithFeels.signalWarmth = brandData.signalWarmth ?? 50
   brandDataWithFeels.signalEnergy = brandData.signalEnergy ?? 50
   brandDataWithFeels.brandVoiceSummary = brandData.brandVoiceSummary || ''
+
+  // Ensure branding v2 fields have defaults
+  brandDataWithFeels.headingFont = brandData.headingFont ?? null
+  brandDataWithFeels.colorScheme = brandData.colorScheme ?? null
+  brandDataWithFeels.fontSizes = brandData.fontSizes ?? null
+  brandDataWithFeels.fontWeights = brandData.fontWeights ?? null
+  brandDataWithFeels.spacingUnit = brandData.spacingUnit ?? null
+  brandDataWithFeels.borderRadius = brandData.borderRadius ?? null
 
   // Validate and set defaults for visualStyle, brandTone, and industryArchetype
   const isValidVisualStyle = VISUAL_STYLE_VALUES.includes(

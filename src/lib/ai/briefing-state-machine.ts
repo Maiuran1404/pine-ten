@@ -59,6 +59,7 @@ export interface StoryboardScene {
   imageSearchTerms?: string[] // AI-generated visual search keywords for Pexels
   filmTitleSuggestions?: string[] // AI-generated film titles for Film-Grab cinematic stills
   visualTechniques?: string[] // Camera/editing techniques for Eyecannndy (e.g. dutch-angle, tracking)
+  imageGenerationPrompt?: string // AI-generated visual description for DALL-E image generation
   // Elaboration fields (populated during ELABORATE stage)
   fullScript?: string
   directorNotes?: string
@@ -334,10 +335,8 @@ export const STAGE_PIPELINE: StageGate[] = [
   {
     stage: 'INSPIRATION',
     exitWhen: (s) => {
-      // Video projects: style selection is optional (visual direction comes from storyboard)
-      if (s.deliverableCategory === 'video') {
-        return s.structure !== null
-      }
+      // All categories (including video) require style selection.
+      // Video needs it for DALL-E image generation style context.
       return (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0
     },
   },

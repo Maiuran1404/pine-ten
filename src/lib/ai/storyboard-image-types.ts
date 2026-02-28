@@ -14,6 +14,7 @@ export type ImageSource =
   | 'houzz'
   | 'arena'
   | 'serper'
+  | 'dalle'
 export type ImageMediaType = 'still' | 'gif'
 
 export interface StoryboardImageAttribution {

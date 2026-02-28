@@ -250,6 +250,7 @@ export function ChatInterface({
     handleNarrativeFieldEdit,
     handleRegenerateNarrative: _handleRegenerateNarrative,
     handleRetryGeneration,
+    handleEditNarrative,
 
     // Website inspiration
     websiteInspirations,
@@ -376,6 +377,7 @@ export function ChatInterface({
         onNarrativeFieldEdit={handleNarrativeFieldEdit}
         lastSendError={lastSendError}
         onRetryGeneration={handleRetryGeneration}
+        onEditNarrative={handleEditNarrative}
         viewStructureRef={viewStructureRef}
         websiteGlobalStyles={websiteGlobalStyles}
         websiteInspirations={websiteInspirations}

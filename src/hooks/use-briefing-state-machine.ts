@@ -105,62 +105,65 @@ export function useBriefingStateMachine(
 
   const dispatch = useCallback(
     (action: BriefingAction) => {
-      Sentry.addBreadcrumb({
-        category: 'briefing',
-        message: `Briefing action: ${action.type}`,
-        data: { from: state.stage, action: action.type },
-        level: 'info',
-      })
+      setState((prev) => {
+        Sentry.addBreadcrumb({
+          category: 'briefing',
+          message: `Briefing action: ${action.type}`,
+          data: { from: prev.stage, action: action.type },
+          level: 'info',
+        })
 
-      let newState: BriefingState
+        let newState: BriefingState
 
-      switch (action.type) {
-        case 'GO_BACK':
-          newState = goBackTo(state, action.stage)
-          break
+        switch (action.type) {
+          case 'GO_BACK':
+            newState = goBackTo(prev, action.stage)
+            break
 
-        case 'PIVOT_CATEGORY':
-          newState = pivotCategory(state, action.category)
-          break
+          case 'PIVOT_CATEGORY':
+            newState = pivotCategory(prev, action.category)
+            break
 
-        case 'STAGE_RESPONSE': {
-          newState = { ...state }
-          if (state.stage === 'STRATEGIC_REVIEW') {
-            if (action.response === 'override' && newState.strategicReview) {
-              newState.strategicReview = {
-                ...newState.strategicReview,
-                userOverride: true,
+          case 'STAGE_RESPONSE': {
+            newState = { ...prev }
+            if (prev.stage === 'STRATEGIC_REVIEW') {
+              if (action.response === 'override' && newState.strategicReview) {
+                newState.strategicReview = {
+                  ...newState.strategicReview,
+                  userOverride: true,
+                }
               }
+              // Advance to MOODBOARD
+              newState.stage = 'MOODBOARD'
+              newState.turnsInCurrentStage = 0
             }
-            // Advance to MOODBOARD
-            newState.stage = 'MOODBOARD'
-            newState.turnsInCurrentStage = 0
+            break
           }
-          break
+
+          case 'SELECT_DEEPEN':
+            newState = {
+              ...prev,
+              deepenSelections: [...(prev.deepenSelections ?? []), action.option],
+            }
+            break
+
+          case 'CONFIRM_SUBMIT':
+            newState = {
+              ...prev,
+              stage: 'SUBMIT',
+              turnsInCurrentStage: 0,
+            }
+            break
+
+          default:
+            return prev
         }
 
-        case 'SELECT_DEEPEN':
-          newState = {
-            ...state,
-            deepenSelections: [...(state.deepenSelections ?? []), action.option],
-          }
-          break
-
-        case 'CONFIRM_SUBMIT':
-          newState = {
-            ...state,
-            stage: 'SUBMIT',
-            turnsInCurrentStage: 0,
-          }
-          break
-
-        default:
-          return
-      }
-
-      updateState(newState)
+        persistState(newState)
+        return newState
+      })
     },
-    [state, updateState]
+    [persistState]
   )
 
   // ==========================================================================

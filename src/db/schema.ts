@@ -291,6 +291,13 @@ export const companies = pgTable('companies', {
   // Typography
   primaryFont: text('primary_font'),
   secondaryFont: text('secondary_font'),
+  headingFont: text('heading_font'), // Separate heading font from body
+  fontSizes: jsonb('font_sizes').$type<{ h1?: string; h2?: string; body?: string }>(),
+  fontWeights: jsonb('font_weights').$type<{ regular?: number; medium?: number; bold?: number }>(),
+  // Visual system
+  colorScheme: text('color_scheme'), // 'dark' | 'light'
+  spacingUnit: integer('spacing_unit'), // base spacing in px (e.g. 8)
+  borderRadius: text('border_radius'), // e.g. "8px"
   // Social media & contact
   socialLinks: jsonb('social_links').$type<{
     twitter?: string

@@ -418,25 +418,27 @@ export function useChatMessages({
 
   const handleMessageFeedback = useCallback(
     (messageId: string, feedback: 'up' | 'down') => {
-      const currentFeedback = messageFeedback[messageId]
-      const newFeedback = currentFeedback === feedback ? null : feedback
+      setMessageFeedback((prev) => {
+        const currentFeedback = prev[messageId]
+        const newFeedback = currentFeedback === feedback ? null : feedback
 
-      setMessageFeedback((prev) => ({ ...prev, [messageId]: newFeedback }))
+        if (newFeedback) {
+          csrfFetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messageId, feedback: newFeedback, context: 'chat' }),
+          }).catch((err) => console.debug('Feedback logging:', err))
 
-      if (newFeedback) {
-        csrfFetch('/api/feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId, feedback: newFeedback, context: 'chat' }),
-        }).catch((err) => console.debug('Feedback logging:', err))
+          toast.success(
+            newFeedback === 'up' ? 'Thanks for the feedback!' : "We'll work on improving this",
+            { duration: 2000 }
+          )
+        }
 
-        toast.success(
-          newFeedback === 'up' ? 'Thanks for the feedback!' : "We'll work on improving this",
-          { duration: 2000 }
-        )
-      }
+        return { ...prev, [messageId]: newFeedback }
+      })
     },
-    [messageFeedback, csrfFetch]
+    [csrfFetch]
   )
 
   const handleRetry = useCallback(() => {

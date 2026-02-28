@@ -387,7 +387,11 @@ function buildInspirationTask(state: BriefingState): string {
   const structureNote = hasStructure
     ? `\n- The structure has already been created. Show style references that would complement the ${state.structure?.type || 'deliverable'}'s visual direction.`
     : ''
-  return `Show visual style references that match the context.${structureNote}
+  const dalleNote =
+    state.deliverableCategory === 'video' && hasStructure
+      ? '\n- IMPORTANT: The visual style you choose will directly shape how the storyboard frames are generated. Pick a direction that brings the scenes to life.'
+      : ''
+  return `Show visual style references that match the context.${structureNote}${dalleNote}
 - Frame the creative direction based on what you know about audience, industry, and intent.
 - The system will display style cards. Your job is to introduce them with context.
 - IMPORTANT: Include the marker with search context so the system can find relevant design references:
@@ -550,16 +554,14 @@ SCENE QUALITY RULES:
 - Each scene description should describe what the CAMERA SEES, not abstract ideas. "A product manager refreshing a dashboard showing 12% conversion" not "The pain of low conversion rates."
 - The final scene should land on a concrete result (a number, a visual change, a reaction) before delivering the CTA from the approved narrative.
 
-- For each scene, include imageSearchTerms: an array of 3-4 short search tags that describe what a stock photographer would TAG this scene as. Each term should be 2-3 words maximum — think stock photo TAGS, not descriptions. Focus on VISIBLE SUBJECTS, not abstract concepts.
-  Bad (too long): ["person scanning face with phone camera", "laptop showing dashboard analytics chart"]
-  Good (short tags): ["face scan smartphone", "analytics dashboard laptop", "woman phone verification"]
-  Bad (abstract): ["identity verification", "conversion optimization", "business impact metrics"]
-  Good (concrete): ["fingerprint phone screen", "conversion chart laptop", "team meeting whiteboard"]
-  Each term is searched INDEPENDENTLY on Pexels/Unsplash — short, specific tags yield far better results than multi-word phrases.
-- Do NOT include filmTitleSuggestions or visualTechniques yet. Those depend on the style chosen later.
+- For each scene, include imageGenerationPrompt: a 2-3 sentence visual description for AI image generation. Describe what the camera sees — subjects, setting, lighting, mood, and composition. Be concrete and cinematic. This prompt will be fed to an AI image generator later (after the user picks a visual style), so focus on WHAT is in the frame, not HOW it should be styled.
+  Bad: "A person uses the app" (too vague, no visual detail)
+  Good: "Over-the-shoulder shot of a product manager at a standing desk, staring at a laptop screen showing a funnel chart with a sharp drop-off at the verification step. Dim office lighting, single monitor glow on their face. The dashboard shows red warning indicators."
+  Bad: "The problem of low conversion" (abstract concept, not visual)
+  Good: "Close-up of a smartphone screen showing a loading spinner stuck at 'Verifying Identity...', the user's thumb hovering impatiently. Shallow depth of field, warm indoor lighting."
 - CRITICAL: Use [STORYBOARD] as the marker, NOT [VIDEO_STORYBOARD]. The UI parser only recognizes [STORYBOARD].
 - You MUST output the structure as [STORYBOARD]{json}[/STORYBOARD]. Without this marker the UI cannot render the storyboard.
-- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"The Drop-Off Cliff","description":"A product manager stares at a funnel chart. The bar at 'Identity Verification' drops to nearly zero.","duration":"6s","visualNote":"Over-the-shoulder shot of a real analytics dashboard","voiceover":"You know that screen. The one where 40% of your sign-ups just disappear.","transition":"cut","cameraNote":"Over-shoulder, tight on screen, then pull back to show the person's reaction","imageSearchTerms":["person looking at analytics dashboard","funnel chart on laptop screen"],"hookData":{"targetPersona":"Product managers","painMetric":"40% sign-up drop-off","quantifiableImpact":"verification in 2 seconds"}}]}[/STORYBOARD]
+- Example: [STORYBOARD]{"scenes":[{"sceneNumber":1,"title":"The Drop-Off Cliff","description":"A product manager stares at a funnel chart. The bar at 'Identity Verification' drops to nearly zero.","duration":"6s","visualNote":"Over-the-shoulder shot of a real analytics dashboard","voiceover":"You know that screen. The one where 40% of your sign-ups just disappear.","transition":"cut","cameraNote":"Over-shoulder, tight on screen, then pull back to show the person's reaction","imageGenerationPrompt":"Over-the-shoulder shot of a product manager at a standing desk, staring at a laptop screen showing a funnel chart with a sharp drop-off at the verification step. Dim office lighting, single monitor glow on their face, dashboard shows red warning indicators.","hookData":{"targetPersona":"Product managers","painMetric":"40% sign-up drop-off","quantifiableImpact":"verification in 2 seconds"}}]}[/STORYBOARD]
 OUTPUT FORMAT: Start with the [STORYBOARD]{valid JSON}[/STORYBOARD] block FIRST, before any conversational text. This is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas. If you write the storyboard as plain text without these markers, the UI cannot render it and the response fails.
 
 CONVERSATIONAL TEXT:

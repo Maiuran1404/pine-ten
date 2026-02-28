@@ -69,9 +69,19 @@ Arguments: $ARGUMENTS
 
 ### Step 2: Dispatch QA Stress Test Agent
 
-Launch the `qa-stress-test` agent with the parsed configuration:
+**IMPORTANT**: Use `subagent_type: "general-purpose"` (NOT `"qa-stress-test"`). Custom agent types cannot access Chrome MCP tools — only `general-purpose` agents have access to `mcp__claude-in-chrome__*` tools needed for browser automation.
+
+Before dispatching, read the full agent instructions from `.claude/agents/qa-stress-test.md` and include them in the prompt.
+
+Launch a `general-purpose` agent with:
 
 ```
+You are the QA Stress Test agent. Follow the instructions below exactly.
+
+[Paste full contents of .claude/agents/qa-stress-test.md here]
+
+## Test Configuration
+
 Target: [parsed target]
 Depth: [parsed depth]
 Flows: [parsed flows count]
@@ -79,7 +89,9 @@ Viewport: [parsed viewport]
 Focus: [parsed focus]
 
 Run autonomous QA stress tests on the Pine Ten application.
-Follow the 5-phase methodology defined in your agent instructions.
+Follow the 5-phase methodology from the instructions above.
+
+IMPORTANT: You MUST use Chrome browser automation. Start by calling mcp__claude-in-chrome__tabs_context_mcp to connect to Chrome, then create a new tab via mcp__claude-in-chrome__tabs_create_mcp. Only fall back to static analysis if Chrome is genuinely unavailable (extension not connected).
 ```
 
 ### Step 3: Report Results
