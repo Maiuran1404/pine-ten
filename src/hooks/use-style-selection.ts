@@ -29,7 +29,7 @@ interface UseStyleSelectionOptions {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>
   setAnimatingMessageId: (id: string | null) => void
   selectedStyles: string[]
-  csrfFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 
 export function useStyleSelection({
@@ -285,7 +285,7 @@ export function useStyleSelection({
       setIsLoading(true)
 
       try {
-        const response = await fetch('/api/chat', {
+        const response = await csrfFetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -362,6 +362,7 @@ export function useStyleSelection({
       setIsLoading,
       setMessages,
       setAnimatingMessageId,
+      csrfFetch,
     ]
   )
 
@@ -397,7 +398,7 @@ export function useStyleSelection({
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await csrfFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
