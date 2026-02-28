@@ -15,14 +15,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname()
   const { data: session, isPending } = useSession()
 
-  // Check if we're on the chat page - which has its own layout
-  // Note: /dashboard/chat now redirects to /dashboard, but we keep this check
-  // in case anyone lands on the redirect page briefly
   const isChatPage = pathname?.startsWith('/dashboard/chat')
   const isWebsiteProjectPage = pathname?.startsWith('/dashboard/website-project')
-  const isFullScreenPage = isChatPage || isWebsiteProjectPage
+  const isFullScreenPage = isWebsiteProjectPage
   const isDashboardRoot = pathname === '/dashboard'
-  const [sidebarOpen, setSidebarOpen] = useState(!isDashboardRoot)
+  // Sidebar collapsed by default on dashboard root and chat pages
+  const [sidebarOpen, setSidebarOpen] = useState(!isDashboardRoot && !isChatPage)
 
   // Redirect based on auth state only (NOT role)
   // Users stay on the subdomain they logged into - no role-based redirects
