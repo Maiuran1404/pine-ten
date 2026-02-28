@@ -23,9 +23,10 @@ export interface PendingFile {
 
 interface UseFileUploadOptions {
   addFromUpload: (file: UploadedFile) => void
+  csrfFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 }
 
-export function useFileUpload({ addFromUpload }: UseFileUploadOptions) {
+export function useFileUpload({ addFromUpload, csrfFetch }: UseFileUploadOptions) {
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -58,7 +59,7 @@ export function useFileUpload({ addFromUpload }: UseFileUploadOptions) {
         formData.append('file', pending.file)
         formData.append('folder', 'attachments')
 
-        const uploadPromise = fetch('/api/upload', {
+        const uploadPromise = csrfFetch('/api/upload', {
           method: 'POST',
           body: formData,
         })
@@ -109,7 +110,7 @@ export function useFileUpload({ addFromUpload }: UseFileUploadOptions) {
         uploadPromisesRef.current.set(pending.id, uploadPromise)
       })
     },
-    [addFromUpload]
+    [addFromUpload, csrfFetch]
   )
 
   const handleFileUpload = useCallback(

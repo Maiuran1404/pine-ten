@@ -93,6 +93,7 @@ interface StructurePanelProps {
   // Error recovery for storyboard generation after narrative approval
   lastSendError?: string | null
   onRetryGeneration?: () => void
+  onEditNarrative?: () => void
   className?: string
 }
 
@@ -242,6 +243,7 @@ export function StructurePanel({
   onNarrativeFieldEdit,
   lastSendError,
   onRetryGeneration,
+  onEditNarrative,
   className,
 }: StructurePanelProps) {
   // No type known — shouldn't render, but handle gracefully
@@ -302,12 +304,8 @@ export function StructurePanel({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    if (onNarrativeFieldEdit) {
-                      // Allow re-editing the narrative by un-approving
-                      // This is handled by the parent resetting narrativeApproved
-                    }
-                  }}
+                  onClick={onEditNarrative}
+                  disabled={!onEditNarrative}
                   className="gap-1.5"
                 >
                   <Pencil className="h-3.5 w-3.5" />

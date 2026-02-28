@@ -269,7 +269,7 @@ export function useChatInterfaceData({
     async (durationDays: number = 30) => {
       if (!brief.platform.value || !brief.intent.value) return
       try {
-        const response = await fetch('/api/brief/generate-outline', {
+        const response = await csrfFetch('/api/brief/generate-outline', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -309,7 +309,7 @@ export function useChatInterfaceData({
         }))
       }
     },
-    [brief, brandData, toneOfVoice, updateBriefInState]
+    [brief, brandData, toneOfVoice, updateBriefInState, csrfFetch]
   )
 
   // Export brief as markdown
@@ -375,7 +375,7 @@ export function useChatInterfaceData({
   sendOptionRef.current = chatMessages.handleSendOption
 
   // ─── File upload ─────────────────────────────────────────────
-  const fileUpload = useFileUpload({ addFromUpload })
+  const fileUpload = useFileUpload({ addFromUpload, csrfFetch })
 
   // ─── Scroll management ──────────────────────────────────────
   const { scrollAreaRef, scrollToBottom } = useChatScroll({

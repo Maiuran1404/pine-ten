@@ -603,7 +603,7 @@ export function NarrativePanel({
                     <div className="flex gap-3">
                       <div className="w-0.5 shrink-0 rounded-full bg-crafted-green/40" />
                       <p className="flex-1 text-sm text-foreground/70 leading-relaxed italic pr-16">
-                        &ldquo;{renderHighlightedText(narrative.hook)}&rdquo;
+                        &ldquo;{narrative.hook.replace(/<<|>>/g, '')}&rdquo;
                       </p>
                     </div>
                   </div>
