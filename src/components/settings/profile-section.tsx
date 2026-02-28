@@ -43,21 +43,24 @@ export function ProfileSection({
       />
       <div className="p-5 space-y-6">
         <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={session?.user?.image || undefined} />
-            <AvatarFallback className="bg-muted text-muted-foreground text-lg">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-crafted-green/20 to-crafted-mint/20" />
+            <Avatar className="relative h-20 w-20">
+              <AvatarImage src={session?.user?.image || undefined} />
+              <AvatarFallback className="bg-crafted-green/10 text-crafted-forest text-lg">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </div>
           <div>
-            <p className="font-medium text-foreground">{session?.user?.name}</p>
+            <p className="text-lg font-semibold text-foreground">{session?.user?.name}</p>
             <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
           </div>
         </div>
 
-        <div className="h-px bg-border" />
+        <div className="h-px bg-border/60" />
 
-        <div className="grid gap-4 max-w-md">
+        <div className="grid gap-5 max-w-md">
           <div className="grid gap-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -97,7 +100,11 @@ export function ProfileSection({
           </div>
         </div>
 
-        <Button onClick={onSave} disabled={isSaving}>
+        <Button
+          onClick={onSave}
+          disabled={isSaving}
+          className="bg-crafted-green hover:bg-crafted-forest text-white"
+        >
           {isSaving ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

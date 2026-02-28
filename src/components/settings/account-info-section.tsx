@@ -21,11 +21,11 @@ export function AccountInfoSection({ userSettings, children }: AccountInfoSectio
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Account ID</span>
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="font-mono text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
               {userSettings?.id?.slice(0, 8)}...
             </span>
           </div>
-          <div className="h-px bg-border" />
+          <div className="h-px bg-border/60" />
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Member Since</span>
             <span className="text-foreground">

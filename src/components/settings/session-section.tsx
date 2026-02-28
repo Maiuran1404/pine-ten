@@ -22,7 +22,7 @@ export function SessionSection({
     <SettingsCard>
       <SettingsCardHeader icon={LogOut} title="Session" description="Manage your current session" />
       <div className="p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm text-foreground">Log out of your account</p>
             <p className="text-xs text-muted-foreground mt-1">{description}</p>
