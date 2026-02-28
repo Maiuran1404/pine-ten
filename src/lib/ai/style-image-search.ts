@@ -52,6 +52,7 @@ export interface SearchedDeliverableStyle {
   styleAxis: string
   subStyle: string | null
   semanticTags: string[]
+  promptGuide?: string
   brandMatchScore?: number
   matchReason?: string
   attribution?: StyleImageAttribution

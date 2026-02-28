@@ -25,7 +25,7 @@ import {
 import { extractStyleContext } from '@/lib/ai/chat-context'
 import { db } from '@/db'
 import { deliverableStyleReferences } from '@/db/schema'
-import { eq, ilike } from 'drizzle-orm'
+import { eq, ilike, and, asc, isNotNull } from 'drizzle-orm'
 import type { SerializedBriefingState } from '@/lib/ai/briefing-state-machine'
 import type { StyleContext } from '@/lib/ai/brand-style-scoring'
 import type { ChatRequestBody } from './types'
@@ -185,6 +185,8 @@ export async function processStylesAndVideo(
 
   // FALLBACK: Auto-detect marker if AI didn't include one
   // Only at style-eligible stages; suppress when AI is asking a question
+  // Exception: at INSPIRATION stage, allow auto-detect even when AI ends with `?`
+  const isInspirationStage = currentStage === 'INSPIRATION'
   const aiResponseEndsWithQuestion =
     currentStage &&
     responseContent
@@ -192,8 +194,24 @@ export async function processStylesAndVideo(
       .trim()
       .endsWith('?')
 
-  if (!deliverableStyleMarker && isStyleEligible && !aiResponseEndsWithQuestion) {
+  if (
+    !deliverableStyleMarker &&
+    isStyleEligible &&
+    (!aiResponseEndsWithQuestion || isInspirationStage)
+  ) {
     deliverableStyleMarker = autoDetectStyleMarker(responseContent, lastUserMessage)
+  }
+
+  // Last-resort: at INSPIRATION, create marker from briefing state deliverable category
+  if (!deliverableStyleMarker && isInspirationStage && isStyleEligible && updatedBriefingState) {
+    const category = updatedBriefingState.deliverableCategory
+    if (category === 'video') {
+      deliverableStyleMarker = {
+        type: 'initial',
+        deliverableType: 'launch_video',
+      }
+      logger.debug('Created fallback style marker from briefing state (video)')
+    }
   }
 
   // Suppress marker at non-eligible stages
@@ -215,15 +233,31 @@ export async function processStylesAndVideo(
             deliverableStyleMarker = undefined
             break
           }
-          // For video types, fetch visual direction references instead of skipping entirely
+          // For video types at INSPIRATION, load curated presets from DB
           if (isVideoType) {
-            deliverableStyles = await searchStyleImages(
-              {
-                searchTerms: deliverableStyleMarker.searchTerms,
-                deliverableType: normalizedType,
-              },
-              { count: 6, styleContext }
-            )
+            if (isInspirationStage) {
+              deliverableStyles = await getVideoStylePresets(normalizedType)
+              logger.debug(
+                { count: deliverableStyles?.length, deliverableType: normalizedType },
+                'Loaded curated video style presets from DB'
+              )
+            } else {
+              // Non-INSPIRATION: use existing web search logic
+              deliverableStyles = await searchStyleImages(
+                {
+                  searchTerms: deliverableStyleMarker.searchTerms,
+                  deliverableType: normalizedType,
+                },
+                { count: 6, styleContext }
+              )
+            }
+            if (!deliverableStyles?.length) {
+              // Fallback to brand-aware styles if no presets found
+              deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
+                includeAllAxes: true,
+                context: styleContext,
+              })
+            }
             if (!deliverableStyles?.length) {
               deliverableStyleMarker = undefined
             }
@@ -432,9 +466,15 @@ export async function processStylesAndVideo(
   logger.debug({ isVideoRequest, hasVideoMarker, deliverableStyleMarker }, 'Video detection check')
 
   // Only fetch video refs when there's a video-type marker AND stage is eligible
+  // At INSPIRATION, preserve deliverableStyles (curated presets) — don't clear them
   if (isStyleEligible && !moodboardHasStyles && hasVideoMarker) {
-    deliverableStyles = undefined
-    logger.debug('Video marker detected - cleared image styles, fetching video refs')
+    if (!isInspirationStage || !deliverableStyles?.length) {
+      deliverableStyles = undefined
+    }
+    logger.debug(
+      { preservedStyles: isInspirationStage && !!deliverableStyles?.length },
+      'Video marker detected - processing video refs'
+    )
 
     try {
       const deliverableType = deliverableStyleMarker?.deliverableType
@@ -468,4 +508,47 @@ export async function processStylesAndVideo(
   }
 
   return { deliverableStyles, deliverableStyleMarker, videoReferences }
+}
+
+// ── Helper: Load curated video style presets from DB ──
+
+async function getVideoStylePresets(
+  deliverableType: string
+): Promise<SearchedDeliverableStyle[] | undefined> {
+  try {
+    // Only return curated presets (those with a promptGuide) for reliable visual direction
+    const presets = await db
+      .select()
+      .from(deliverableStyleReferences)
+      .where(
+        and(
+          eq(deliverableStyleReferences.deliverableType, deliverableType),
+          eq(deliverableStyleReferences.isActive, true),
+          isNotNull(deliverableStyleReferences.promptGuide)
+        )
+      )
+      .orderBy(asc(deliverableStyleReferences.displayOrder))
+
+    if (presets.length === 0) return undefined
+
+    return presets.map((preset) => ({
+      id: preset.id,
+      name: preset.name,
+      description: preset.description,
+      imageUrl: preset.imageUrl,
+      deliverableType: preset.deliverableType,
+      styleAxis: preset.styleAxis,
+      subStyle: preset.subStyle,
+      semanticTags: preset.semanticTags || [],
+      promptGuide: preset.promptGuide ?? undefined,
+      attribution: {
+        source: 'db' as const,
+        domain: 'crafted',
+        sourceUrl: '',
+      },
+    }))
+  } catch (err) {
+    logger.error({ err }, 'Error loading video style presets from DB')
+    return undefined
+  }
 }

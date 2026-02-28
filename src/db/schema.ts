@@ -873,6 +873,7 @@ export const deliverableStyleReferences = pgTable(
     name: text('name').notNull(),
     description: text('description'),
     imageUrl: text('image_url').notNull(),
+    promptGuide: text('prompt_guide'), // DALL-E prompt template for this visual style
 
     // Primary categorization
     deliverableType: text('deliverable_type').notNull(),
