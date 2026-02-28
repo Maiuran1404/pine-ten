@@ -341,6 +341,18 @@
   --neutral-darker: #1f2937;
 }
 
+/* Auth pages: always use dark surface tokens regardless of theme */
+.auth-dark {
+  --background: #0a0a0a;
+  --surface-overlay: rgba(20, 20, 20, 0.8);
+  --surface-input: rgba(40, 40, 40, 0.6);
+  --surface-inset: rgba(15, 15, 15, 0.9);
+  --surface-raised: #141414;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --button-cream: #f5f5f0;
+  --button-cream-foreground: #1a1a1a;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
