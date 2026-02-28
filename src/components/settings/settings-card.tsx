@@ -17,7 +17,7 @@ export function SettingsCard({
 }
 
 export function SettingsCardHeader({
-  icon: Icon,
+  icon: _Icon,
   title,
   description,
 }: {

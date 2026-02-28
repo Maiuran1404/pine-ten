@@ -101,12 +101,12 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="min-h-full bg-background">
-        <div className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-5">
-            <Skeleton className="h-7 w-32" />
+        <div>
+          <div className="max-w-4xl mx-auto px-6 py-8">
+            <Skeleton className="h-9 w-32" />
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
+        <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
           <Skeleton className="h-10 w-64" />
           <SettingsCard className="p-6">
             <Skeleton className="h-32 w-full" />
@@ -119,15 +119,16 @@ export default function SettingsPage() {
   return (
     <div className="min-h-full bg-background">
       {/* Header */}
-      <div className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-foreground">Account</h1>
-          </div>
+      <div>
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <h1 className="text-3xl font-bold text-foreground">Account</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your profile, billing, and account settings
+          </p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-4 space-y-4 sm:space-y-6">
+      <div className="max-w-4xl mx-auto px-6 py-6 space-y-4 sm:space-y-6">
         {/* Tabs */}
         <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
           <TabsList className="w-full sm:w-auto flex overflow-x-auto">
@@ -180,7 +181,7 @@ export default function SettingsPage() {
                 title="Credit Balance"
                 description="Your current credit balance for creating tasks"
               />
-              <div className="p-5">
+              <div className="px-7 py-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-baseline gap-2">
@@ -204,7 +205,7 @@ export default function SettingsPage() {
                       </p>
                     )}
                   </div>
-                  <Button asChild>
+                  <Button asChild className="rounded-full">
                     <Link href="/dashboard/credits">
                       <Plus className="h-4 w-4 mr-2" />
                       Buy Credits
@@ -224,7 +225,10 @@ export default function SettingsPage() {
               <div className="divide-y divide-border">
                 {billingData?.transactions && billingData.transactions.length > 0 ? (
                   billingData.transactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-4">
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between px-7 py-4"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                           {getTransactionIcon(transaction.type)}

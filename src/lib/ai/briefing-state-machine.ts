@@ -289,8 +289,8 @@ const STAGE_ORDER: BriefingStage[] = [
   'EXTRACT',
   'TASK_TYPE',
   'INTENT',
-  'INSPIRATION',
   'STRUCTURE',
+  'INSPIRATION',
   'ELABORATE',
   'STRATEGIC_REVIEW',
   'MOODBOARD',
@@ -323,20 +323,20 @@ export const STAGE_PIPELINE: StageGate[] = [
     exitWhen: (s) => s.brief.intent.confidence >= 0.4 && s.brief.intent.value !== null,
   },
   {
-    stage: 'INSPIRATION',
-    exitWhen: (s) => {
-      // All categories require style selection before building structure.
-      // Video needs it for DALL-E image generation style context.
-      return (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0
-    },
-  },
-  {
     stage: 'STRUCTURE',
     exitWhen: (s) => {
       if (!s.structure) return false
       // Video requires narrative approval before advancing
       if (s.deliverableCategory === 'video' && !s.narrativeApproved) return false
       return true
+    },
+  },
+  {
+    stage: 'INSPIRATION',
+    exitWhen: (s) => {
+      // Style selection after structure is built.
+      // Video needs it for DALL-E image generation style context at ELABORATE.
+      return (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0
     },
   },
   {

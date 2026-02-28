@@ -126,15 +126,15 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
           <p className="text-muted-foreground">Configure platform settings</p>
         </div>
-        <Button onClick={handleSaveAll} disabled={isSaving}>
+        <Button onClick={handleSaveAll} disabled={isSaving} className="rounded-full">
           {isSaving ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4 mr-2" />}
           Save All Changes
         </Button>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-8">
         {/* Pricing Settings */}
-        <Card>
+        <Card className="rounded-2xl border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle>Pricing</CardTitle>
             <CardDescription>Configure credit pricing and fees</CardDescription>
@@ -153,6 +153,7 @@ export default function SettingsPage() {
                       creditPrice: Number(e.target.value),
                     })
                   }
+                  className="rounded-lg"
                 />
                 <p className="text-xs text-muted-foreground">Price per credit in USD</p>
               </div>
@@ -168,6 +169,7 @@ export default function SettingsPage() {
                       platformFeePercent: Number(e.target.value),
                     })
                   }
+                  className="rounded-lg"
                 />
                 <p className="text-xs text-muted-foreground">
                   Percentage taken from each task payment
@@ -178,7 +180,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Task Settings */}
-        <Card>
+        <Card className="rounded-2xl border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle>Task Settings</CardTitle>
             <CardDescription>Configure default task parameters</CardDescription>
@@ -197,6 +199,7 @@ export default function SettingsPage() {
                       maxRevisions: Number(e.target.value),
                     })
                   }
+                  className="rounded-lg"
                 />
                 <p className="text-xs text-muted-foreground">Default maximum revisions per task</p>
               </div>
@@ -212,6 +215,7 @@ export default function SettingsPage() {
                       newUserCredits: Number(e.target.value),
                     })
                   }
+                  className="rounded-lg"
                 />
                 <p className="text-xs text-muted-foreground">Free credits given to new users</p>
               </div>
@@ -220,7 +224,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Freelancer Settings */}
-        <Card>
+        <Card className="rounded-2xl border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle>Freelancer Settings</CardTitle>
             <CardDescription>Configure freelancer-related settings</CardDescription>
@@ -238,7 +242,7 @@ export default function SettingsPage() {
                     minWithdrawal: Number(e.target.value),
                   })
                 }
-                className="max-w-xs"
+                className="max-w-xs rounded-lg"
               />
               <p className="text-xs text-muted-foreground">
                 Minimum amount freelancers can withdraw
@@ -248,7 +252,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* System Settings */}
-        <Card>
+        <Card className="rounded-2xl border-border/60 shadow-sm">
           <CardHeader>
             <CardTitle>System</CardTitle>
             <CardDescription>System-wide settings</CardDescription>

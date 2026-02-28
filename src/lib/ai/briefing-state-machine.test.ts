@@ -508,7 +508,19 @@ describe('deriveStage', () => {
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
-      state.brief.visualDirection = { selectedStyles: ['style-1'] }
+      state.brief.visualDirection = {
+        selectedStyles: [
+          {
+            id: '1',
+            name: 'Style',
+            description: null,
+            imageUrl: '',
+            deliverableType: 'video',
+            styleAxis: 'tech',
+            subStyle: null,
+          },
+        ],
+      }
       state.structure = null
       state.turnsInCurrentStage = 10
       expect(deriveStage(state)).toBe('STRUCTURE')

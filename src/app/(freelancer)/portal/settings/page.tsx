@@ -106,7 +106,7 @@ function TagInput({
       <div className="relative">
         <div
           className={cn(
-            'flex flex-wrap gap-2 p-3 min-h-[44px] rounded-md border bg-background cursor-text',
+            'flex flex-wrap gap-2 p-3 min-h-[44px] rounded-lg border bg-background cursor-text',
             'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2'
           )}
           onClick={() => inputRef.current?.focus()}
@@ -278,14 +278,14 @@ export default function FreelancerSettingsPage() {
   if (isLoading) {
     return (
       <div className="min-h-full bg-background">
-        <div className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-5">
-            <Skeleton className="h-7 w-32" />
+        <div>
+          <div className="max-w-4xl mx-auto px-6 py-8">
+            <Skeleton className="h-9 w-32" />
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
+        <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
           <Skeleton className="h-4 w-64" />
-          <Skeleton className="h-20 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
         </div>
       </div>
     )
@@ -294,13 +294,14 @@ export default function FreelancerSettingsPage() {
   return (
     <div className="min-h-full bg-background">
       {/* Header */}
-      <div className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-5">
-          <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+      <div>
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+          <p className="text-muted-foreground mt-1">Manage your profile and freelancer settings</p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-4 space-y-4 sm:space-y-6">
+      <div className="max-w-4xl mx-auto px-6 py-6 space-y-4 sm:space-y-6">
         {/* Profile Section */}
         <ProfileSection
           session={session}
@@ -321,7 +322,7 @@ export default function FreelancerSettingsPage() {
             title="Skills & Expertise"
             description="Add your skills to help us match you with relevant tasks"
           />
-          <div className="p-5 space-y-6">
+          <div className="px-7 pb-7 pt-5 space-y-6">
             <TagInput
               tags={skills}
               onTagsChange={setSkills}
@@ -338,7 +339,11 @@ export default function FreelancerSettingsPage() {
               label="Your Specializations"
             />
 
-            <Button onClick={handleSaveSkills} disabled={isSavingSkills}>
+            <Button
+              onClick={handleSaveSkills}
+              disabled={isSavingSkills}
+              className="rounded-full px-6"
+            >
               {isSavingSkills ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -358,7 +363,7 @@ export default function FreelancerSettingsPage() {
             title="Freelancer Profile"
             description="Update your professional profile"
           />
-          <div className="p-5 space-y-6">
+          <div className="px-7 pb-7 pt-5 space-y-6">
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="bio" className="text-muted-foreground">
@@ -371,7 +376,7 @@ export default function FreelancerSettingsPage() {
                     setFreelancerFormData({ ...freelancerFormData, bio: e.target.value })
                   }
                   placeholder="Tell us about yourself and your design experience..."
-                  className=" min-h-[100px]"
+                  className="rounded-lg min-h-[100px]"
                 />
               </div>
 
@@ -390,7 +395,7 @@ export default function FreelancerSettingsPage() {
                     })
                   }
                   placeholder="+1 234 567 8900"
-                  className=""
+                  className="rounded-lg"
                 />
                 <p className="text-xs text-muted-foreground">
                   We&apos;ll notify you of new tasks via WhatsApp
@@ -415,7 +420,7 @@ export default function FreelancerSettingsPage() {
                     })
                   }
                   placeholder="Behance, Dribbble, or personal website URLs (comma-separated)"
-                  className=""
+                  className="rounded-lg"
                 />
               </div>
 
@@ -430,7 +435,11 @@ export default function FreelancerSettingsPage() {
               </div>
             </div>
 
-            <Button onClick={handleSaveFreelancerProfile} disabled={isSaving} className="">
+            <Button
+              onClick={handleSaveFreelancerProfile}
+              disabled={isSaving}
+              className="rounded-full px-6"
+            >
               {isSaving ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

@@ -17,17 +17,17 @@ export function AccountInfoSection({ userSettings, children }: AccountInfoSectio
         title="Account Information"
         description="Your account details"
       />
-      <div className="p-5">
+      <div className="px-7 pb-7 pt-5">
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Account ID</span>
+            <span className="text-base font-medium text-foreground">Account ID</span>
             <span className="font-mono text-xs text-muted-foreground">
               {userSettings?.id?.slice(0, 8)}...
             </span>
           </div>
-          <div className="h-px bg-border" />
+          <div className="h-px bg-border/50" />
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Member Since</span>
+            <span className="text-base font-medium text-foreground">Member Since</span>
             <span className="text-foreground">
               {userSettings?.createdAt
                 ? new Date(userSettings.createdAt).toLocaleDateString('en-US', {
