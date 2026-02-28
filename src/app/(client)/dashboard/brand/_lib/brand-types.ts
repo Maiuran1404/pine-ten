@@ -78,6 +78,12 @@ export interface BrandData {
     keyPhrases?: string[]
     avoidPhrases?: string[]
   } | null
+  headingFont: string | null
+  colorScheme: 'dark' | 'light' | null
+  fontSizes: { h1?: string; h2?: string; body?: string } | null
+  fontWeights: { regular?: number; medium?: number; bold?: number } | null
+  spacingUnit: number | null
+  borderRadius: string | null
 }
 
 export type TabId =

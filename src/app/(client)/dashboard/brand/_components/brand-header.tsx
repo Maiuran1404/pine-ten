@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -19,7 +19,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Save, RefreshCw, MoreHorizontal, RotateCcw, AlertTriangle } from 'lucide-react'
+import {
+  Save,
+  RefreshCw,
+  MoreHorizontal,
+  RotateCcw,
+  AlertTriangle,
+  Radar,
+  FileUp,
+  Loader2,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { BrandData } from '../_lib/brand-types'
 
@@ -29,8 +38,12 @@ interface BrandHeaderProps {
   hasChanges: boolean
   isSaving: boolean
   isRescanning: boolean
+  isDeepScanning: boolean
+  isExtractingPdf: boolean
   onSave: () => void
   onRescan: () => void
+  onDeepScan: () => void
+  onExtractPdf: (file: File) => void
   onRedoOnboarding: () => void
 }
 
@@ -85,11 +98,25 @@ export function BrandHeader({
   hasChanges,
   isSaving,
   isRescanning,
+  isDeepScanning,
+  isExtractingPdf,
   onSave,
   onRescan,
+  onDeepScan,
+  onExtractPdf,
   onRedoOnboarding,
 }: BrandHeaderProps) {
   const [showRedoDialog, setShowRedoDialog] = useState(false)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+
+  const handlePdfSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      onExtractPdf(file)
+      // Reset input so the same file can be re-selected
+      e.target.value = ''
+    }
+  }
 
   return (
     <div className="relative z-10 border-b border-border">
@@ -166,11 +193,32 @@ export function BrandHeader({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {brand.website && (
-                  <DropdownMenuItem onClick={onRescan} disabled={isRescanning}>
-                    <RefreshCw className={cn('h-4 w-4 mr-2', isRescanning && 'animate-spin')} />
-                    {isRescanning ? 'Scanning...' : 'Rescan website'}
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={onRescan} disabled={isRescanning}>
+                      <RefreshCw className={cn('h-4 w-4 mr-2', isRescanning && 'animate-spin')} />
+                      {isRescanning ? 'Scanning...' : 'Rescan website'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onDeepScan} disabled={isDeepScanning}>
+                      {isDeepScanning ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Radar className="h-4 w-4 mr-2" />
+                      )}
+                      {isDeepScanning ? 'Deep scanning...' : 'Deep scan website'}
+                    </DropdownMenuItem>
+                  </>
                 )}
+                <DropdownMenuItem
+                  onClick={() => pdfInputRef.current?.click()}
+                  disabled={isExtractingPdf}
+                >
+                  {isExtractingPdf ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileUp className="h-4 w-4 mr-2" />
+                  )}
+                  {isExtractingPdf ? 'Extracting...' : 'Upload PDF guidelines'}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setShowRedoDialog(true)}
@@ -184,6 +232,15 @@ export function BrandHeader({
           </div>
         </div>
       </div>
+
+      {/* Hidden PDF file input */}
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept=".pdf"
+        className="hidden"
+        onChange={handlePdfSelect}
+      />
 
       {/* Controlled AlertDialog outside DropdownMenu to prevent unmount issues */}
       <AlertDialog open={showRedoDialog} onOpenChange={setShowRedoDialog}>

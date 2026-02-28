@@ -193,7 +193,9 @@ function ColorsPreview({ brand }: { brand: BrandData }) {
 function TypographyPreview({ brand }: { brand: BrandData }) {
   // Load Google Fonts for preview
   useEffect(() => {
-    const fonts = [brand.primaryFont, brand.secondaryFont].filter(Boolean) as string[]
+    const fonts = [brand.primaryFont, brand.secondaryFont, brand.headingFont].filter(
+      Boolean
+    ) as string[]
     fonts.forEach((font) => {
       const encoded = encodeURIComponent(font)
       const id = `google-font-preview-${encoded}`
@@ -204,11 +206,36 @@ function TypographyPreview({ brand }: { brand: BrandData }) {
       link.href = `https://fonts.googleapis.com/css2?family=${encoded}:wght@400;600;700&display=swap`
       document.head.appendChild(link)
     })
-  }, [brand.primaryFont, brand.secondaryFont])
+  }, [brand.primaryFont, brand.secondaryFont, brand.headingFont])
+
+  const hasDesignTokens =
+    brand.fontSizes || brand.fontWeights || brand.spacingUnit || brand.borderRadius
 
   return (
     <div className="w-full max-w-md space-y-6">
       <div className="rounded-2xl overflow-hidden shadow-2xl border border-border bg-card p-6 space-y-6">
+        {/* Display/Heading font specimen (if different from primary) */}
+        {brand.headingFont && brand.headingFont !== brand.primaryFont && (
+          <>
+            <div>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                Display Font
+              </span>
+              <div
+                className="mt-2 space-y-1"
+                style={{ fontFamily: brand.headingFont || 'inherit' }}
+              >
+                <p className="text-3xl font-bold text-foreground">Aa Bb Cc</p>
+                <p className="text-xl font-semibold text-foreground">The quick brown fox</p>
+              </div>
+              <span className="text-xs text-muted-foreground mt-2 block font-mono">
+                {brand.headingFont}
+              </span>
+            </div>
+            <div className="border-t border-border" />
+          </>
+        )}
+
         {/* Heading font specimen */}
         <div>
           <span className="text-xs text-muted-foreground uppercase tracking-wider">
@@ -240,6 +267,56 @@ function TypographyPreview({ brand }: { brand: BrandData }) {
             {brand.secondaryFont || 'System default'}
           </span>
         </div>
+
+        {/* Design tokens */}
+        {hasDesignTokens && (
+          <>
+            <div className="border-t border-border" />
+            <div>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                Design Tokens
+              </span>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {brand.fontSizes?.h1 && (
+                  <div className="px-3 py-2 rounded-lg bg-muted">
+                    <span className="text-[10px] text-muted-foreground uppercase">H1</span>
+                    <p className="text-sm font-medium text-foreground">{brand.fontSizes.h1}</p>
+                  </div>
+                )}
+                {brand.fontSizes?.h2 && (
+                  <div className="px-3 py-2 rounded-lg bg-muted">
+                    <span className="text-[10px] text-muted-foreground uppercase">H2</span>
+                    <p className="text-sm font-medium text-foreground">{brand.fontSizes.h2}</p>
+                  </div>
+                )}
+                {brand.fontSizes?.body && (
+                  <div className="px-3 py-2 rounded-lg bg-muted">
+                    <span className="text-[10px] text-muted-foreground uppercase">Body</span>
+                    <p className="text-sm font-medium text-foreground">{brand.fontSizes.body}</p>
+                  </div>
+                )}
+                {brand.spacingUnit && (
+                  <div className="px-3 py-2 rounded-lg bg-muted">
+                    <span className="text-[10px] text-muted-foreground uppercase">Spacing</span>
+                    <p className="text-sm font-medium text-foreground">{brand.spacingUnit}px</p>
+                  </div>
+                )}
+                {brand.borderRadius && (
+                  <div className="px-3 py-2 rounded-lg bg-muted">
+                    <span className="text-[10px] text-muted-foreground uppercase">Radius</span>
+                    <p className="text-sm font-medium text-foreground">{brand.borderRadius}</p>
+                  </div>
+                )}
+                {brand.fontWeights?.bold && (
+                  <div className="px-3 py-2 rounded-lg bg-muted">
+                    <span className="text-[10px] text-muted-foreground uppercase">Bold</span>
+                    <p className="text-sm font-medium text-foreground">{brand.fontWeights.bold}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Keywords */}

@@ -4,16 +4,23 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Sparkles, Loader2 } from 'lucide-react'
 import { SectionCard } from './section-card'
 import type { BrandData } from '../_lib/brand-types'
 
 interface CompetitorsTabProps {
   brand: BrandData
   updateField: (field: keyof BrandData, value: BrandData[keyof BrandData]) => void
+  onEnrichCompetitors: () => void
+  isEnrichingCompetitors: boolean
 }
 
-export function CompetitorsTab({ brand, updateField }: CompetitorsTabProps) {
+export function CompetitorsTab({
+  brand,
+  updateField,
+  onEnrichCompetitors,
+  isEnrichingCompetitors,
+}: CompetitorsTabProps) {
   const competitors = brand.competitors || []
 
   function addCompetitor() {
@@ -39,6 +46,24 @@ export function CompetitorsTab({ brand, updateField }: CompetitorsTabProps) {
     <div className="space-y-6">
       <SectionCard title="Competitive Landscape" description="Key competitors and how you compare">
         <div className="space-y-4">
+          {competitors.length > 0 && competitors.some((c) => c.name.trim()) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={onEnrichCompetitors}
+              disabled={isEnrichingCompetitors}
+            >
+              {isEnrichingCompetitors ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              {isEnrichingCompetitors ? 'Enriching...' : 'Auto-enrich competitors'}
+            </Button>
+          )}
+
           {competitors.map((competitor, index) => (
             <div key={index} className="space-y-4 rounded-lg border border-border p-4">
               <div className="flex items-center justify-between">

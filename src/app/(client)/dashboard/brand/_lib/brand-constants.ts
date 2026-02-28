@@ -155,7 +155,7 @@ export const TAB_GROUPS: TabGroup[] = [
 export const TAB_COMPLETION_FIELDS: Record<TabId, string[]> = {
   company: ['name', 'industry', 'description', 'tagline', 'website'],
   colors: ['primaryColor', 'secondaryColor', 'accentColor'],
-  typography: ['primaryFont', 'secondaryFont', 'keywords'],
+  typography: ['primaryFont', 'secondaryFont', 'headingFont', 'keywords'],
   social: ['contactEmail', 'socialLinks'],
   audiences: [], // computed from audiences array
   positioning: ['positioning'],

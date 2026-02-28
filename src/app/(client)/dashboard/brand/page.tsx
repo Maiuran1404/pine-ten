@@ -27,6 +27,9 @@ export default function BrandPage() {
     isLoading,
     isSaving,
     isRescanning,
+    isDeepScanning,
+    isEnrichingCompetitors,
+    isExtractingPdf,
     copiedColor,
     hasChanges,
     tabCompletionStatus,
@@ -36,6 +39,9 @@ export default function BrandPage() {
     removeBrandColor,
     handleSave,
     handleRescan,
+    handleDeepScan,
+    handleEnrichCompetitors,
+    handleExtractPdf,
     handleRedoOnboarding,
     isResettingOnboarding,
     handleDeleteAudience,
@@ -114,8 +120,12 @@ export default function BrandPage() {
         hasChanges={hasChanges}
         isSaving={isSaving}
         isRescanning={isRescanning}
+        isDeepScanning={isDeepScanning}
+        isExtractingPdf={isExtractingPdf}
         onSave={handleSave}
         onRescan={handleRescan}
+        onDeepScan={handleDeepScan}
+        onExtractPdf={handleExtractPdf}
         onRedoOnboarding={handleRedoOnboarding}
       />
 
@@ -175,7 +185,12 @@ export default function BrandPage() {
               )}
               {activeTab === 'voice' && <VoiceTab brand={brand} updateField={updateField} />}
               {activeTab === 'competitors' && (
-                <CompetitorsTab brand={brand} updateField={updateField} />
+                <CompetitorsTab
+                  brand={brand}
+                  updateField={updateField}
+                  onEnrichCompetitors={handleEnrichCompetitors}
+                  isEnrichingCompetitors={isEnrichingCompetitors}
+                />
               )}
             </motion.div>
           </AnimatePresence>

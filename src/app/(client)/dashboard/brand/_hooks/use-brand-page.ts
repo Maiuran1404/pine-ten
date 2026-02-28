@@ -185,6 +185,142 @@ export function useBrandPage() {
     },
   })
 
+  const deepScanMutation = useMutation({
+    mutationFn: async (websiteUrl: string) => {
+      const response = await csrfFetch('/api/brand/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ websiteUrl, deep: true }),
+      })
+      if (!response.ok) {
+        throw new Error('Deep scan failed')
+      }
+      const result = await response.json()
+      return result.data
+    },
+    onSuccess: (data) => {
+      setLocalEdits((prev) => {
+        const base = prev ?? brandQuery.data
+        return base
+          ? {
+              ...base,
+              ...data,
+              id: base.id,
+            }
+          : null
+      })
+      toast.success('Deep scan complete — new brand data populated!')
+    },
+    onError: () => {
+      toast.error('Deep scan failed. Try again later.')
+    },
+  })
+
+  const enrichCompetitorsMutation = useMutation({
+    mutationFn: async (competitors: Array<{ name: string; website?: string }>) => {
+      const response = await csrfFetch('/api/brand/competitors/enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ competitors }),
+      })
+      if (!response.ok) {
+        throw new Error('Enrichment failed')
+      }
+      const result = await response.json()
+      return result.data
+    },
+    onSuccess: (data) => {
+      if (!data?.competitors) return
+      setLocalEdits((prev) => {
+        const base = prev ?? brandQuery.data
+        if (!base) return null
+        const existing = base.competitors || []
+        const merged = existing.map((comp) => {
+          const enriched = (
+            data.competitors as Array<{
+              name: string
+              website: string | null
+              description: string | null
+              primaryColor: string | null
+              logoUrl: string | null
+              positioning: string | null
+              strengths: string | null
+              weaknesses: string | null
+            }>
+          ).find((e) => e.name.toLowerCase() === comp.name.toLowerCase())
+          if (!enriched) return comp
+          return {
+            ...comp,
+            website: enriched.website || comp.website,
+            positioning: enriched.positioning || comp.positioning,
+            strengths: enriched.strengths || comp.strengths,
+            weaknesses: enriched.weaknesses || comp.weaknesses,
+          }
+        })
+        return { ...base, competitors: merged }
+      })
+      toast.success(`Enriched ${data.enriched}/${data.total} competitors`)
+    },
+    onError: () => {
+      toast.error('Failed to enrich competitors')
+    },
+  })
+
+  const extractPdfMutation = useMutation({
+    mutationFn: async (file: File) => {
+      // Step 1: Upload PDF
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'brand')
+
+      const uploadResponse = await csrfFetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload PDF')
+      }
+      const uploadResult = await uploadResponse.json()
+      const pdfUrl = uploadResult.data?.url || uploadResult.url
+
+      if (!pdfUrl) {
+        throw new Error('No URL returned from upload')
+      }
+
+      // Step 2: Extract brand data from PDF
+      const extractResponse = await csrfFetch('/api/brand/extract-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdfUrl }),
+      })
+      if (!extractResponse.ok) {
+        throw new Error('Failed to extract brand data from PDF')
+      }
+      const extractResult = await extractResponse.json()
+      return extractResult.data
+    },
+    onSuccess: (data) => {
+      if (!data?.extracted) return
+      setLocalEdits((prev) => {
+        const base = prev ?? brandQuery.data
+        if (!base) return null
+        const extracted = data.extracted as Record<string, unknown>
+        // Only merge non-null, non-empty fields
+        const updates: Record<string, unknown> = {}
+        for (const [key, value] of Object.entries(extracted)) {
+          if (value === null || value === undefined) continue
+          if (Array.isArray(value) && value.length === 0) continue
+          updates[key] = value
+        }
+        return { ...base, ...updates }
+      })
+      toast.success(`Extracted ${data.fieldsFound} fields from PDF!`)
+    },
+    onError: () => {
+      toast.error('Failed to extract brand data from PDF')
+    },
+  })
+
   const setPrimaryAudienceMutation = useMutation({
     mutationFn: async (audienceId: string) => {
       const response = await csrfFetch(`/api/audiences/${audienceId}/primary`, {
@@ -320,6 +456,37 @@ export function useBrandPage() {
     }
   }, [csrfFetch])
 
+  const handleDeepScan = useCallback(async () => {
+    if (!brand?.website) {
+      toast.error('No website to scan')
+      return
+    }
+    deepScanMutation.mutate(brand.website)
+  }, [brand, deepScanMutation])
+
+  const handleEnrichCompetitors = useCallback(async () => {
+    const competitors = brand?.competitors
+    if (!competitors || competitors.length === 0) {
+      toast.error('Add competitors first')
+      return
+    }
+    const toEnrich = competitors
+      .filter((c) => c.name.trim())
+      .map((c) => ({ name: c.name, website: c.website }))
+    if (toEnrich.length === 0) {
+      toast.error('Competitors need names to enrich')
+      return
+    }
+    enrichCompetitorsMutation.mutate(toEnrich)
+  }, [brand, enrichCompetitorsMutation])
+
+  const handleExtractPdf = useCallback(
+    async (file: File) => {
+      extractPdfMutation.mutate(file)
+    },
+    [extractPdfMutation]
+  )
+
   const handleDeleteAudience = useCallback(
     async (audienceId: string) => {
       deleteAudienceMutation.mutate(audienceId)
@@ -342,6 +509,9 @@ export function useBrandPage() {
     isLoading,
     isSaving: saveMutation.isPending,
     isRescanning: rescanMutation.isPending,
+    isDeepScanning: deepScanMutation.isPending,
+    isEnrichingCompetitors: enrichCompetitorsMutation.isPending,
+    isExtractingPdf: extractPdfMutation.isPending,
     isResettingOnboarding,
     copiedColor,
     hasChanges,
@@ -352,6 +522,9 @@ export function useBrandPage() {
     removeBrandColor,
     handleSave,
     handleRescan,
+    handleDeepScan,
+    handleEnrichCompetitors,
+    handleExtractPdf,
     handleRedoOnboarding,
     handleDeleteAudience,
     handleSetPrimaryAudience,
