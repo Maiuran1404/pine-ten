@@ -1,3 +1,27 @@
+# Fix: Style options not showing + suppress quick options at INSPIRATION stage
+
+## Problem
+
+1. **Right panel stuck on "Preparing style options..."** — When the briefing stage transitions to INSPIRATION (after narrative approval), the right panel's `StyleSelectionPanel` has no styles to show. `latestDeliverableStyles` scans messages for `deliverableStyles` but finds none because the API response that triggered the transition didn't include them.
+
+2. **Quick options shown redundantly** — AI-generated quick options with image cards ("Show me style options" / "I have a style in mind") appear in the chat input area, but these are redundant since the style panel in the right panel handles visual direction selection.
+
+## Changes
+
+### 1. `src/components/chat/useChatInterfaceData.ts` — Suppress quick options at INSPIRATION
+
+Add check: if `briefingStage === 'INSPIRATION'`, return null from `resolvedQuickOptions`.
+
+### 2. `src/hooks/use-style-selection.ts` — Add `fetchInitialStyles()`
+
+New function that calls `/api/chat` with `deliverableStyleMarker: { type: 'initial', deliverableType }`, adds resulting styles to messages.
+
+### 3. `src/components/chat/useChatInterfaceData.ts` — Auto-fetch styles on INSPIRATION entry
+
+New effect: when `briefingStage === 'INSPIRATION'` AND no `deliverableStyles` in messages AND not loading, call `fetchInitialStyles()`. Use ref to prevent re-triggering.
+
+---
+
 # 10x Chat Experience: State-Machine-Driven Creative Briefing
 
 ## Context

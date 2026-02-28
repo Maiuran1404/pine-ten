@@ -465,6 +465,81 @@ export function useStyleSelection({
     csrfFetch,
   ])
 
+  /**
+   * Auto-fetch initial styles for the style panel (used at INSPIRATION stage entry).
+   * Sends a style shortcut request to get deliverable styles without an AI call.
+   */
+  const fetchInitialStyles = useCallback(
+    async (deliverableCategory: string) => {
+      if (isLoading) return false
+
+      // Map briefing category to a deliverable type the API understands
+      const categoryToType: Record<string, string> = {
+        video: 'launch_video',
+        website: 'landing_page',
+        content: 'instagram_post',
+        design: 'brand_identity',
+        brand: 'brand_identity',
+      }
+      const deliverableType = categoryToType[deliverableCategory] || deliverableCategory
+
+      setIsLoading(true)
+
+      try {
+        const response = await csrfFetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: messages.map((m) => ({ role: m.role, content: m.content })),
+            deliverableStyleMarker: {
+              type: 'initial',
+              deliverableType,
+            },
+          }),
+        })
+
+        if (!response.ok) return false
+
+        const data = await response.json()
+
+        if (data.deliverableStyles && data.deliverableStyles.length > 0) {
+          const assistantMessage: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            deliverableStyles: data.deliverableStyles,
+            deliverableStyleMarker: data.deliverableStyleMarker,
+          }
+
+          setMessages((prev) => [...prev, assistantMessage])
+          setCurrentDeliverableType(deliverableType)
+          return true
+        } else if (data.videoReferences && data.videoReferences.length > 0) {
+          const assistantMessage: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            videoReferences: data.videoReferences,
+            deliverableStyleMarker: data.deliverableStyleMarker,
+          }
+
+          setMessages((prev) => [...prev, assistantMessage])
+          setCurrentDeliverableType(deliverableType)
+          return true
+        }
+
+        return false
+      } catch {
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [isLoading, messages, setIsLoading, setMessages, csrfFetch]
+  )
+
   const resetStyles = useCallback(() => {
     setSelectedStyles([])
     setSelectedDeliverableStyles([])
@@ -496,6 +571,7 @@ export function useStyleSelection({
     handleSelectVideo,
     handleShowMoreStyles,
     handleShowDifferentStyles,
+    fetchInitialStyles,
     resetStyles,
   }
 }

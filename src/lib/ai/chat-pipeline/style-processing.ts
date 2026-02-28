@@ -45,7 +45,9 @@ export async function handleStyleShortcut(
 
   if (
     !clientStyleMarker ||
-    (clientStyleMarker.type !== 'more' && clientStyleMarker.type !== 'different')
+    (clientStyleMarker.type !== 'more' &&
+      clientStyleMarker.type !== 'different' &&
+      clientStyleMarker.type !== 'initial')
   ) {
     return null
   }
@@ -58,7 +60,29 @@ export async function handleStyleShortcut(
   const isVideoType = isVideoDeliverableType(normalizedType)
 
   try {
-    if (isVideoType) {
+    if (type === 'initial' && isVideoType) {
+      // For video initial, load curated presets from DB first
+      deliverableStyles = await getVideoStylePresets(normalizedType)
+      if (!deliverableStyles?.length) {
+        // Fallback to brand-aware styles
+        deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
+          includeAllAxes: true,
+          context: styleContext,
+        })
+      }
+    } else if (type === 'initial') {
+      // For non-video initial, search for styles
+      deliverableStyles = await searchStyleImages(
+        { searchTerms: clientStyleMarker.searchTerms, deliverableType: normalizedType },
+        { count: 6, styleContext }
+      )
+      if (!deliverableStyles || deliverableStyles.length === 0) {
+        deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
+          includeAllAxes: true,
+          context: styleContext,
+        })
+      }
+    } else if (isVideoType) {
       const lastUserMessage = messages[messages.length - 1]?.content || ''
       const videoOffset = styleOffset || 0
       const fetchLimit = videoOffset + 3

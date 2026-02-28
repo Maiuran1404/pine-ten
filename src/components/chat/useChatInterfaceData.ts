@@ -584,6 +584,8 @@ export function useChatInterfaceData({
   // ─── Quick options ──────────────────────────────────────────
   const resolvedQuickOptions = useMemo(() => {
     if (chatMessages.isLoading || task.pendingTask) return null
+    // Suppress at INSPIRATION — style panel in the right panel handles visual direction
+    if (_briefingState?.stage === 'INSPIRATION') return null
     const msgs = chatMessages.messages
     // Dismiss chips after user answers (BUG-7)
     if (msgs.length > 0 && msgs[msgs.length - 1].role === 'user') return null
@@ -595,7 +597,7 @@ export function useChatInterfaceData({
       return lastAssistantMessage.quickOptions
     }
     return null
-  }, [chatMessages.messages, chatMessages.isLoading, task.pendingTask])
+  }, [chatMessages.messages, chatMessages.isLoading, task.pendingTask, _briefingState?.stage])
 
   // ─── Collapse left sidebar when chat starts ──────────────────
   useEffect(() => {
@@ -646,6 +648,38 @@ export function useChatInterfaceData({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_briefingState?.videoNarrative, _briefingState?.narrativeApproved])
+
+  // ─── Auto-fetch styles when entering INSPIRATION with no styles ──
+  const styleFetchTriggeredRef = useRef(false)
+  useEffect(() => {
+    const stage = _briefingState?.stage
+    const category = _briefingState?.deliverableCategory
+
+    // Reset trigger when leaving INSPIRATION
+    if (stage !== 'INSPIRATION') {
+      styleFetchTriggeredRef.current = false
+      return
+    }
+
+    // Only proceed if at INSPIRATION with a known category and not already fetched
+    if (!category || styleFetchTriggeredRef.current) return
+    if (chatMessages.isLoading) return
+
+    // Check if any message already has deliverableStyles
+    const hasStyles = chatMessages.messages.some(
+      (m) => m.deliverableStyles && m.deliverableStyles.length > 0
+    )
+    if (hasStyles) return
+
+    styleFetchTriggeredRef.current = true
+    styleSelection.fetchInitialStyles(category)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    _briefingState?.stage,
+    _briefingState?.deliverableCategory,
+    chatMessages.isLoading,
+    chatMessages.messages,
+  ])
 
   // ─── DALL-E generation trigger: after INSPIRATION → ELABORATE for video ──
   const dalleTriggeredRef = useRef(false)
