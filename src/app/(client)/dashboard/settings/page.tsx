@@ -102,14 +102,14 @@ export default function SettingsPage() {
     return (
       <div className="min-h-full bg-background">
         <div className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-5">
-            <Skeleton className="h-7 w-32" />
+          <div className="max-w-6xl mx-auto px-6 py-6">
+            <Skeleton className="h-8 w-36" />
           </div>
         </div>
         <div className="max-w-6xl mx-auto px-6 py-4 space-y-6">
-          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-11 w-72" />
           <SettingsCard className="p-6">
-            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-40 w-full" />
           </SettingsCard>
         </div>
       </div>
@@ -120,34 +120,32 @@ export default function SettingsPage() {
     <div className="min-h-full bg-background">
       {/* Header */}
       <div className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-foreground">Account</h1>
-          </div>
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Account</h1>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-4 space-y-4 sm:space-y-6">
         {/* Tabs */}
         <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <TabsList className="w-full sm:w-auto flex overflow-x-auto">
+          <TabsList className="w-full sm:w-auto flex overflow-x-auto h-11 p-1 bg-muted/50">
             <TabsTrigger
               value="profile"
-              className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial"
+              className="gap-1.5 sm:gap-2 text-sm h-9 px-4 flex-1 sm:flex-initial data-[state=active]:bg-card data-[state=active]:shadow-sm"
             >
               <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Profile</span>
             </TabsTrigger>
             <TabsTrigger
               value="billing"
-              className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial"
+              className="gap-1.5 sm:gap-2 text-sm h-9 px-4 flex-1 sm:flex-initial data-[state=active]:bg-card data-[state=active]:shadow-sm"
             >
               <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Billing</span>
             </TabsTrigger>
             <TabsTrigger
               value="account"
-              className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial"
+              className="gap-1.5 sm:gap-2 text-sm h-9 px-4 flex-1 sm:flex-initial data-[state=active]:bg-card data-[state=active]:shadow-sm"
             >
               <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Account</span>
@@ -204,7 +202,7 @@ export default function SettingsPage() {
                       </p>
                     )}
                   </div>
-                  <Button asChild>
+                  <Button asChild className="bg-crafted-green hover:bg-crafted-forest text-white">
                     <Link href="/dashboard/credits">
                       <Plus className="h-4 w-4 mr-2" />
                       Buy Credits
@@ -226,7 +224,7 @@ export default function SettingsPage() {
                   billingData.transactions.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between p-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                        <div className="h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center">
                           {getTransactionIcon(transaction.type)}
                         </div>
                         <div>
@@ -250,8 +248,10 @@ export default function SettingsPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center">
-                    <Coins className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <div className="p-12 text-center">
+                    <div className="h-14 w-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                      <Coins className="h-7 w-7 text-muted-foreground" />
+                    </div>
                     <p className="text-muted-foreground">No transactions yet</p>
                     <Button asChild variant="outline" className="mt-4">
                       <Link href="/dashboard/credits">
