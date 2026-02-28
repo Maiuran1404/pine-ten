@@ -462,6 +462,7 @@ export function useStyleSelection({
     setIsLoading,
     setMessages,
     setAnimatingMessageId,
+    csrfFetch,
   ])
 
   const resetStyles = useCallback(() => {
