@@ -23,7 +23,7 @@ export interface PendingFile {
 
 interface UseFileUploadOptions {
   addFromUpload: (file: UploadedFile) => void
-  csrfFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 
 export function useFileUpload({ addFromUpload, csrfFetch }: UseFileUploadOptions) {
