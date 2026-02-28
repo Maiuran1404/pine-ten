@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { LucideIcon } from 'lucide-react'
 import { useSession } from '@/lib/auth-client'
 import {
   User,
@@ -37,6 +37,47 @@ interface BillingData {
   transactions: Transaction[]
 }
 
+type SettingsTab = 'profile' | 'billing' | 'account'
+
+const SETTINGS_TABS: { id: SettingsTab; label: string; icon: LucideIcon }[] = [
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'billing', label: 'Billing', icon: CreditCard },
+  { id: 'account', label: 'Account', icon: Calendar },
+]
+
+function SettingsTabNav({
+  activeTab,
+  onTabChange,
+}: {
+  activeTab: SettingsTab
+  onTabChange: (tab: SettingsTab) => void
+}) {
+  return (
+    <div className="flex justify-center">
+      <nav className="inline-flex gap-0.5">
+        {SETTINGS_TABS.map((tab) => {
+          const isActive = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={cn(
+                'flex items-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                isActive
+                  ? 'bg-crafted-green/15 text-crafted-forest dark:text-crafted-sage'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
+            >
+              <tab.icon className="h-4 w-4 flex-shrink-0" />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+      </nav>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const { data: session } = useSession()
   const {
@@ -50,6 +91,7 @@ export default function SettingsPage() {
     handleLogout,
     getInitials,
   } = useSettings()
+  const [activeTab, setActiveTab] = useState<'profile' | 'billing' | 'account'>('profile')
   const [billingData, setBillingData] = useState<BillingData | null>(null)
 
   useEffect(() => {
@@ -126,34 +168,12 @@ export default function SettingsPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-4 space-y-4 sm:space-y-6">
-        {/* Tabs */}
-        <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <TabsList className="w-full sm:w-auto flex overflow-x-auto h-11 p-1 bg-muted/50">
-            <TabsTrigger
-              value="profile"
-              className="gap-1.5 sm:gap-2 text-sm h-9 px-4 flex-1 sm:flex-initial data-[state=active]:bg-card data-[state=active]:shadow-sm"
-            >
-              <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span>Profile</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="billing"
-              className="gap-1.5 sm:gap-2 text-sm h-9 px-4 flex-1 sm:flex-initial data-[state=active]:bg-card data-[state=active]:shadow-sm"
-            >
-              <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span>Billing</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="account"
-              className="gap-1.5 sm:gap-2 text-sm h-9 px-4 flex-1 sm:flex-initial data-[state=active]:bg-card data-[state=active]:shadow-sm"
-            >
-              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span>Account</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Tab Navigation */}
+        <SettingsTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
+        {/* Tab Content */}
+        {activeTab === 'profile' && (
+          <div className="space-y-6">
             <ProfileSection
               session={session}
               initials={initials}
@@ -167,10 +187,11 @@ export default function SettingsPage() {
               phonePlaceholder="+1 234 567 8900"
               phoneHint="Include country code. We'll send task updates via WhatsApp."
             />
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Billing Tab */}
-          <TabsContent value="billing" className="space-y-6">
+        {activeTab === 'billing' && (
+          <div className="space-y-6">
             {/* Credit Balance */}
             <SettingsCard>
               <SettingsCardHeader
@@ -263,16 +284,15 @@ export default function SettingsPage() {
                 )}
               </div>
             </SettingsCard>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Account Tab */}
-          <TabsContent value="account" className="space-y-6">
+        {activeTab === 'account' && (
+          <div className="space-y-6">
             <AccountInfoSection userSettings={userSettings} />
-
-            {/* Logout */}
             <SessionSection isLoggingOut={isLoggingOut} onLogout={handleLogout} />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
     </div>
   )
