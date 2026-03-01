@@ -32,6 +32,8 @@ export interface ChatApiResponse {
   globalStyles?: WebsiteGlobalStyles
   videoNarrativeData?: VideoNarrative
   assetRequest?: Message['assetRequest']
+  /** Scene numbers the AI explicitly requested image regeneration for */
+  scenesToRegenerate?: number[]
   /** Marker types that failed parsing even after retry (e.g., 'STRUCTURE', 'VIDEO_NARRATIVE') */
   parseFailures?: string[]
 }
@@ -46,6 +48,7 @@ interface UseChatMessagesOptions {
   onStructureData: (data: StructureData) => void
   onGlobalStyles?: (styles: WebsiteGlobalStyles) => void
   onVideoNarrative?: (data: VideoNarrative) => void
+  onRegenerateSceneImages?: (sceneNumbers: number[]) => void
   latestStoryboardRef: React.MutableRefObject<StructureData | null>
   csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
@@ -60,6 +63,7 @@ export function useChatMessages({
   onStructureData,
   onGlobalStyles,
   onVideoNarrative,
+  onRegenerateSceneImages,
   latestStoryboardRef,
   csrfFetch,
 }: UseChatMessagesOptions) {
@@ -122,6 +126,11 @@ export function useChatMessages({
         onVideoNarrative(data.videoNarrativeData)
       }
 
+      // Trigger explicit image regeneration from AI [REGENERATE_IMAGES] marker
+      if (data.scenesToRegenerate?.length && onRegenerateSceneImages) {
+        onRegenerateSceneImages(data.scenesToRegenerate)
+      }
+
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -153,6 +162,7 @@ export function useChatMessages({
       onStructureData,
       onGlobalStyles,
       onVideoNarrative,
+      onRegenerateSceneImages,
       onTaskProposal,
       onDeliverableTypeChange,
       latestStoryboardRef,

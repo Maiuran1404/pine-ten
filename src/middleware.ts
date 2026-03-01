@@ -15,7 +15,8 @@ const COOKIE_PREFIX = 'crafted'
  * Middleware runs in Edge Runtime and cannot access the database to get user roles.
  *
  * Security model:
- * 1. Cookies are isolated per subdomain (no cross-subdomain session sharing)
+ * 1. Cookies are shared across subdomains via crossSubDomainCookies config
+ *    (domain=.getcrafted.ai in production, domain=localhost in dev)
  * 2. Middleware checks for valid session cookie existence (defense-in-depth)
  * 3. Layout components (e.g., /app/(admin)/layout.tsx) enforce role-based access
  * 4. API routes check roles before processing requests via requireAuth()/requireRole()

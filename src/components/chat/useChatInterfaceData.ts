@@ -329,9 +329,15 @@ export function useChatInterfaceData({
   }, [brief, brandData, toneOfVoice, draftId])
 
   // ─── Storyboard / Structure panel ────────────────────────────
-  // We need a forward ref for handleSendOption, which is created by useChatMessages
-  // below. We use a placeholder callback that gets populated after useChatMessages is
-  // instantiated.
+  // Forward refs for callbacks that target hooks defined later in the composition chain.
+  // handleSendOption is created by useChatMessages below, and handleRegenerateImage
+  // is defined after useChatMessages. Both use placeholder callbacks that get populated
+  // after their respective hooks are instantiated.
+  const regenerateImageRef = useRef<(sceneNumbers: number[]) => void>(() => {})
+  const stableOnRegenerateSceneImages = useCallback(
+    (sceneNumbers: number[]) => regenerateImageRef.current(sceneNumbers),
+    []
+  )
   const sendOptionRef = useRef<
     (
       text: string,
@@ -368,6 +374,7 @@ export function useChatInterfaceData({
     onStructureData: storyboard.updateStructureData,
     onGlobalStyles: storyboard.setGlobalStyles,
     onVideoNarrative: storyboard.updateVideoNarrative,
+    onRegenerateSceneImages: stableOnRegenerateSceneImages,
     latestStoryboardRef: storyboard.latestStoryboardRef,
     csrfFetch,
   })
@@ -769,6 +776,48 @@ export function useChatInterfaceData({
     },
     [_briefingState, draftId, storyboard]
   )
+
+  // Wire up forward ref for AI-triggered image regeneration (via [REGENERATE_IMAGES] marker)
+  regenerateImageRef.current = (sceneNumbers: number[]) => {
+    if (storyboard.isGeneratingImages) return
+    const currentStoryboard = storyboard.latestStoryboardRef.current
+    if (!currentStoryboard || currentStoryboard.type !== 'storyboard') return
+
+    for (const sceneNum of sceneNumbers) {
+      // Only regenerate scenes that already have images
+      if (!storyboard.sceneImageData.has(sceneNum)) continue
+      const scene = currentStoryboard.scenes.find((s) => s.sceneNumber === sceneNum)
+      if (scene) handleRegenerateImage(scene)
+    }
+  }
+
+  // ─── Auto-regenerate scene images when visual fields change ──
+  useEffect(() => {
+    if (storyboard.changedScenes.size === 0) return
+    if (storyboard.isGeneratingImages) return
+
+    const VISUAL_FIELDS = ['visualNote', 'description', 'imageGenerationPrompt']
+    const scenesToRegen: number[] = []
+
+    for (const [sceneNum, changes] of storyboard.changedScenes) {
+      const hasVisualChange = changes.some((c) => VISUAL_FIELDS.includes(c.field))
+      const hasExistingImage = storyboard.sceneImageData.has(sceneNum)
+      if (hasVisualChange && hasExistingImage) {
+        scenesToRegen.push(sceneNum)
+      }
+    }
+
+    if (scenesToRegen.length === 0) return
+
+    const currentStoryboard = storyboard.latestStoryboardRef.current
+    if (!currentStoryboard || currentStoryboard.type !== 'storyboard') return
+
+    for (const sceneNum of scenesToRegen) {
+      const scene = currentStoryboard.scenes.find((s) => s.sceneNumber === sceneNum)
+      if (scene) handleRegenerateImage(scene)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyboard.changedScenes])
 
   // ─── Sync storyboard edits to briefing state for draft persistence ──
   const structureSyncRef = useRef<ReturnType<typeof setTimeout>>(undefined)

@@ -452,7 +452,14 @@ export function useStoryboard({
     if (data.type === 'storyboard' && previousScenesRef.current?.type === 'storyboard') {
       const oldScenes = previousScenesRef.current.scenes
       const changed = new Map<number, { field: string; oldValue: string; newValue: string }[]>()
-      const diffFields = ['title', 'description', 'duration', 'voiceover', 'visualNote'] as const
+      const diffFields = [
+        'title',
+        'description',
+        'duration',
+        'voiceover',
+        'visualNote',
+        'imageGenerationPrompt',
+      ] as const
       for (const newScene of data.scenes) {
         const oldScene = oldScenes.find((s) => s.sceneNumber === newScene.sceneNumber)
         if (!oldScene) {

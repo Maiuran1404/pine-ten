@@ -107,6 +107,7 @@ async function handler(request: NextRequest) {
         strategicReviewData: postResult.strategicReviewData,
         globalStyles: postResult.globalStyles,
         videoNarrativeData: postResult.videoNarrativeData,
+        scenesToRegenerate: postResult.scenesToRegenerate,
         assetRequest: response.assetRequest,
         briefingState: postResult.updatedBriefingState ?? ctx.body.briefingState,
         ...(postResult.parseFailures?.length ? { parseFailures: postResult.parseFailures } : {}),

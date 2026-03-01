@@ -704,7 +704,8 @@ Do NOT ask questions. Generate the creative content now.`
     case 'video':
       return `The user is refining the elaborated storyboard. Apply their feedback to the specific scenes they mentioned.
 Regenerate the FULL [STORYBOARD] block with all scenes, updating only what was requested.
-Keep all existing detail (fullScript, directorNotes, referenceDescription) intact for scenes the user didn't mention.`
+Keep all existing detail (fullScript, directorNotes, referenceDescription) intact for scenes the user didn't mention.
+If the user's feedback changes the visual direction or image of any scene, also output [REGENERATE_IMAGES: X,Y] with affected scene numbers to trigger image regeneration.`
     case 'website':
       return `The user is refining the elaborated layout. Apply their feedback to the specific sections they mentioned.
 Regenerate the FULL [LAYOUT] block with all sections, updating only what was requested.

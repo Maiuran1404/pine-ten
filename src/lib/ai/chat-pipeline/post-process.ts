@@ -205,6 +205,17 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
       }
     }
 
+    // Parse [REGENERATE_IMAGES: X,Y] marker for explicit image regeneration
+    let scenesToRegenerate: number[] | undefined
+    const regenMatch = responseContent.match(/\[REGENERATE_IMAGES:\s*([\d,\s]+)\]/)
+    if (regenMatch) {
+      scenesToRegenerate = regenMatch[1]
+        .split(',')
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n) && n > 0)
+      if (!scenesToRegenerate.length) scenesToRegenerate = undefined
+    }
+
     // Unified retry with shared budget
     const retryResult = await parseWithRetry({
       briefingState,
@@ -248,6 +259,7 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
       strategicReviewData,
       globalStyles,
       videoNarrativeData,
+      scenesToRegenerate,
       updatedBriefingState: serialize(briefingState),
       parseFailures: retryResult.failures?.length ? retryResult.failures : undefined,
     }

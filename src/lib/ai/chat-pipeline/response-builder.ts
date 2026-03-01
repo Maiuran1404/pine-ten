@@ -84,6 +84,7 @@ export function stripMarkers(
     .replace(/\[\/GLOBAL_STYLES\]/g, '')
     .replace(/\[VIDEO_NARRATIVE\][\s\S]*?\[\/VIDEO_NARRATIVE\]/g, '')
     .replace(/\[\/VIDEO_NARRATIVE\]/g, '')
+    .replace(/\[REGENERATE_IMAGES:\s*[\d,\s]+\]/g, '')
     // Clean up unclosed [QUICK_OPTIONS] blocks that span to end of content
     .replace(/\[QUICK_OPTIONS\][\s\S]*?\[\/QUICK_OPTIONS\]/g, '')
     .replace(/\[QUICK_OPTIONS\][\s\S]*$/g, '')

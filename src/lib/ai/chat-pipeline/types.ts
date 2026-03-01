@@ -68,6 +68,7 @@ export interface PostProcessResult {
   globalStyles?: unknown
   videoNarrativeData?: VideoNarrative
   updatedBriefingState?: SerializedBriefingState
+  scenesToRegenerate?: number[]
   parseFailures?: string[]
 }
 
@@ -87,6 +88,7 @@ export interface ChatApiResponsePayload {
   videoNarrativeData?: VideoNarrative
   sceneImageMatches?: SceneImageMatch[]
   assetRequest?: unknown
+  scenesToRegenerate?: number[]
   briefingState?: SerializedBriefingState
   parseFailures?: string[]
 }

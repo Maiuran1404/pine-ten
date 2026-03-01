@@ -6,6 +6,7 @@ import { FreelancerSidebar } from '@/components/freelancer/sidebar'
 import { Header } from '@/components/dashboard/header'
 import { FullPageLoader } from '@/components/shared/loading'
 import { useSession } from '@/lib/auth-client'
+import { useSubdomain } from '@/hooks/use-subdomain'
 import { logger } from '@/lib/logger'
 import { SentryProvider } from '@/providers/sentry-provider'
 import { PostHogIdentify } from '@/components/posthog-identify'
@@ -14,6 +15,7 @@ import type { FreelancerProfileState } from '@/types'
 export default function FreelancerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { data: session, isPending } = useSession()
+  const portal = useSubdomain()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileStatus, setProfileStatus] = useState<FreelancerProfileState>(null)
   const [isStatusLoading, setIsStatusLoading] = useState(true)
@@ -45,19 +47,26 @@ export default function FreelancerLayout({ children }: { children: React.ReactNo
   }, [session])
 
   useEffect(() => {
-    if (!isPending && !session) {
-      router.push('/login')
+    // Wait for BOTH auth state AND portal detection before any redirects
+    if (isPending || !portal.isHydrated) {
+      return
     }
+
+    if (!session) {
+      router.push('/login')
+      return
+    }
+
     // Check if user is a freelancer
     if (session?.user) {
       const user = session.user as { role?: string }
       if (user.role !== 'FREELANCER' && user.role !== 'ADMIN') {
-        router.push('/dashboard')
+        router.push('/login')
       }
     }
-  }, [session, isPending, router])
+  }, [session, isPending, router, portal.isHydrated])
 
-  if (isPending || isStatusLoading) {
+  if (isPending || !portal.isHydrated || isStatusLoading) {
     return <FullPageLoader />
   }
 

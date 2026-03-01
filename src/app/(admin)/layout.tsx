@@ -29,30 +29,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [])
 
   useEffect(() => {
-    if (!isPending && !session) {
+    // Wait for BOTH auth state AND portal detection before any redirects
+    if (isPending || !portal.isHydrated) {
+      return
+    }
+
+    if (!session) {
       router.push('/login')
       return
     }
-    // Wait for subdomain detection to complete before checking
-    if (!portal.isHydrated) {
+
+    const user = session.user as { role?: string }
+
+    if (user.role !== 'ADMIN') {
+      router.push('/login')
       return
     }
-    // Check if user is an admin AND on the correct subdomain
-    if (session?.user) {
-      const user = session.user as { role?: string }
 
-      // Must have ADMIN role first
-      if (user.role !== 'ADMIN') {
-        router.push('/dashboard')
-        return
-      }
-
-      // Must be on superadmin subdomain to access admin pages (both dev and prod)
-      // This means localhost:3000/admin and app.localhost:3000/admin will redirect to /dashboard
-      // Only superadmin.localhost:3000/admin will work
-      if (portal.type !== 'superadmin') {
-        router.push('/dashboard')
-      }
+    // Must be on superadmin subdomain to access admin pages (both dev and prod)
+    if (portal.type !== 'superadmin') {
+      router.push('/login')
     }
   }, [session, isPending, router, portal.type, portal.isHydrated])
 
