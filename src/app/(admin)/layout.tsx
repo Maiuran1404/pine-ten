@@ -34,23 +34,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return
     }
 
+    // Only redirect to /login when truly unauthenticated.
+    // Wrong-role cases are handled in render (not redirect) to avoid
+    // redirect loops: /admin → /login → /admin when login page auto-redirects.
     if (!session) {
       router.push('/login')
-      return
     }
-
-    const user = session.user as { role?: string }
-
-    if (user.role !== 'ADMIN') {
-      router.push('/login')
-      return
-    }
-
-    // Must be on superadmin subdomain to access admin pages (both dev and prod)
-    if (portal.type !== 'superadmin') {
-      router.push('/login')
-    }
-  }, [session, isPending, router, portal.type, portal.isHydrated])
+  }, [session, isPending, router, portal.isHydrated])
 
   // Fetch recent tasks for sidebar
   useEffect(() => {
@@ -77,6 +67,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!session) {
     return null
+  }
+
+  const user = session.user as { role?: string }
+  if (user.role !== 'ADMIN' || portal.type !== 'superadmin') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
+          <p className="text-muted-foreground">
+            You don&apos;t have permission to access the admin portal.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <a
+              href={`http://${typeof window !== 'undefined' ? window.location.hostname.replace('superadmin.', 'app.') : 'app.localhost'}:${typeof window !== 'undefined' ? window.location.port : '3000'}/dashboard`}
+              className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
+            >
+              Go to Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -52,17 +52,11 @@ export default function FreelancerLayout({ children }: { children: React.ReactNo
       return
     }
 
+    // Only redirect to /login when truly unauthenticated.
+    // Wrong-role cases are handled in render (not redirect) to avoid
+    // redirect loops: /portal → /login → /portal when login page auto-redirects.
     if (!session) {
       router.push('/login')
-      return
-    }
-
-    // Check if user is a freelancer
-    if (session?.user) {
-      const user = session.user as { role?: string }
-      if (user.role !== 'FREELANCER' && user.role !== 'ADMIN') {
-        router.push('/login')
-      }
     }
   }, [session, isPending, router, portal.isHydrated])
 
@@ -72,6 +66,28 @@ export default function FreelancerLayout({ children }: { children: React.ReactNo
 
   if (!session) {
     return null
+  }
+
+  const user = session.user as { role?: string }
+  if (user.role !== 'FREELANCER' && user.role !== 'ADMIN') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
+          <p className="text-muted-foreground">
+            You don&apos;t have permission to access the artist portal.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <a
+              href={`http://${typeof window !== 'undefined' ? window.location.hostname.replace('artist.', 'app.') : 'app.localhost'}:${typeof window !== 'undefined' ? window.location.port : '3000'}/dashboard`}
+              className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
+            >
+              Go to Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
