@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { Image as ImageIcon, Trash2, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -330,6 +330,20 @@ export function ChatInterface({
     return []
   }, [messages])
 
+  // Intercept submission-intent quick option chips so they trigger task summary
+  // instead of sending as a chat message
+  const handleQuickOptionClick = useCallback(
+    (option: string) => {
+      const submissionPhrases = ['submit as-is', 'done, submit now']
+      if (submissionPhrases.includes(option.toLowerCase())) {
+        handleRequestTaskSummary()
+        return
+      }
+      handleSendOption(option)
+    },
+    [handleSendOption, handleRequestTaskSummary]
+  )
+
   return (
     <MotionConfig reducedMotion="user">
       <ChatLayout
@@ -597,7 +611,7 @@ export function ChatInterface({
               isSubmitting={isLoading}
               brief={brief}
               stateMachineQuickOptions={resolvedQuickOptions}
-              onQuickOptionClick={handleSendOption}
+              onQuickOptionClick={handleQuickOptionClick}
               hasStrategicReviewCTA={(() => {
                 const last = [...messages].reverse().find((m) => m.role === 'assistant')
                 return !!(last?.strategicReviewData && !last.strategicReviewData.userOverride)

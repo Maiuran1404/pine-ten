@@ -253,7 +253,7 @@ export interface BriefingState {
 }
 
 // =============================================================================
-// STALL CONFIG
+// STAGE DEFINITIONS — single source of truth for all stage metadata
 // =============================================================================
 
 export interface StallConfig {
@@ -262,65 +262,40 @@ export interface StallConfig {
   softNudgeAfter: number | null
 }
 
-export const STALL_CONFIG: Record<BriefingStage, StallConfig> = {
-  EXTRACT: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
-  TASK_TYPE: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
-  INTENT: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
-  INSPIRATION: {
-    maxTurnsBeforeNarrow: null,
-    maxTurnsBeforeRecommend: null,
-    softNudgeAfter: null,
-  },
-  STRUCTURE: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 4 },
-  ELABORATE: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 3 },
-  STRATEGIC_REVIEW: {
-    maxTurnsBeforeNarrow: null,
-    maxTurnsBeforeRecommend: null,
-    softNudgeAfter: null,
-  },
-  MOODBOARD: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
-  REVIEW: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
-  DEEPEN: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
-  SUBMIT: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: null },
+const NO_STALL: StallConfig = {
+  maxTurnsBeforeNarrow: null,
+  maxTurnsBeforeRecommend: null,
+  softNudgeAfter: null,
 }
 
-// Stage ordering for navigation
-const STAGE_ORDER: BriefingStage[] = [
-  'EXTRACT',
-  'TASK_TYPE',
-  'INTENT',
-  'STRUCTURE',
-  'INSPIRATION',
-  'ELABORATE',
-  'STRATEGIC_REVIEW',
-  'MOODBOARD',
-  'REVIEW',
-  'DEEPEN',
-  'SUBMIT',
-]
-
-// =============================================================================
-// STAGE PIPELINE — the single source of truth for stage progression
-// =============================================================================
-
-interface StageGate {
+interface StageDefinition {
   stage: BriefingStage
-  /** Return true when this stage's work is done and we can move on */
-  exitWhen: (state: BriefingState) => boolean
+  /** Return true when this stage's work is done and we can move on.
+   *  Absence means the stage is not in the auto-progression pipeline. */
+  exitWhen?: (state: BriefingState) => boolean
+  stall: StallConfig
+  /** Legal transitions from this stage (always includes self). */
+  legalTransitions: BriefingStage[]
 }
 
-export const STAGE_PIPELINE: StageGate[] = [
+const STAGE_DEFINITIONS: StageDefinition[] = [
   {
     stage: 'EXTRACT',
     exitWhen: (s) => s.brief.topic.confidence >= 0.4 && s.brief.topic.value !== null,
+    stall: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
+    legalTransitions: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE'],
   },
   {
     stage: 'TASK_TYPE',
     exitWhen: (s) => s.brief.taskType.confidence >= 0.4 && s.brief.taskType.value !== null,
+    stall: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
+    legalTransitions: ['TASK_TYPE', 'INTENT', 'STRUCTURE'],
   },
   {
     stage: 'INTENT',
     exitWhen: (s) => s.brief.intent.confidence >= 0.4 && s.brief.intent.value !== null,
+    stall: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
+    legalTransitions: ['INTENT', 'STRUCTURE'],
   },
   {
     stage: 'STRUCTURE',
@@ -332,6 +307,8 @@ export const STAGE_PIPELINE: StageGate[] = [
       if (!s.structure) return false
       return true
     },
+    stall: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 4 },
+    legalTransitions: ['STRUCTURE', 'INSPIRATION'],
   },
   {
     stage: 'INSPIRATION',
@@ -340,17 +317,78 @@ export const STAGE_PIPELINE: StageGate[] = [
       // Video needs it for DALL-E image generation style context at ELABORATE.
       return (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0
     },
+    stall: NO_STALL,
+    legalTransitions: ['INSPIRATION', 'ELABORATE'],
   },
   {
     stage: 'ELABORATE',
     exitWhen: (s) => checkElaborationComplete(s),
+    stall: { maxTurnsBeforeNarrow: null, maxTurnsBeforeRecommend: null, softNudgeAfter: 3 },
+    legalTransitions: ['ELABORATE', 'REVIEW'],
   },
-  // STRATEGIC_REVIEW and MOODBOARD removed from pipeline
+  {
+    stage: 'STRATEGIC_REVIEW',
+    // Not in auto-progression pipeline (no exitWhen)
+    stall: NO_STALL,
+    legalTransitions: ['STRATEGIC_REVIEW', 'REVIEW'],
+  },
+  {
+    stage: 'MOODBOARD',
+    // Not in auto-progression pipeline (no exitWhen)
+    stall: NO_STALL,
+    legalTransitions: ['MOODBOARD', 'REVIEW'],
+  },
   {
     stage: 'REVIEW',
     exitWhen: () => false, // terminal — only CONFIRM_SUBMIT advances past
+    stall: NO_STALL,
+    legalTransitions: ['REVIEW', 'DEEPEN', 'SUBMIT'],
+  },
+  {
+    stage: 'DEEPEN',
+    // Not in auto-progression pipeline (no exitWhen)
+    stall: NO_STALL,
+    legalTransitions: ['DEEPEN', 'REVIEW', 'SUBMIT'],
+  },
+  {
+    stage: 'SUBMIT',
+    // Not in auto-progression pipeline (no exitWhen)
+    stall: NO_STALL,
+    legalTransitions: ['SUBMIT'],
   },
 ]
+
+// =============================================================================
+// DERIVED CONSTANTS — all generated from STAGE_DEFINITIONS
+// =============================================================================
+
+/** Stage ordering for navigation (goBackTo index comparisons). */
+const STAGE_ORDER: BriefingStage[] = STAGE_DEFINITIONS.map((d) => d.stage)
+
+/** Stall thresholds per stage. */
+export const STALL_CONFIG: Record<BriefingStage, StallConfig> = Object.fromEntries(
+  STAGE_DEFINITIONS.map((d) => [d.stage, d.stall])
+) as Record<BriefingStage, StallConfig>
+
+/** Auto-progression pipeline: stages with exitWhen predicates. */
+interface StageGate {
+  stage: BriefingStage
+  exitWhen: (state: BriefingState) => boolean
+}
+
+export const STAGE_PIPELINE: StageGate[] = STAGE_DEFINITIONS.filter(
+  (d): d is StageDefinition & { exitWhen: (state: BriefingState) => boolean } =>
+    d.exitWhen !== undefined
+).map((d) => ({ stage: d.stage, exitWhen: d.exitWhen }))
+
+/** Legal transitions lookup. */
+const LEGAL_TRANSITIONS: Record<BriefingStage, BriefingStage[]> = Object.fromEntries(
+  STAGE_DEFINITIONS.map((d) => [d.stage, d.legalTransitions])
+) as Record<BriefingStage, BriefingStage[]>
+
+// =============================================================================
+// STAGE PROGRESSION
+// =============================================================================
 
 /**
  * Derive the current stage purely from accumulated state data.
@@ -385,29 +423,12 @@ export function deriveStage(state: BriefingState): BriefingStage {
   return 'SUBMIT'
 }
 
-// =============================================================================
-// LEGAL TRANSITIONS
-// =============================================================================
-
 /**
  * Returns the set of stages that are legal next states from the given stage.
  * Used to validate AI-declared stage transitions via [BRIEF_META].
  */
 export function getLegalTransitions(stage: BriefingStage): BriefingStage[] {
-  const LEGAL: Record<BriefingStage, BriefingStage[]> = {
-    EXTRACT: ['EXTRACT', 'TASK_TYPE', 'INTENT', 'STRUCTURE'],
-    TASK_TYPE: ['TASK_TYPE', 'INTENT', 'STRUCTURE'],
-    INTENT: ['INTENT', 'STRUCTURE'],
-    STRUCTURE: ['STRUCTURE', 'INSPIRATION'],
-    INSPIRATION: ['INSPIRATION', 'ELABORATE'],
-    ELABORATE: ['ELABORATE', 'REVIEW'],
-    STRATEGIC_REVIEW: ['STRATEGIC_REVIEW', 'REVIEW'],
-    MOODBOARD: ['MOODBOARD', 'REVIEW'],
-    REVIEW: ['REVIEW', 'DEEPEN', 'SUBMIT'],
-    DEEPEN: ['DEEPEN', 'REVIEW', 'SUBMIT'],
-    SUBMIT: ['SUBMIT'],
-  }
-  return LEGAL[stage] ?? [stage]
+  return LEGAL_TRANSITIONS[stage] ?? [stage]
 }
 
 // =============================================================================

@@ -147,8 +147,7 @@ export function buildChatContext(
 export function runPreAiPipeline(
   body: ChatRequestBody,
   brandContext: BrandContext,
-  brandAudiences: InferredAudience[],
-  moodboardHasStyles: boolean
+  brandAudiences: InferredAudience[]
 ): {
   updatedBriefingState?: SerializedBriefingState
   stateMachineOverride?: { systemPrompt: string; stage?: string }
@@ -220,33 +219,6 @@ export function runPreAiPipeline(
       const category = resolveDeliverableCategory(inference)
       if (category !== 'unknown') {
         briefingState.deliverableCategory = category
-      }
-    }
-
-    // 5b. Sync visualDirection from moodboard
-    if (moodboardHasStyles && briefingState.stage === 'INSPIRATION') {
-      if (
-        !briefingState.brief.visualDirection ||
-        briefingState.brief.visualDirection.selectedStyles.length === 0
-      ) {
-        briefingState.brief.visualDirection = {
-          selectedStyles: [
-            {
-              id: 'moodboard-synced',
-              name: 'User selected styles',
-              description: null,
-              imageUrl: '',
-              deliverableType: briefingState.deliverableCategory || 'unknown',
-              styleAxis: 'reference',
-              subStyle: null,
-              semanticTags: [],
-            },
-          ],
-          moodKeywords: [],
-          colorPalette: [],
-          typography: { primary: '', secondary: '' },
-          avoidElements: [],
-        }
       }
     }
 
@@ -356,8 +328,7 @@ export async function buildPipelineContext(
   const { updatedBriefingState, stateMachineOverride, styleHint } = runPreAiPipeline(
     body,
     brandContext,
-    brandAudiences,
-    body.moodboardHasStyles ?? false
+    brandAudiences
   )
 
   // Stage-based gating

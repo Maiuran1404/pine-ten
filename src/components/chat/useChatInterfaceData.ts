@@ -129,6 +129,7 @@ export function useChatInterfaceData({
     syncFromServer: syncBriefingFromServer,
     updateBrief: updateBriefInState,
     updateStructure,
+    quickOptions: stateMachineQuickOptions,
   } = useBriefingStateMachine(initialBriefingState, { draftId })
 
   // ─── Brief (derived from _briefingState — single source of truth) ─
@@ -596,6 +597,13 @@ export function useChatInterfaceData({
     const msgs = chatMessages.messages
     // Dismiss chips after user answers (BUG-7)
     if (msgs.length > 0 && msgs[msgs.length - 1].role === 'user') return null
+
+    // State machine quick options take priority (deterministic, stage-appropriate)
+    if (stateMachineQuickOptions && stateMachineQuickOptions.options.length > 0) {
+      return stateMachineQuickOptions
+    }
+
+    // Fallback: AI-returned quick options from last assistant message
     const lastAssistantMessage = [...msgs].reverse().find((m) => m.role === 'assistant')
     if (
       lastAssistantMessage?.quickOptions &&
@@ -604,7 +612,13 @@ export function useChatInterfaceData({
       return lastAssistantMessage.quickOptions
     }
     return null
-  }, [chatMessages.messages, chatMessages.isLoading, task.pendingTask, _briefingState?.stage])
+  }, [
+    chatMessages.messages,
+    chatMessages.isLoading,
+    task.pendingTask,
+    _briefingState?.stage,
+    stateMachineQuickOptions,
+  ])
 
   // ─── Collapse left sidebar when chat starts ──────────────────
   useEffect(() => {
@@ -744,8 +758,10 @@ export function useChatInterfaceData({
     const scenesNeedingImages = structure.scenes.filter((s) => !s.resolvedImageUrl)
     if (scenesNeedingImages.length === 0) return
 
-    // Extract style context from visual direction
-    const selectedStyles = _briefingState?.brief?.visualDirection?.selectedStyles
+    // Extract style context from visual direction — filter out synthetic placeholders
+    const selectedStyles = _briefingState?.brief?.visualDirection?.selectedStyles?.filter(
+      (s) => s.id !== 'moodboard-synced' && s.imageUrl !== ''
+    )
     if (!selectedStyles || selectedStyles.length === 0) return
 
     const styleContext = selectedStyles
@@ -766,7 +782,9 @@ export function useChatInterfaceData({
   // Wrapped callback for single-scene DALL-E regeneration (auto-supplies style context + briefId)
   const handleRegenerateImage = useCallback(
     (scene: import('@/lib/ai/briefing-state-machine').StoryboardScene) => {
-      const selectedStylesList = _briefingState?.brief?.visualDirection?.selectedStyles
+      const selectedStylesList = _briefingState?.brief?.visualDirection?.selectedStyles?.filter(
+        (s) => s.id !== 'moodboard-synced' && s.imageUrl !== ''
+      )
       const styleCtx =
         selectedStylesList
           ?.map((s) => s.promptGuide || `${s.name}${s.description ? `: ${s.description}` : ''}`)

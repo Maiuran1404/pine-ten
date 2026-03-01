@@ -13,7 +13,6 @@ import {
   type DeepenOption,
   type SerializedBriefingState,
   createInitialBriefingState,
-  deriveStage,
   goBackTo,
   pivotCategory,
   serialize,
@@ -189,13 +188,10 @@ export function useBriefingStateMachine(
         const newBrief = updater(prev.brief)
         if (newBrief === prev.brief) return prev
         const newState = { ...prev, brief: newBrief }
-        // Re-derive the stage since brief changes can unlock gate conditions
-        // (e.g., adding selectedStyles advances INSPIRATION → ELABORATE)
-        const derivedStage = deriveStage(newState)
-        if (derivedStage !== prev.stage) {
-          newState.stage = derivedStage
-          newState.turnsInCurrentStage = 0
-        }
+        // Stage progression is server-owned: only runPostAiPipeline (post-process.ts)
+        // calls deriveStage(). Client brief updates persist locally but do NOT
+        // advance the stage — this prevents the bypass where moodboard sync →
+        // updateBrief → deriveStage → premature stage jump.
         persistState(newState)
         return newState
       })

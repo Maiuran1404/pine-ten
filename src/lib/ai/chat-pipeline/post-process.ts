@@ -192,16 +192,20 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
         briefingState.videoNarrative = narrativeParsed.data
       }
 
-      // Detect narrative approval
-      const lastUserContent = messages[messages.length - 1]?.content || ''
-      const approvalPattern =
-        /\b(looks good|approve|approved|let'?s build|build the storyboard|that works|move forward)\b/i
-      if (
-        !briefingState.narrativeApproved &&
-        briefingState.videoNarrative &&
-        approvalPattern.test(lastUserContent)
-      ) {
-        briefingState.narrativeApproved = true
+      // Detect narrative approval — only at STRUCTURE stage (video narrative lives here).
+      // Without this guard, "looks good" at INSPIRATION (about a style) would
+      // retroactively satisfy the STRUCTURE gate and skip style selection.
+      if (briefingState.stage === 'STRUCTURE') {
+        const lastUserContent = messages[messages.length - 1]?.content || ''
+        const approvalPattern =
+          /\b(looks good|approve|approved|let'?s build|build the storyboard|that works|move forward)\b/i
+        if (
+          !briefingState.narrativeApproved &&
+          briefingState.videoNarrative &&
+          approvalPattern.test(lastUserContent)
+        ) {
+          briefingState.narrativeApproved = true
+        }
       }
     }
 

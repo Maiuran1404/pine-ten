@@ -205,7 +205,7 @@ export function StyleSelectionPanel({
     }
   }
 
-  const displayedStyles = styles.slice(0, 4)
+  const displayedStyles = styles
 
   const topScore = displayedStyles[0]?.brandMatchScore ?? 0
   const bestMatchId =
