@@ -549,6 +549,7 @@ export function ChatInterface({
             handleRequestTaskSummary={handleRequestTaskSummary}
             onStrategicReviewAction={handleStrategicReviewAction}
             briefingStage={briefingStage}
+            structureType={structureType}
             onSceneClick={handleSceneClick}
             onMultiSceneFeedback={handleMultiSceneFeedback}
             onViewStoryboard={() => {
