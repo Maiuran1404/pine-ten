@@ -38,7 +38,8 @@ async function handler(request: NextRequest) {
         ctx.body.messages as ChatMessage[],
         session.user.id,
         ctx.chatContext,
-        ctx.stateMachineOverride
+        ctx.stateMachineOverride,
+        ctx.brandContext
       )
       response.content = deduplicateResponse(response.content)
 

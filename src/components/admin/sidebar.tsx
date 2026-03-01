@@ -233,6 +233,7 @@ export function AdminSidebar({ recentTasks = [] }: AdminSidebarProps) {
               groups={navigationGroups}
               basePath="/admin"
               accentColor="error"
+              collapsible
             />
           </SidebarGroupContent>
         </SidebarGroup>

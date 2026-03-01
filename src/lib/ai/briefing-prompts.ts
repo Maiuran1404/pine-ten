@@ -923,7 +923,7 @@ Reference these inspirations when recommending section structure and design appr
 // BRAND CONTEXT
 // =============================================================================
 
-function buildBrandSection(ctx: BrandContext, stage?: BriefingStage): string {
+export function buildBrandSection(ctx: BrandContext, stage?: BriefingStage): string {
   const parts: string[] = ['== BRAND CONTEXT ==']
 
   // ── Identity (all stages) ──

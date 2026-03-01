@@ -4,6 +4,8 @@ import { db } from '@/db'
 import { styleReferences, taskCategories, users, audiences as audiencesTable } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { logger } from '@/lib/logger'
+import type { BrandContext } from '@/lib/ai/briefing-prompts'
+import { buildBrandSection } from '@/lib/ai/briefing-prompts'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -205,7 +207,8 @@ export async function chat(
   messages: ChatMessage[],
   userId: string,
   context?: ChatContext,
-  stateMachineOverride?: StateMachineOverride
+  stateMachineOverride?: StateMachineOverride,
+  brandContext?: BrandContext
 ): Promise<{
   content: string
   styleReferences?: string[]
@@ -330,10 +333,12 @@ You already know their brand. DO NOT ask about: company, industry, audience, col
     maxTokens = 4096
   } else {
     // Fallback mode: build enhanced system prompt (used on error or when no state is provided)
+    const brandSection = brandContext
+      ? buildBrandSection(brandContext)
+      : `${companyContext}\n${brandDetectionContext}`
     finalSystemPrompt = `${basePrompt}
 
-${companyContext}
-${brandDetectionContext}
+${brandSection}
 ${completenessContext}
 ${confirmedFieldsContext}
 
