@@ -81,7 +81,7 @@ export async function generateSceneImage(
   )
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.0-flash',
     contents: [{ role: 'user', parts }],
     config: {
       responseModalities: [Modality.TEXT, Modality.IMAGE],
