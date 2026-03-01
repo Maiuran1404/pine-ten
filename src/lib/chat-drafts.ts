@@ -121,8 +121,8 @@ function setLocalDrafts(drafts: ChatDraft[]): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts))
-    // Dispatch custom event to notify sidebar of changes
-    window.dispatchEvent(new CustomEvent('drafts-updated'))
+    // Defer event so subscribers don't setState during another component's render
+    queueMicrotask(() => window.dispatchEvent(new CustomEvent('drafts-updated')))
   } catch (error) {
     logger.error({ err: error }, 'Failed to save drafts to localStorage')
   }
