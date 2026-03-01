@@ -670,9 +670,10 @@ export function useChatInterfaceData({
     if (chatMessages.isLoading) return
     if (messagesRef.current.length === 0) return
     elaborateTriggeredRef.current = true
+    setNeedsAutoContinueConfirmation(false)
     chatMessages.handleSendOption(
       'Now build the full storyboard based on the approved narrative and selected visual style.',
-      { narrativeApproved: true }
+      { narrativeApproved: true, stage: 'ELABORATE', turnsInCurrentStage: 0 }
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

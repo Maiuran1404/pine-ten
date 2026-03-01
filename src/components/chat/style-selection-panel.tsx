@@ -162,7 +162,7 @@ function PanelStyleCard({
 
 function SkeletonCards() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-2 gap-3">
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="rounded-2xl overflow-hidden animate-pulse">
           <div className="aspect-[16/9] bg-muted-foreground/10" />
@@ -268,7 +268,7 @@ export function StyleSelectionPanel({
               <p className="text-sm text-muted-foreground">Preparing style options...</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {displayedStyles.map((style, index) => (
                 <PanelStyleCard
                   key={style.id}
