@@ -28,18 +28,13 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="w-full max-w-sm"
+      className="w-full"
     >
       <div className="relative">
-        {/* Floating label */}
-        <div className="text-center mb-6">
-          <span className="text-white/30 text-xs uppercase tracking-widest">Live Preview</span>
-        </div>
-
         {/* Mock Social Post Card */}
         <motion.div
           key={animationKey}
@@ -144,16 +139,6 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
             </div>
           </div>
         </motion.div>
-
-        {/* Decorative elements */}
-        <div
-          className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-[80px] opacity-20"
-          style={{ background: primaryColor }}
-        />
-        <div
-          className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-[60px] opacity-15"
-          style={{ background: secondaryColor }}
-        />
       </div>
     </motion.div>
   )

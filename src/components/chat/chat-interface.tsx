@@ -183,6 +183,7 @@ export function ChatInterface({
     briefingStage,
     deliverableCategory,
     estimatedCredits,
+    targetDurationSeconds,
 
     // Files
     uploadedFiles,
@@ -382,6 +383,7 @@ export function ChatInterface({
         onRegenerateStoryboard={showSubmissionSuccess ? undefined : handleRegenerateStoryboard}
         onRegenerateScene={showSubmissionSuccess ? undefined : handleRegenerateScene}
         onRegenerateField={showSubmissionSuccess ? undefined : handleRegenerateField}
+        targetDurationSeconds={targetDurationSeconds}
         onSectionReorder={handleSectionReorder}
         onSectionEdit={handleSectionEdit}
         sceneImageData={sceneImageData}

@@ -1076,21 +1076,8 @@ interface RichStoryboardPanelProps {
   // DALL-E image generation
   imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
   onRegenerateImage?: (scene: StoryboardScene) => void
-}
-
-// Duration targets (common video ad lengths in seconds)
-const DURATION_TARGETS = [15, 30, 60, 90, 120]
-
-function getDurationIndicator(totalDuration: number): {
-  color: 'green' | 'amber' | null
-  target: number | null
-} {
-  // Pick the smallest standard target >= total duration
-  for (const target of DURATION_TARGETS) {
-    if (totalDuration <= target + 5) return { color: 'green', target }
-    if (totalDuration <= target + 10) return { color: 'amber', target }
-  }
-  return { color: null, target: null }
+  // User-specified target duration from briefing state (e.g. "45 second video")
+  targetDurationSeconds?: number | null
 }
 
 // =============================================================================
@@ -1123,6 +1110,7 @@ export function RichStoryboardPanel({
   canRedo,
   imageGenerationProgress,
   onRegenerateImage,
+  targetDurationSeconds,
 }: RichStoryboardPanelProps) {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([])
   const [regenConfirm, setRegenConfirm] = useState(false)
@@ -1225,28 +1213,37 @@ export function RichStoryboardPanel({
             </span>
             {totalDuration > 0 &&
               (() => {
-                const indicator = getDurationIndicator(totalDuration)
+                const target = targetDurationSeconds ?? 45
+                const diff = Math.abs(totalDuration - target)
+                const isOnTarget = diff <= 5
+                const isClose = diff <= 10
                 return (
                   <>
                     <span className="text-muted-foreground/30">·</span>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
                       <span>{formatTimestamp(totalDuration)}</span>
-                      {indicator.color === 'green' && indicator.target && (
+                      {isOnTarget ? (
                         <span
                           className="flex items-center gap-0.5 text-crafted-green"
-                          title={`Within 5s of ${indicator.target}s target`}
+                          title={`Within 5s of ${target}s target`}
                         >
                           <Check className="h-3 w-3" />
-                          <span className="text-[10px]">{indicator.target}s</span>
+                          <span className="text-[10px]">{target}s</span>
                         </span>
-                      )}
-                      {indicator.color === 'amber' && indicator.target && (
+                      ) : isClose ? (
                         <span
                           className="text-ds-warning text-[10px]"
-                          title={`${Math.abs(totalDuration - indicator.target)}s from ${indicator.target}s target`}
+                          title={`${diff}s from ${target}s target`}
                         >
-                          target: {indicator.target}s
+                          target: {target}s
+                        </span>
+                      ) : (
+                        <span
+                          className="text-ds-warning text-[10px]"
+                          title={`${diff}s from ${target}s target`}
+                        >
+                          target: {target}s ({diff}s off)
                         </span>
                       )}
                     </div>

@@ -930,6 +930,7 @@ Reference these inspirations when recommending section structure and design appr
 export function buildBrandSection(ctx: BrandContext, stage?: BriefingStage): string {
   const parts: string[] = [
     '== BRAND CONTEXT (USE THIS — do NOT ask the client about information listed here) ==',
+    'When first referencing this brand data, briefly acknowledge it (e.g. "Based on your brand profile for [Company]...") so the user knows where the information came from.',
   ]
 
   // ── Identity (all stages) ──

@@ -4,17 +4,15 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }))
 
-const mockRequireClient = vi.fn()
+const mockRequireRole = vi.fn()
 vi.mock('@/lib/require-auth', () => ({
-  requireClient: (...args: unknown[]) => mockRequireClient(...args),
+  requireRole: (...args: unknown[]) => mockRequireRole(...args),
 }))
 
-const mockDbSelect = vi.fn()
 const mockDbUpdate = vi.fn()
 const mockDbDelete = vi.fn()
 vi.mock('@/db', () => ({
   db: {
-    select: (...args: unknown[]) => mockDbSelect(...args),
     update: (...args: unknown[]) => mockDbUpdate(...args),
     delete: (...args: unknown[]) => mockDbDelete(...args),
   },
@@ -38,41 +36,15 @@ beforeEach(() => {
 describe('POST /api/brand/reset-onboarding', () => {
   it('returns 401 when not authenticated', async () => {
     const { APIError, ErrorCodes } = await import('@/lib/errors')
-    mockRequireClient.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
+    mockRequireRole.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
 
     const response = await POST()
     expect(response.status).toBe(401)
   })
 
-  it('returns 404 when user not found', async () => {
-    mockRequireClient.mockResolvedValue({
-      user: { id: 'user-1', name: 'Test', email: 'test@test.com' },
-    })
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue([]),
-        }),
-      }),
-    })
-
-    const response = await POST()
-    const data = await response.json()
-
-    expect(response.status).toBe(404)
-    expect(data.error.message).toContain('User')
-  })
-
   it('resets onboarding and deletes company', async () => {
-    mockRequireClient.mockResolvedValue({
-      user: { id: 'user-1', name: 'Test', email: 'test@test.com' },
-    })
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue([{ companyId: 'company-1' }]),
-        }),
-      }),
+    mockRequireRole.mockResolvedValue({
+      user: { id: 'user-1', name: 'Test', email: 'test@test.com', companyId: 'company-1' },
     })
     // Delete company
     mockDbDelete.mockReturnValueOnce({
@@ -95,15 +67,8 @@ describe('POST /api/brand/reset-onboarding', () => {
   })
 
   it('resets onboarding without company delete when no company', async () => {
-    mockRequireClient.mockResolvedValue({
-      user: { id: 'user-1', name: 'Test', email: 'test@test.com' },
-    })
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue([{ companyId: null }]),
-        }),
-      }),
+    mockRequireRole.mockResolvedValue({
+      user: { id: 'user-1', name: 'Test', email: 'test@test.com', companyId: null },
     })
     mockDbUpdate.mockReturnValueOnce({
       set: vi.fn().mockReturnValue({
@@ -117,5 +82,31 @@ describe('POST /api/brand/reset-onboarding', () => {
     expect(response.status).toBe(200)
     expect(data.data.success).toBe(true)
     expect(mockDbDelete).not.toHaveBeenCalled()
+  })
+
+  it('allows ADMIN role to reset onboarding', async () => {
+    mockRequireRole.mockResolvedValue({
+      user: {
+        id: 'admin-1',
+        name: 'Admin',
+        email: 'admin@test.com',
+        role: 'ADMIN',
+        companyId: 'company-1',
+      },
+    })
+    mockDbDelete.mockReturnValueOnce({
+      where: vi.fn().mockResolvedValue(undefined),
+    })
+    mockDbUpdate.mockReturnValueOnce({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
+      }),
+    })
+
+    const response = await POST()
+    const data = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(data.data.success).toBe(true)
   })
 })

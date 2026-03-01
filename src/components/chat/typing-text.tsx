@@ -178,9 +178,15 @@ export function TypingText({
     const animateChunks = () => {
       // Bail if a newer animation generation has started
       if (animationGenRef.current !== gen) return
-      if (chunkIndexRef.current < chunksRef.current.length) {
-        setDisplayedContent((prev) => prev + chunksRef.current[chunkIndexRef.current])
-        chunkIndexRef.current++
+      const idx = chunkIndexRef.current
+      if (idx < chunksRef.current.length) {
+        // Capture chunk into a local variable before passing to the state updater.
+        // Reading chunksRef inside the updater closure is unsafe — React may batch
+        // the update, and chunkIndexRef could be incremented before the updater runs,
+        // causing an out-of-bounds read that concatenates "undefined".
+        const chunk = chunksRef.current[idx]
+        setDisplayedContent((prev) => prev + chunk)
+        chunkIndexRef.current = idx + 1
         animationRef.current = window.setTimeout(animateChunks, speedRef.current)
       } else {
         setIsComplete(true)

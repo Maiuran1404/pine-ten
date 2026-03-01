@@ -17,7 +17,6 @@ import { BrandReadyStep } from '@/app/(auth)/onboarding/_components/shared/brand
 import { BrandInputStep } from '@/app/(auth)/onboarding/_components/route-a/brand-input-step'
 import { ScanningStep } from '@/app/(auth)/onboarding/_components/route-a/scanning-step'
 import { BrandDNARevealStep } from '@/app/(auth)/onboarding/_components/route-a/brand-dna-reveal-step'
-import { BrandCardPreviewPanel } from '@/app/(auth)/onboarding/_components/route-a/brand-card-preview-panel'
 import { FineTuneStep } from '@/app/(auth)/onboarding/_components/route-a/fine-tune-step'
 
 // Route B components
@@ -290,9 +289,6 @@ function OnboardingContent() {
 
       <div className="relative z-10 flex-1 h-full hidden lg:flex items-center justify-center pr-[10%]">
         <AnimatePresence mode="wait">
-          {step === 'brand-dna-reveal' && (
-            <BrandCardPreviewPanel key="brand-card-preview" brandData={brandData} />
-          )}
           {step === 'fine-tune' && <MoodPreviewPanel key="mood-preview" brandData={brandData} />}
         </AnimatePresence>
       </div>

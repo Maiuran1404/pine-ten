@@ -1,5 +1,5 @@
-import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
-import { requireClient } from '@/lib/require-auth'
+import { withErrorHandling, successResponse } from '@/lib/errors'
+import { requireRole } from '@/lib/require-auth'
 import { db } from '@/db'
 import { users, companies } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -7,38 +7,25 @@ import { eq } from 'drizzle-orm'
 export async function POST() {
   return withErrorHandling(
     async () => {
-      const { user } = await requireClient()
+      const { user } = await requireRole('CLIENT', 'ADMIN')
 
-      // Get user with company info
-      const [currentUser] = await db
-        .select({
-          companyId: users.companyId,
-        })
-        .from(users)
-        .where(eq(users.id, user.id))
-        .limit(1)
+      const companyId = user.companyId
 
-      if (!currentUser) {
-        throw Errors.notFound('User')
-      }
-
-      // Delete the company if it exists
-      if (currentUser.companyId) {
-        await db.delete(companies).where(eq(companies.id, currentUser.companyId))
-      }
-
-      // Reset user onboarding status and role to CLIENT
-      // Role must be reset to CLIENT so user can complete onboarding again
-      await db
-        .update(users)
-        .set({
-          companyId: null,
-          onboardingCompleted: false,
-          onboardingData: { isRedo: true, resetAt: new Date().toISOString() },
-          role: 'CLIENT',
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, user.id))
+      // Run user update and company delete in parallel
+      // User update nulls out companyId so no FK issues
+      await Promise.all([
+        db
+          .update(users)
+          .set({
+            companyId: null,
+            onboardingCompleted: false,
+            onboardingData: { isRedo: true, resetAt: new Date().toISOString() },
+            role: 'CLIENT',
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, user.id)),
+        ...(companyId ? [db.delete(companies).where(eq(companies.id, companyId))] : []),
+      ])
 
       return successResponse({ success: true })
     },

@@ -386,6 +386,83 @@ function createDefaultBrandData(
   }
 }
 
+// Focused strategic prompt for when Firecrawl already extracted high-confidence visual data.
+// Skips color, font, typography, logo, social links, and contact fields — saves ~8-15s
+// by avoiding screenshot processing and reducing prompt/output token count.
+function buildStrategicPrompt(
+  normalizedUrl: string,
+  metadata: { title?: string; description?: string } | undefined,
+  markdownContent: string | undefined,
+  deepContext: string | null,
+  links: string[] | undefined
+): string {
+  return `Analyze this website and extract strategic brand information. Visual identity (colors, fonts, typography) has already been extracted separately — focus ONLY on strategic analysis.
+
+Website URL: ${normalizedUrl}
+Page Title: ${metadata?.title || 'Unknown'}
+Page Description: ${metadata?.description || 'Unknown'}
+
+Website Content (markdown):
+${markdownContent || 'No content available'}
+${deepContext ? `\n--- MULTI-PAGE DEEP SCAN DATA ---\n${deepContext.slice(0, 6000)}\n--- END DEEP SCAN DATA ---` : ''}
+Links found on page:
+${links?.slice(0, 20).join('\n') || 'No links available'}
+
+Based on the content above, extract the following in JSON format.
+
+IMPORTANT: ALL output must be in English, even if the website content is in another language.
+
+1. **Company Name**: The official brand name. The domain "${normalizedUrl}" is the strongest signal. Do NOT use taglines or slogans.
+2. **Description**: What the company does (2-3 sentences, in English)
+3. **Tagline**: Any tagline or slogan found
+4. **Industry**: Specific industry (e.g., "Recruitment", "SaaS", "Restaurants")
+5. **Industry Archetype** (choose ONE): "hospitality", "blue-collar", "white-collar", "e-commerce", "tech"
+6. **Keywords**: 5-10 keywords describing this brand
+7. **Visual Style** (choose ONE): "minimal-clean", "bold-impactful", "elegant-refined", "modern-sleek", "playful-vibrant", "organic-natural", "tech-futuristic", "classic-timeless", "artistic-expressive", "corporate-professional", "warm-inviting", "edgy-disruptive"
+8. **Brand Tone** (choose ONE): "friendly-approachable", "professional-trustworthy", "playful-witty", "bold-confident", "sophisticated-refined", "innovative-visionary", "empathetic-caring", "authoritative-expert", "casual-relaxed", "inspiring-motivational", "premium-exclusive", "rebellious-edgy"
+9. **Brand Personality** (ALL values 0-100, analyze carefully — do NOT default to 50):
+   - feelPlayfulSerious: 0=Playful → 100=Serious
+   - feelBoldMinimal: 0=Bold/maximalist → 100=Minimal/clean
+   - feelExperimentalClassic: 0=Experimental → 100=Classic
+   - feelFriendlyProfessional: 0=Friendly → 100=Professional
+   - feelPremiumAccessible: 0=Accessible → 100=Premium
+   - signalTone: 0=Serious → 100=Playful
+   - signalDensity: 0=Minimal → 100=Rich
+   - signalWarmth: 0=Cold → 100=Warm
+   - signalEnergy: 0=Calm → 100=Energetic
+10. **Brand Voice Summary**: 1-2 sentences as a brand strategist. Be specific — reference what you see in the copy tone and content style.
+11. **Target Audiences** (1-3 segments): For each: name, isPrimary, demographics, firmographics, psychographics, behavioral, confidence (0-100)
+12. **Competitors** (1-5): name, website, positioning, strengths, weaknesses
+13. **Positioning**: uvp, missionStatement, positioningStatement, differentiators, targetMarket
+14. **Brand Voice & Messaging**: messagingPillars, toneDoList, toneDontList, brandPromise, keyPhrases, avoidPhrases
+
+Return ONLY valid JSON:
+{
+  "name": "string",
+  "description": "string",
+  "tagline": "string or null",
+  "industry": "string or null",
+  "industryArchetype": "hospitality | blue-collar | white-collar | e-commerce | tech",
+  "keywords": ["keyword1", "keyword2"],
+  "visualStyle": "one of the values above",
+  "brandTone": "one of the values above",
+  "feelPlayfulSerious": number,
+  "feelBoldMinimal": number,
+  "feelExperimentalClassic": number,
+  "feelFriendlyProfessional": number,
+  "feelPremiumAccessible": number,
+  "signalTone": number,
+  "signalDensity": number,
+  "signalWarmth": number,
+  "signalEnergy": number,
+  "brandVoiceSummary": "string (1-2 sentences)",
+  "audiences": [{ "name": "string", "isPrimary": true, "demographics": {}, "firmographics": {}, "psychographics": { "painPoints": [], "goals": [], "values": [] }, "behavioral": {}, "confidence": 85 }],
+  "competitors": [{ "name": "string", "website": "url", "positioning": "string", "strengths": "string", "weaknesses": "string" }],
+  "positioning": { "uvp": "string", "missionStatement": "string", "positioningStatement": "string", "differentiators": ["string"], "targetMarket": "string" },
+  "brandVoice": { "messagingPillars": ["string"], "toneDoList": ["string"], "toneDontList": ["string"], "brandPromise": "string", "keyPhrases": ["string"], "avoidPhrases": ["string"] }
+}`
+}
+
 const EXTRACTION_TIMEOUT_MS = 60_000
 const DEEP_EXTRACTION_TIMEOUT_MS = 120_000 // Agent navigation takes longer
 
@@ -806,8 +883,34 @@ Return ONLY a valid JSON object with this exact structure:
   }
 }`
 
+  // When Firecrawl has high-confidence branding, use the focused strategic prompt
+  // and skip the screenshot — image processing is the biggest token/time cost
+  const effectivePrompt = hasHighConfidenceBranding
+    ? buildStrategicPrompt(
+        normalizedUrl,
+        metadata,
+        markdown?.slice(0, markdownLimit),
+        deepContext,
+        links
+      )
+    : textPrompt
+  // Keep max_tokens at 3000 for both paths — the strategic response still needs
+  // room for audiences (nested objects), competitors, positioning, and brandVoice.
+  // The speed savings come from skipping the screenshot and shorter input prompt.
+  const effectiveMaxTokens = 3000
+  logger.info(
+    {
+      url: normalizedUrl,
+      promptMode: hasHighConfidenceBranding ? 'strategic-only' : 'full',
+      maxTokens: effectiveMaxTokens,
+      includeScreenshot: !hasHighConfidenceBranding && !!screenshot,
+    },
+    'Claude prompt configured'
+  )
+
   // Try to include screenshot, but be prepared to retry without it if it fails
-  let useScreenshot = !!screenshot
+  // When high-confidence branding is available, skip the screenshot entirely
+  let useScreenshot = hasHighConfidenceBranding ? false : !!screenshot
   let brandData: BrandExtraction | null = null
   let lastError: Error | null = null
 
@@ -828,13 +931,13 @@ Return ONLY a valid JSON object with this exact structure:
 
       contentParts.push({
         type: 'text',
-        text: textPrompt,
+        text: effectivePrompt,
       })
 
       const response = await getAnthropic().messages.create(
         {
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 3000,
+          max_tokens: effectiveMaxTokens,
           messages: [
             {
               role: 'user',

@@ -421,258 +421,267 @@ function DashboardContent() {
       )}
 
       {/* Main Content — vertically centered like Cardboard */}
-      <div className="flex flex-col items-center justify-center px-4 sm:px-6 min-h-[calc(100vh-3rem)] pb-12">
-        {/* Welcome Header */}
-        <motion.div
-          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: prefersReduced ? 0 : 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-          className="text-center mb-6"
-        >
-          <h1 className="text-[1.7rem] sm:text-[2rem] font-medium text-foreground tracking-[-0.01em] leading-snug">
-            What are we creating today, {userName}?
-          </h1>
-          <p className="text-[0.95rem] text-muted-foreground mt-2">
-            Bring in your ideas and let&apos;s get started.
-          </p>
-        </motion.div>
+      {/* Using my-auto instead of justify-center to avoid the "unsafe center" bug:
+          when content overflows a justify-center container, the top content
+          becomes inaccessible (can't scroll to it). my-auto achieves the same
+          visual centering but gracefully falls back to top-aligned on overflow. */}
+      <div className="flex flex-col items-center px-4 sm:px-6 min-h-[calc(100vh-3rem)] pb-12">
+        <div className="my-auto flex flex-col items-center w-full">
+          {/* Welcome Header */}
+          <motion.div
+            initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: prefersReduced ? 0 : 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            className="text-center mb-6"
+          >
+            <h1 className="text-[1.7rem] sm:text-[2rem] font-medium text-foreground tracking-[-0.01em] leading-snug">
+              What are we creating today, {userName}?
+            </h1>
+            <p className="text-[0.95rem] text-muted-foreground mt-2">
+              Bring in your ideas and let&apos;s get started.
+            </p>
+          </motion.div>
 
-        {/* Main Input Card */}
-        <motion.div
-          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: prefersReduced ? 0 : 0.4,
-            delay: prefersReduced ? 0 : 0.08,
-            ease: [0.25, 0.1, 0.25, 1],
-          }}
-          className="w-full max-w-[780px] mb-3"
-        >
-          <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg shadow-black/[0.03] overflow-hidden">
-            {/* Uploaded files preview */}
-            {uploadedFiles.length > 0 && (
-              <div className="px-4 py-3 border-b border-border/30">
-                <div className="flex flex-wrap gap-2">
-                  {uploadedFiles.filter(Boolean).map((file) => (
-                    <div
-                      key={file.fileUrl}
-                      className="relative group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50"
-                    >
-                      {file.fileType?.startsWith('image/') ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={file.fileUrl}
-                          alt={file.fileName}
-                          className="h-5 w-5 rounded object-cover"
-                        />
-                      ) : (
-                        <span className="[&>svg]:h-4 [&>svg]:w-4">
-                          {getFileIcon(file.fileType)}
-                        </span>
-                      )}
-                      <span className="text-sm max-w-[150px] truncate text-foreground">
-                        {file.fileName}
-                      </span>
-                      <button
-                        onClick={() => removeFile(file.fileUrl)}
-                        className="p-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        aria-label="Remove file"
+          {/* Main Input Card */}
+          <motion.div
+            initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: prefersReduced ? 0 : 0.4,
+              delay: prefersReduced ? 0 : 0.08,
+              ease: [0.25, 0.1, 0.25, 1],
+            }}
+            className="w-full max-w-[780px] mb-3"
+          >
+            <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg shadow-black/[0.03] overflow-hidden">
+              {/* Uploaded files preview */}
+              {uploadedFiles.length > 0 && (
+                <div className="px-4 py-3 border-b border-border/30">
+                  <div className="flex flex-wrap gap-2">
+                    {uploadedFiles.filter(Boolean).map((file) => (
+                      <div
+                        key={file.fileUrl}
+                        className="relative group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50"
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Text Input Area */}
-            <div className="px-4 sm:px-5 pt-4 pb-2">
-              <textarea
-                ref={inputRef}
-                value={chatInput}
-                onChange={(e) => {
-                  setChatInput(e.target.value)
-                  e.target.style.height = 'auto'
-                  e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px'
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSubmit()
-                  }
-                }}
-                placeholder={
-                  uploadedFiles.length > 0
-                    ? 'Add a message or just send...'
-                    : 'Describe what you want to create...'
-                }
-                className="w-full bg-transparent text-foreground placeholder:text-muted-foreground/60 focus:outline-none text-[0.95rem] leading-relaxed resize-none min-h-[40px] max-h-[150px]"
-                rows={1}
-              />
-            </div>
-
-            {/* Toolbar Row */}
-            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-3 pt-1">
-              {/* Left side - attachment icons and credits */}
-              <div className="flex items-center gap-0.5">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
-                  title="Attach file"
-                >
-                  {isUploading ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <Paperclip className="h-[18px] w-[18px]" />
-                  )}
-                </button>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
-                  title="Add image"
-                >
-                  <ImageIcon className="h-[18px] w-[18px]" />
-                </button>
-
-                <div className="w-px h-4 bg-border/50 mx-2" />
-
-                {/* Credits indicator */}
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  {isLoadingCredits ? (
-                    <Skeleton className="h-3.5 w-24" />
-                  ) : (
-                    <>
-                      <span
-                        className={cn(
-                          'w-1.5 h-1.5 rounded-full',
-                          credits === 0
-                            ? 'bg-[var(--ds-error)]'
-                            : credits <= 2
-                              ? 'bg-[var(--ds-warning)]'
-                              : 'bg-[var(--ds-success)]'
+                        {file.fileType?.startsWith('image/') ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={file.fileUrl}
+                            alt={file.fileName}
+                            className="h-5 w-5 rounded object-cover"
+                          />
+                        ) : (
+                          <span className="[&>svg]:h-4 [&>svg]:w-4">
+                            {getFileIcon(file.fileType)}
+                          </span>
                         )}
-                      />
-                      <span>{credits} credits</span>
-                    </>
-                  )}
+                        <span className="text-sm max-w-[150px] truncate text-foreground">
+                          {file.fileName}
+                        </span>
+                        <button
+                          onClick={() => removeFile(file.fileUrl)}
+                          className="p-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          aria-label="Remove file"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Right side - Submit arrow */}
-              <button
-                onClick={() => handleSubmit()}
-                disabled={
-                  isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)
-                }
-                aria-label="Send message"
-                className="flex items-center justify-center w-8 h-8 bg-foreground hover:bg-foreground/80 text-background rounded-lg transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 19V5M5 12l7-7 7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Drag and drop hint */}
-          <p className="text-center text-xs text-muted-foreground/60 mt-2.5">
-            Drag and drop or{' '}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="underline underline-offset-2 hover:text-muted-foreground transition-colors"
-            >
-              click here
-            </button>{' '}
-            to add your images, videos or files.
-          </p>
-        </motion.div>
-
-        {/* Template Cards */}
-        <motion.div
-          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: prefersReduced ? 0 : 0.4,
-            delay: prefersReduced ? 0 : 0.2,
-            ease: [0.25, 0.1, 0.25, 1],
-          }}
-          className="w-full max-w-[780px] mt-5"
-        >
-          <p className="text-center text-xs text-muted-foreground/60 mb-4">
-            or start from a template
-          </p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            {Object.entries(TEMPLATE_CATEGORIES).map(([category, { icon: Icon, categoryKey }]) => {
-              const categoryImage = templateImageMap.get(categoryKey)
-              const gradients: Record<string, string> = {
-                'Launch Videos': 'from-[var(--crafted-green)] to-[var(--crafted-forest)]',
-                'Pitch Deck': 'from-[var(--crafted-green-light)] to-[var(--crafted-green)]',
-                Branding: 'from-[var(--crafted-sage)] to-[var(--crafted-green)]',
-                'Social Media': 'from-[var(--crafted-forest)] to-[var(--crafted-green)]',
-                'Content Calendar': 'from-[var(--crafted-green)] to-[var(--crafted-sage)]',
-                'Landing Page': 'from-[var(--crafted-green-light)] to-[var(--crafted-forest)]',
-              }
-              const gradient = gradients[category] || 'from-muted-foreground to-muted-foreground/80'
-              return (
-                <button
-                  key={category}
-                  onClick={() => {
-                    setSelectedCategory(category)
-                    setSelectedOption(null)
-                    setModalNotes('')
-                    setPlatformSelections({})
+              {/* Text Input Area */}
+              <div className="px-4 sm:px-5 pt-4 pb-2">
+                <textarea
+                  ref={inputRef}
+                  value={chatInput}
+                  onChange={(e) => {
+                    setChatInput(e.target.value)
+                    e.target.style.height = 'auto'
+                    e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px'
                   }}
-                  className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.05] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSubmit()
+                    }
+                  }}
+                  placeholder={
+                    uploadedFiles.length > 0
+                      ? 'Add a message or just send...'
+                      : 'Describe what you want to create...'
+                  }
+                  className="w-full bg-transparent text-foreground placeholder:text-muted-foreground/60 focus:outline-none text-[0.95rem] leading-relaxed resize-none min-h-[40px] max-h-[150px]"
+                  rows={1}
+                />
+              </div>
+
+              {/* Toolbar Row */}
+              <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-3 pt-1">
+                {/* Left side - attachment icons and credits */}
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                    title="Attach file"
+                  >
+                    {isUploading ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <Paperclip className="h-[18px] w-[18px]" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                    title="Add image"
+                  >
+                    <ImageIcon className="h-[18px] w-[18px]" />
+                  </button>
+
+                  <div className="w-px h-4 bg-border/50 mx-2" />
+
+                  {/* Credits indicator */}
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {isLoadingCredits ? (
+                      <Skeleton className="h-3.5 w-24" />
+                    ) : (
+                      <>
+                        <span
+                          className={cn(
+                            'w-1.5 h-1.5 rounded-full',
+                            credits === 0
+                              ? 'bg-[var(--ds-error)]'
+                              : credits <= 2
+                                ? 'bg-[var(--ds-warning)]'
+                                : 'bg-[var(--ds-success)]'
+                          )}
+                        />
+                        <span>{credits} credits</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right side - Submit arrow */}
+                <button
+                  onClick={() => handleSubmit()}
+                  disabled={
+                    isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)
+                  }
+                  aria-label="Send message"
+                  className="flex items-center justify-center w-8 h-8 bg-foreground hover:bg-foreground/80 text-background rounded-lg transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  {categoryImage ? (
-                    <>
-                      <Image
-                        src={categoryImage}
-                        alt={category}
-                        fill
-                        className="object-cover"
-                        sizes="120px"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10 group-hover:from-black/70 transition-colors" />
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        className={cn(
-                          'absolute inset-0 bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity',
-                          gradient
-                        )}
-                      />
-                      <div
-                        className="absolute inset-0 opacity-[0.15]"
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                          backgroundSize: '128px 128px',
-                        }}
-                      />
-                      <Icon className="relative z-10 h-5 w-5 text-white/90 drop-shadow-sm" />
-                    </>
-                  )}
-                  <span className="relative z-10 text-white text-xs font-semibold leading-tight drop-shadow-md">
-                    {category}
-                  </span>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 19V5M5 12l7-7 7 7" />
+                  </svg>
                 </button>
-              )
-            })}
-          </div>
-        </motion.div>
+              </div>
+            </div>
+
+            {/* Drag and drop hint */}
+            <p className="text-center text-xs text-muted-foreground/60 mt-2.5">
+              Drag and drop or{' '}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="underline underline-offset-2 hover:text-muted-foreground transition-colors"
+              >
+                click here
+              </button>{' '}
+              to add your images, videos or files.
+            </p>
+          </motion.div>
+
+          {/* Template Cards */}
+          <motion.div
+            initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: prefersReduced ? 0 : 0.4,
+              delay: prefersReduced ? 0 : 0.2,
+              ease: [0.25, 0.1, 0.25, 1],
+            }}
+            className="w-full max-w-[780px] mt-5"
+          >
+            <p className="text-center text-xs text-muted-foreground/60 mb-4">
+              or start from a template
+            </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              {Object.entries(TEMPLATE_CATEGORIES).map(
+                ([category, { icon: Icon, categoryKey }]) => {
+                  const categoryImage = templateImageMap.get(categoryKey)
+                  const gradients: Record<string, string> = {
+                    'Launch Videos': 'from-[var(--crafted-green)] to-[var(--crafted-forest)]',
+                    'Pitch Deck': 'from-[var(--crafted-green-light)] to-[var(--crafted-green)]',
+                    Branding: 'from-[var(--crafted-sage)] to-[var(--crafted-green)]',
+                    'Social Media': 'from-[var(--crafted-forest)] to-[var(--crafted-green)]',
+                    'Content Calendar': 'from-[var(--crafted-green)] to-[var(--crafted-sage)]',
+                    'Landing Page': 'from-[var(--crafted-green-light)] to-[var(--crafted-forest)]',
+                  }
+                  const gradient =
+                    gradients[category] || 'from-muted-foreground to-muted-foreground/80'
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => {
+                        setSelectedCategory(category)
+                        setSelectedOption(null)
+                        setModalNotes('')
+                        setPlatformSelections({})
+                      }}
+                      className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.05] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
+                    >
+                      {categoryImage ? (
+                        <>
+                          <Image
+                            src={categoryImage}
+                            alt={category}
+                            fill
+                            className="object-cover"
+                            sizes="120px"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10 group-hover:from-black/70 transition-colors" />
+                        </>
+                      ) : (
+                        <>
+                          <div
+                            className={cn(
+                              'absolute inset-0 bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity',
+                              gradient
+                            )}
+                          />
+                          <div
+                            className="absolute inset-0 opacity-[0.15]"
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                              backgroundSize: '128px 128px',
+                            }}
+                          />
+                          <Icon className="relative z-10 h-5 w-5 text-white/90 drop-shadow-sm" />
+                        </>
+                      )}
+                      <span className="relative z-10 text-white text-xs font-semibold leading-tight drop-shadow-md">
+                        {category}
+                      </span>
+                    </button>
+                  )
+                }
+              )}
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       {/* Category Options Modal */}

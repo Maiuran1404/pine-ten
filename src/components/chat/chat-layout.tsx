@@ -59,6 +59,8 @@ interface ChatLayoutProps {
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
+  // User-specified target duration for storyboard header
+  targetDurationSeconds?: number | null
   onSectionReorder?: (sections: LayoutSection[]) => void
   onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
   // Moodboard-to-scene connection (#15)
@@ -180,6 +182,7 @@ export function ChatLayout({
   onRegenerateStoryboard,
   onRegenerateScene,
   onRegenerateField,
+  targetDurationSeconds,
   onSectionReorder,
   onSectionEdit,
   onApplyMoodboardToScene,
@@ -338,6 +341,7 @@ export function ChatLayout({
                     onRegenerateStoryboard={onRegenerateStoryboard}
                     onRegenerateScene={onRegenerateScene}
                     onRegenerateField={onRegenerateField}
+                    targetDurationSeconds={targetDurationSeconds}
                     onSectionReorder={onSectionReorder}
                     onSectionEdit={onSectionEdit}
                     websiteGlobalStyles={websiteGlobalStyles}
@@ -396,6 +400,7 @@ export function ChatLayout({
                     onRegenerateStoryboard={onRegenerateStoryboard}
                     onRegenerateScene={onRegenerateScene}
                     onRegenerateField={onRegenerateField}
+                    targetDurationSeconds={targetDurationSeconds}
                     onSectionReorder={onSectionReorder}
                     onSectionEdit={onSectionEdit}
                     websiteGlobalStyles={websiteGlobalStyles}

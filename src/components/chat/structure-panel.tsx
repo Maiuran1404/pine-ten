@@ -57,6 +57,8 @@ interface StructurePanelProps {
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
+  // User-specified target duration for storyboard header
+  targetDurationSeconds?: number | null
   onSectionReorder?: (sections: LayoutSection[]) => void
   onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
   // Website-specific props
@@ -482,6 +484,7 @@ export function StructurePanel({
   onRegenerateStoryboard,
   onRegenerateScene,
   onRegenerateField,
+  targetDurationSeconds,
   onSectionReorder,
   onSectionEdit,
   websiteGlobalStyles,
@@ -753,6 +756,7 @@ export function StructurePanel({
           canRedo={canRedo}
           imageGenerationProgress={imageGenerationProgress}
           onRegenerateImage={onRegenerateImage}
+          targetDurationSeconds={targetDurationSeconds}
         />
       )}
       {structureData.type === 'layout' && (

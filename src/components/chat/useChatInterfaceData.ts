@@ -592,8 +592,9 @@ export function useChatInterfaceData({
   // ─── Quick options ──────────────────────────────────────────
   const resolvedQuickOptions = useMemo(() => {
     if (chatMessages.isLoading || task.pendingTask) return null
-    // Suppress at INSPIRATION — style panel in the right panel handles visual direction
-    if (_briefingState?.stage === 'INSPIRATION') return null
+    // Note: INSPIRATION suppression removed — chat-input-area.tsx already hides chips
+    // when inline style/video pickers are present (hasInlineStylePicker check).
+    // The redundant guard here caused a race with async briefingState sync.
     const msgs = chatMessages.messages
     // Dismiss chips after user answers (BUG-7)
     if (msgs.length > 0 && msgs[msgs.length - 1].role === 'user') return null
@@ -612,13 +613,7 @@ export function useChatInterfaceData({
       return lastAssistantMessage.quickOptions
     }
     return null
-  }, [
-    chatMessages.messages,
-    chatMessages.isLoading,
-    task.pendingTask,
-    _briefingState?.stage,
-    stateMachineQuickOptions,
-  ])
+  }, [chatMessages.messages, chatMessages.isLoading, task.pendingTask, stateMachineQuickOptions])
 
   // ─── Collapse left sidebar when chat starts ──────────────────
   useEffect(() => {
@@ -1131,6 +1126,7 @@ export function useChatInterfaceData({
     briefingStage: _briefingState?.stage ?? null,
     deliverableCategory: _briefingState?.deliverableCategory ?? null,
     estimatedCredits,
+    targetDurationSeconds: _briefingState?.targetDurationSeconds ?? null,
 
     // Files
     uploadedFiles: fileUpload.uploadedFiles,
