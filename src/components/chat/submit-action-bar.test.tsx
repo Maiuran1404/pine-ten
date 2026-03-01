@@ -165,10 +165,8 @@ describe('SubmitActionBar', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Submit Brief/i }))
 
-    expect(screen.getByText('15')).toBeInTheDocument() // credits
-    expect(screen.getByText('credits')).toBeInTheDocument()
-    expect(screen.getByText('2')).toBeInTheDocument() // revisions
-    expect(screen.getByText('revisions included')).toBeInTheDocument()
+    expect(screen.getByText(/15\s+credits/)).toBeInTheDocument()
+    expect(screen.getByText(/2 revision/)).toBeInTheDocument()
   })
 
   it('disables buttons when isSubmitting is true', () => {
