@@ -23,6 +23,7 @@
     "db:seed": "npx tsx scripts/seed.ts",
     "db:seed:styles": "npx tsx src/db/seed-styles.ts",
     "db:seed:skills": "npx tsx src/db/seed-skills.ts",
+    "db:seed:visual-presets": "npx tsx src/db/seed-visual-presets.ts",
     "db:apply-rls": "npx tsx scripts/apply-rls.ts",
     "validate": "pnpm lint && pnpm typecheck && pnpm test",
     "prepare": "husky"

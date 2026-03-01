@@ -510,7 +510,7 @@ export const createDeliverableStyleSchema = z.object({
   featuredOrder: z.number().int().optional().default(0),
   displayOrder: z.number().int().optional().default(0),
   // Preset metadata — styles with a promptGuide are treated as curated presets
-  promptGuide: z.string().max(2000).optional().nullable(),
+  promptGuide: z.string().max(5000).optional().nullable(),
   colorTemperature: z.string().optional().nullable(),
   energyLevel: z.string().optional().nullable(),
   formalityLevel: z.string().optional().nullable(),
