@@ -35,6 +35,7 @@ import {
   UserPlus,
   Image,
   GalleryThumbnails,
+  Eye,
 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import {
@@ -131,6 +132,11 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Reference Library',
         href: '/admin/deliverable-styles',
         icon: LayoutTemplate,
+      },
+      {
+        name: 'Visual Styles',
+        href: '/admin/style-prompts',
+        icon: Eye,
       },
       {
         name: 'Intake Prompts',

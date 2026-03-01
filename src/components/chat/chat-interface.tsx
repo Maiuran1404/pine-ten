@@ -392,6 +392,7 @@ export function ChatInterface({
         onRetryGeneration={handleRetryGeneration}
         onEditNarrative={handleEditNarrative}
         imageGenerationProgress={imageGenerationProgress}
+        isGeneratingImages={isGeneratingImages}
         onRegenerateImage={handleRegenerateImage}
         viewStructureRef={viewStructureRef}
         websiteGlobalStyles={websiteGlobalStyles}

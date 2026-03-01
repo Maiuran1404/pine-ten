@@ -356,10 +356,12 @@ function buildStageTask(state: BriefingState): string {
 
 function buildExtractTask(_state: BriefingState): string {
   return `Process the user's first message. Acknowledge what you understood and ask about the first missing piece.
+- IMPORTANT: If a BRAND CONTEXT section exists below, USE IT. Reference the company by name, weave in their industry, positioning, and audience. Never ask generic questions ("What's the product?") when brand data tells you who they are and what they do. Treat the brand context as known facts about this client.
 - If you understood their task type and intent clearly, confirm and move forward.
-- If the message is vague, ask what they want to create.
+- If the message is vague, ask what they want to create, but frame it in terms of their brand (e.g. "What aspect of [company]'s [industry] work should this highlight?").
 - Reference any style keywords or inspiration they mentioned.
 - IMPORTANT: Do NOT re-ask about things the user already stated clearly (e.g. if they said "new customers" or "driving traffic", their intent and audience are already clear. Confirm it and move to the next unknown).
+- Do NOT ask about company name, industry, or audience when brand context provides this information.
 - Only ask about what's genuinely missing. If audience/goal/intent are clear, ask about something else (style preference, brand personality, specific requirements).
 - Be concise. Don't repeat back everything they said.
 - If the user's first message clearly states what they want, for whom, and why, confirm everything in one sentence and proceed directly to structure. Do not ask follow-up questions when all core information is present.`
@@ -367,17 +369,18 @@ function buildExtractTask(_state: BriefingState): string {
 
 function buildTaskTypeTask(_state: BriefingState): string {
   return `We need to know what they're making.
-- Recommend a deliverable type based on context, or ask directly.
+- Recommend a deliverable type based on context and brand data, or ask directly.
 - The options are: video, social content (calendar), website/landing page, design asset, or branding.
-- If they seem unsure, frame the question as "What's the hero deliverable?"
+- If they seem unsure, frame the question as "What's the hero deliverable?" but ground it in their brand context (e.g. "For [company]'s [industry] work, a [recommendation] could work well").
 - One clear question. No rambling.`
 }
 
 function buildIntentTask(state: BriefingState): string {
   return `We know WHAT they're making (${state.brief.taskType.value || 'TBD'}). We need to know WHY.
-- Infer the business goal from context, or ask directly.
+- Infer the business goal from brand context and conversation, or ask directly.
 - Common intents: drive signups, build authority, increase awareness, boost sales, educate.
-- Frame it naturally: "What should this get people to do?" or "What's the end goal here?"
+- Frame it naturally using their brand: "What should this get people to do?" or reference their known audience/positioning.
+- If brand context includes positioning or audience data, use that to suggest a likely intent rather than asking from scratch.
 - One question. Be brief.`
 }
 
@@ -437,6 +440,7 @@ If you have an open question about the primary action or audience, ask it before
       if (!hasNarrative) {
         // Phase 1: Generate story narrative first
         return `${clarifyPrefix}MANDATORY: Before building a scene-by-scene storyboard, first create a concise story narrative that captures the video's creative angle.
+IMPORTANT: If brand context is available, use the actual company name, industry, positioning, and audience throughout. Never write generic placeholders like "your breakthrough product" or "your company" when you know who the client is.
 
 Generate a story narrative with these three fields:
 
@@ -924,7 +928,9 @@ Reference these inspirations when recommending section structure and design appr
 // =============================================================================
 
 export function buildBrandSection(ctx: BrandContext, stage?: BriefingStage): string {
-  const parts: string[] = ['== BRAND CONTEXT ==']
+  const parts: string[] = [
+    '== BRAND CONTEXT (USE THIS — do NOT ask the client about information listed here) ==',
+  ]
 
   // ── Identity (all stages) ──
   if (ctx.companyName) parts.push(`Company: ${ctx.companyName}`)

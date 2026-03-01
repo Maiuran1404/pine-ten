@@ -110,6 +110,7 @@ interface StructurePanelProps {
   onEditNarrative?: () => void
   // DALL-E image generation
   imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
+  isGeneratingImages?: boolean
   onRegenerateImage?: (scene: StoryboardScene) => void
   // Style selection props (shown during INSPIRATION stage)
   styleSelectionStyles?: DeliverableStyle[]
@@ -195,9 +196,11 @@ const LOADING_MESSAGES: Record<StructureData['type'], string[]> = {
 function PlaceholderState({
   structureType,
   progress,
+  scenes,
 }: {
   structureType: StructureData['type']
   progress?: { done: number; total: number; message?: string }
+  scenes?: Array<{ sceneNumber: number; title: string }>
 }) {
   const config = TYPE_CONFIG[structureType]
   const Icon = config.icon
@@ -216,6 +219,22 @@ function PlaceholderState({
     ? Math.round((progress.done / Math.max(progress.total, 1)) * 100)
     : null
 
+  // Determine which scene is currently being generated
+  const currentGeneratingScene = progress ? Math.min(progress.done + 1, progress.total) : null
+
+  // Build dynamic message with scene title when available
+  const dynamicMessage = (() => {
+    if (progress?.message) return progress.message
+    if (currentGeneratingScene && scenes && scenes.length > 0) {
+      const scene = scenes.find((s) => s.sceneNumber === currentGeneratingScene)
+      if (scene) return `Creating Scene ${scene.sceneNumber}: ${scene.title}...`
+    }
+    return messages[messageIndex]
+  })()
+
+  // Scene slots to show — use actual scene count if available
+  const sceneSlots = scenes?.length ?? progress?.total ?? 0
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -227,28 +246,36 @@ function PlaceholderState({
       </div>
 
       {/* Animated loading content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 gap-8">
-        {/* Animated icon ring */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8 gap-6">
+        {/* Clapperboard animation */}
         <div className="relative">
           {/* Outer rotating ring */}
           <motion.div
-            className="absolute inset-0 rounded-full border-2 border-dashed border-crafted-green/20"
-            style={{ width: 96, height: 96, margin: -8 }}
+            className="absolute rounded-full border-2 border-dashed border-crafted-green/20"
+            style={{ width: 96, height: 96, top: -8, left: -8 }}
             animate={{ rotate: 360 }}
             transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
           />
           {/* Inner pulsing glow */}
           <motion.div
-            className="absolute inset-0 rounded-full bg-crafted-green/5"
-            style={{ width: 80, height: 80 }}
+            className="absolute rounded-full bg-crafted-green/5"
+            style={{ width: 80, height: 80, top: 0, left: 0 }}
             animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           />
-          {/* Center icon */}
+          {/* Center icon with clapperboard snap animation for storyboard */}
           <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-crafted-green/10 to-crafted-forest/10 flex items-center justify-center">
             <motion.div
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              animate={
+                structureType === 'storyboard'
+                  ? { rotateX: [0, -15, 0], y: [0, -2, 0] }
+                  : { y: [0, -3, 0] }
+              }
+              transition={{
+                duration: structureType === 'storyboard' ? 1.5 : 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
             >
               {structureType === 'storyboard' ? (
                 <Clapperboard className="h-8 w-8 text-crafted-green" />
@@ -259,18 +286,18 @@ function PlaceholderState({
           </div>
         </div>
 
-        {/* Cycling message */}
+        {/* Cycling message with dynamic scene info */}
         <div className="text-center space-y-2 min-h-[56px]">
           <AnimatePresence mode="wait">
             <motion.p
-              key={progress?.message ?? messageIndex}
+              key={dynamicMessage}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35 }}
               className="text-sm font-medium text-foreground"
             >
-              {progress?.message ?? messages[messageIndex]}
+              {dynamicMessage}
             </motion.p>
           </AnimatePresence>
           {progressPercent !== null ? (
@@ -282,21 +309,28 @@ function PlaceholderState({
           )}
         </div>
 
-        {/* Progress bar */}
-        <div className="w-full max-w-[240px]">
+        {/* Progress bar with glowing leading edge */}
+        <div className="w-full max-w-[260px]">
           {progressPercent !== null ? (
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="h-2 bg-muted rounded-full overflow-hidden relative">
               <motion.div
-                className="h-full bg-crafted-green rounded-full"
+                className="h-full bg-gradient-to-r from-crafted-green to-crafted-green-light rounded-full relative"
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-              />
+              >
+                {/* Glowing leading edge */}
+                <motion.div
+                  className="absolute right-0 top-0 h-full w-3 bg-crafted-mint/80 rounded-full blur-sm"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              </motion.div>
             </div>
           ) : (
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
               <motion.div
-                className="h-full w-1/3 bg-crafted-green/60 rounded-full"
+                className="h-full w-1/3 bg-gradient-to-r from-crafted-green/40 to-crafted-green rounded-full"
                 animate={{ x: ['-100%', '400%'] }}
                 transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
               />
@@ -304,8 +338,68 @@ function PlaceholderState({
           )}
         </div>
 
-        {/* Floating scene preview cards (storyboard only) */}
-        {structureType === 'storyboard' && (
+        {/* Film strip scene slots (storyboard only) — shows actual scene count */}
+        {structureType === 'storyboard' && sceneSlots > 0 && (
+          <div className="flex flex-wrap justify-center gap-2 mt-2 max-w-[320px]">
+            {Array.from({ length: sceneSlots }, (_, i) => {
+              const sceneNum = i + 1
+              const isDone = progress ? sceneNum <= progress.done : false
+              const isActive = progress ? sceneNum === progress.done + 1 : false
+              const sceneTitle = scenes?.[i]?.title
+
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 + i * 0.1, duration: 0.4 }}
+                  className={cn(
+                    'w-[52px] h-[34px] rounded-md border overflow-hidden relative flex flex-col items-center justify-center',
+                    isDone
+                      ? 'border-crafted-green/40 bg-crafted-green/10'
+                      : isActive
+                        ? 'border-crafted-green/30 bg-muted/60'
+                        : 'border-border/30 bg-muted/40'
+                  )}
+                >
+                  {/* Active scene shimmer */}
+                  {isActive && (
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-crafted-green/10 to-transparent"
+                      animate={{ x: ['-100%', '100%'] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  )}
+                  {/* Done glow */}
+                  {isDone && (
+                    <motion.div
+                      className="absolute inset-0 bg-crafted-green/5"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4 }}
+                    />
+                  )}
+                  <span
+                    className={cn(
+                      'text-[9px] font-medium relative z-10',
+                      isDone ? 'text-crafted-green' : 'text-muted-foreground'
+                    )}
+                  >
+                    {sceneNum}
+                  </span>
+                  {sceneTitle && (
+                    <span className="text-[7px] text-muted-foreground/60 truncate max-w-[44px] relative z-10">
+                      {sceneTitle}
+                    </span>
+                  )}
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Fallback cards for non-storyboard or when no scene data */}
+        {structureType === 'storyboard' && sceneSlots === 0 && (
           <div className="flex gap-2 mt-2">
             {[0, 1, 2].map((i) => (
               <motion.div
@@ -413,6 +507,7 @@ export function StructurePanel({
   onRetryGeneration,
   onEditNarrative,
   imageGenerationProgress,
+  isGeneratingImages,
   onRegenerateImage,
   styleSelectionStyles,
   onStyleConfirmSelection,
@@ -569,9 +664,11 @@ export function StructurePanel({
     )
   }
 
-  // Storyboard: show loading screen while images are still generating
+  // Storyboard: show loading screen only during batch generation (not single-scene regen)
+  // isGeneratingImages is true only during generateDalleImages (batch), not regenerateSceneImage
   if (
     structureData?.type === 'storyboard' &&
+    isGeneratingImages &&
     imageGenerationProgress &&
     imageGenerationProgress.size > 0
   ) {
@@ -585,11 +682,19 @@ export function StructurePanel({
         generatingCount > 0
           ? `Generating scene visuals (${doneCount}/${total})...`
           : `Preparing scene images...`
+      const sceneInfo =
+        structureData.type === 'storyboard'
+          ? structureData.scenes.map((s) => ({
+              sceneNumber: s.sceneNumber,
+              title: s.title,
+            }))
+          : undefined
       return (
         <div className={cn('flex flex-col h-full bg-background', className)}>
           <PlaceholderState
             structureType="storyboard"
             progress={{ done: doneCount, total, message }}
+            scenes={sceneInfo}
           />
         </div>
       )

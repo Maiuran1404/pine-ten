@@ -128,6 +128,7 @@ interface ChatLayoutProps {
   onEditNarrative?: () => void
   // DALL-E image generation
   imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
+  isGeneratingImages?: boolean
   onRegenerateImage?: (scene: StoryboardScene) => void
   // Briefing stage (used by structure panel for fidelity)
   briefingStage?: string | null
@@ -214,6 +215,7 @@ export function ChatLayout({
   onRetryGeneration,
   onEditNarrative,
   imageGenerationProgress,
+  isGeneratingImages,
   onRegenerateImage,
   briefingStage,
   styleSelectionStyles,
@@ -360,6 +362,7 @@ export function ChatLayout({
                     onRetryGeneration={onRetryGeneration}
                     onEditNarrative={onEditNarrative}
                     imageGenerationProgress={imageGenerationProgress}
+                    isGeneratingImages={isGeneratingImages}
                     onRegenerateImage={onRegenerateImage}
                     styleSelectionStyles={styleSelectionStyles}
                     onStyleConfirmSelection={onStyleConfirmSelection}
@@ -412,6 +415,7 @@ export function ChatLayout({
                     onRetryGeneration={onRetryGeneration}
                     onEditNarrative={onEditNarrative}
                     imageGenerationProgress={imageGenerationProgress}
+                    isGeneratingImages={isGeneratingImages}
                     onRegenerateImage={onRegenerateImage}
                     styleSelectionStyles={styleSelectionStyles}
                     onStyleConfirmSelection={onStyleConfirmSelection}

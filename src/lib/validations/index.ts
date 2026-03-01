@@ -140,7 +140,19 @@ export const setRoleSchema = z.object({
 
 export const updateBrandSchema = z.object({
   name: z.string().min(2).max(100).optional(),
-  website: z.string().url().optional().or(z.literal('')).nullable(),
+  website: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .nullable()
+    .transform((val) => {
+      if (!val) return val
+      // Auto-prepend https:// if no protocol given
+      if (val && !val.startsWith('http://') && !val.startsWith('https://')) {
+        return `https://${val}`
+      }
+      return val
+    }),
   industry: z.string().max(100).optional().nullable(),
   industryArchetype: z.string().max(100).optional().nullable(),
   description: z.string().max(1000).optional().nullable(),
