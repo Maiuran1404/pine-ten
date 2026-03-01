@@ -1,6 +1,20 @@
 'use client'
 
-import { Film, Layout, Calendar, Palette, Loader2, Sparkles, RefreshCw, Pencil } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Film,
+  Layout,
+  Calendar,
+  Palette,
+  Loader2,
+  Sparkles,
+  RefreshCw,
+  Pencil,
+  Clapperboard,
+  Wand2,
+  ImageIcon,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'

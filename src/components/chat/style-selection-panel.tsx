@@ -54,7 +54,7 @@ function PanelStyleCard({
         )}
       >
         {/* Image container with zoom effect */}
-        <div className="relative aspect-[16/9] overflow-hidden">
+        <div className="relative aspect-[3/4] overflow-hidden">
           <motion.div
             className="w-full h-full"
             variants={{
@@ -162,10 +162,10 @@ function PanelStyleCard({
 
 function SkeletonCards() {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-4 gap-3">
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="rounded-2xl overflow-hidden animate-pulse">
-          <div className="aspect-[16/9] bg-muted-foreground/10" />
+          <div className="aspect-[3/4] bg-muted-foreground/10" />
           <div className="p-3 space-y-2 bg-muted/30">
             <div className="h-3.5 w-32 bg-muted-foreground/10 rounded" />
             <div className="flex gap-1.5">
@@ -268,7 +268,7 @@ export function StyleSelectionPanel({
               <p className="text-sm text-muted-foreground">Preparing style options...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {displayedStyles.map((style, index) => (
                 <PanelStyleCard
                   key={style.id}
