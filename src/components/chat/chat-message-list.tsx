@@ -992,64 +992,6 @@ export function ChatMessageList({
               )}
             </motion.div>
           )}
-
-          {/* Inline submit prompt - shown as an AI message when ready to submit */}
-          {/* Hidden during mid-flow stages; visible at REVIEW/SUBMIT or when no state machine */}
-          {!isLoading &&
-            !pendingTask &&
-            !isTaskMode &&
-            (!briefingStage || briefingStage === 'REVIEW' || briefingStage === 'SUBMIT') &&
-            (() => {
-              // Check if the last assistant message asked a question (ends with ?)
-              const lastAssistantMsg = messages.filter((m) => m.role === 'assistant').pop()
-              const lastMsg = messages[messages.length - 1]
-              const aiJustAskedQuestion =
-                lastMsg?.role === 'assistant' && lastAssistantMsg?.content?.trim().endsWith('?')
-
-              // Don't show submit prompt if AI just asked a question
-              if (aiJustAskedQuestion) return null
-
-              // Don't show immediately after a style selection
-              const lastUserMessage = messages.filter((m) => m.role === 'user').slice(-1)[0]
-              const lastUserWasStyleSelection =
-                lastUserMessage?.content?.includes('style selected') ||
-                lastUserMessage?.content?.includes('Style selected') ||
-                lastUserMessage?.selectedStyle != null
-
-              // Show when AI indicates ready or user has enough context
-              // BUT not right after a style selection (let user respond first)
-              const shouldShow =
-                showManualSubmit ||
-                (moodboardItems.length > 0 &&
-                  messages.filter((m) => m.role === 'user').length >= 3 &&
-                  !lastUserWasStyleSelection)
-
-              if (!shouldShow) return null
-
-              // Render as a subtle inline CTA, not a fake AI message
-              return (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex justify-center"
-                >
-                  <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-muted/60 border border-border/50 backdrop-blur-sm">
-                    <Button
-                      onClick={handleRequestTaskSummary}
-                      disabled={isLoading}
-                      size="sm"
-                      variant="ghost"
-                      className="gap-1.5 text-crafted-green hover:text-crafted-green-light hover:bg-crafted-mint/10 dark:hover:bg-crafted-green/15 font-medium"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Generate Summary
-                    </Button>
-                    <span className="text-xs text-muted-foreground">or keep chatting</span>
-                  </div>
-                </motion.div>
-              )
-            })()}
         </div>
       </ScrollArea>
       {/* Screen reader announcement for new messages */}

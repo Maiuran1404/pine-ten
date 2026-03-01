@@ -109,7 +109,7 @@ export const complexityMultipliers = {
 // Delivery time matrix: business days by category slug and complexity
 export const deliveryDaysMatrix: Record<string, Record<string, number>> = {
   'static-ads': { SIMPLE: 2, INTERMEDIATE: 3, ADVANCED: 4, EXPERT: 5 },
-  'video-motion': { SIMPLE: 5, INTERMEDIATE: 7, ADVANCED: 8, EXPERT: 10 },
+  'video-motion': { SIMPLE: 3, INTERMEDIATE: 4, ADVANCED: 5, EXPERT: 5 },
   'social-media': { SIMPLE: 2, INTERMEDIATE: 3, ADVANCED: 4, EXPERT: 5 },
   'ui-ux': { SIMPLE: 5, INTERMEDIATE: 7, ADVANCED: 8, EXPERT: 10 },
 }
