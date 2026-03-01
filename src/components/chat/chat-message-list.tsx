@@ -468,6 +468,11 @@ export function ChatMessageList({
         >
           <AnimatePresence>
             {messages.map((message, index) => {
+              // Skip empty assistant messages (marker-only responses stripped to nothing)
+              if (message.role === 'assistant' && !message.content?.trim()) {
+                return null
+              }
+
               // Determine if this is the last assistant message (for CTA gating)
               const isLastAssistant =
                 message.role === 'assistant' &&

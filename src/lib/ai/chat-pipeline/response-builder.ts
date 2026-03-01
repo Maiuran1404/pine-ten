@@ -104,6 +104,12 @@ export function stripMarkers(
     }
   }
 
+  // General fallback: if stripping markers leaves nothing, return empty
+  // so the chat UI can skip rendering an empty bubble
+  if (!cleanContent) {
+    return ''
+  }
+
   return cleanContent
 }
 

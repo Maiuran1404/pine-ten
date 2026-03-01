@@ -17,7 +17,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   const isChatPage = pathname?.startsWith('/dashboard/chat')
   const isWebsiteProjectPage = pathname?.startsWith('/dashboard/website-project')
-  const isFullScreenPage = isWebsiteProjectPage
+  const isFullScreenPage = isWebsiteProjectPage || isChatPage
   const isDashboardRoot = pathname === '/dashboard'
   // Sidebar collapsed by default on dashboard root and chat pages
   const [sidebarOpen, setSidebarOpen] = useState(!isDashboardRoot && !isChatPage)

@@ -204,31 +204,31 @@ export function StyleSelectionPanel({
               ))}
             </div>
           )}
+
+          {/* Confirm button — directly below the grid */}
+          <AnimatePresence>
+            {selectedStyle && onConfirmSelection && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.2 }}
+                className="mt-4"
+              >
+                <Button
+                  size="lg"
+                  onClick={handleConfirm}
+                  disabled={isLoading}
+                  className="w-full gap-2 bg-crafted-green hover:bg-crafted-forest text-white rounded-xl h-11 font-medium shadow-sm shadow-crafted-green/15"
+                >
+                  Continue with {selectedStyle.name}
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </ScrollArea>
-
-      {/* Confirm pill */}
-      <AnimatePresence>
-        {selectedStyle && onConfirmSelection && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.2 }}
-            className="shrink-0 px-4 py-3 border-t border-border/40"
-          >
-            <Button
-              size="sm"
-              onClick={handleConfirm}
-              disabled={isLoading}
-              className="w-full rounded-full gap-1.5"
-            >
-              Continue with {selectedStyle.name}
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
