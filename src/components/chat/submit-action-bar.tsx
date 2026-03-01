@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/shared/loading'
 import {
   ArrowRight,
@@ -23,6 +22,32 @@ import { cn } from '@/lib/utils'
 import { type TaskProposal, type MoodboardItem, getDeliveryDateString } from './types'
 import type { LiveBrief } from './brief-panel/types'
 import { INTENT_DESCRIPTIONS, PLATFORM_DISPLAY_NAMES } from './brief-panel/types'
+
+// ---------------------------------------------------------------------------
+// Animation constants
+// ---------------------------------------------------------------------------
+
+const expandedContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
+  },
+  exit: { opacity: 0 },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 400, damping: 25 },
+  },
+}
+
+const buttonSpring = { type: 'spring' as const, stiffness: 400, damping: 25 }
+
+// ---------------------------------------------------------------------------
 
 interface SubmitActionBarProps {
   taskProposal: TaskProposal
@@ -106,12 +131,12 @@ export function SubmitActionBar({
       >
         <AnimatePresence mode="wait" initial={false}>
           {!isExpanded ? (
-            /* Collapsed state */
+            /* ─── Collapsed state ─── */
             <motion.div
               key="collapsed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.15 }}
               onAnimationComplete={handleAnimationComplete}
               className="p-4"
@@ -148,47 +173,57 @@ export function SubmitActionBar({
                     <span className="hidden sm:inline">Make Changes</span>
                     <span className="sm:hidden">Edit</span>
                   </Button>
-                  <Button
-                    size="lg"
-                    onClick={handleSubmitClick}
-                    disabled={isSubmitting || isAnimating}
-                    className={cn(
-                      'gap-2 rounded-xl px-6 sm:px-8 font-semibold h-11',
-                      hasEnoughCredits
-                        ? 'bg-crafted-green hover:bg-crafted-forest text-white shadow-md shadow-crafted-green/20'
-                        : 'bg-ds-warning hover:bg-ds-warning/80 text-white'
-                    )}
+                  <motion.div
+                    className="group"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={buttonSpring}
                   >
-                    {isSubmitting ? (
-                      <LoadingSpinner size="sm" />
-                    ) : hasEnoughCredits ? (
-                      <>
-                        Submit Brief ({creditsRequired} credits)
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="h-4 w-4" />
-                        Get Credits to Submit
-                      </>
-                    )}
-                  </Button>
+                    <Button
+                      size="lg"
+                      onClick={handleSubmitClick}
+                      disabled={isSubmitting || isAnimating}
+                      className={cn(
+                        'gap-2 rounded-xl px-6 sm:px-8 font-semibold h-11',
+                        hasEnoughCredits
+                          ? 'bg-crafted-green hover:bg-crafted-forest text-white shadow-md shadow-crafted-green/20'
+                          : 'bg-ds-warning hover:bg-ds-warning/80 text-white'
+                      )}
+                    >
+                      {isSubmitting ? (
+                        <LoadingSpinner size="sm" />
+                      ) : hasEnoughCredits ? (
+                        <>
+                          Submit Brief ({creditsRequired} credits)
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="h-4 w-4" />
+                          Get Credits to Submit
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
           ) : (
-            /* Expanded state */
+            /* ─── Expanded state ─── */
             <motion.div
               key="expanded"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              variants={expandedContainerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
               onAnimationComplete={handleAnimationComplete}
               className="p-5 sm:p-6"
             >
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
+              <motion.div
+                variants={itemVariants}
+                className="flex items-center justify-between mb-4"
+              >
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-crafted-green animate-pulse" />
                   <span className="text-xs font-semibold tracking-wider text-crafted-green uppercase">
@@ -203,32 +238,37 @@ export function SubmitActionBar({
                   <ChevronDown className="h-3 w-3 rotate-180" />
                   Collapse
                 </button>
-              </div>
+              </motion.div>
 
-              {/* Task title and description */}
-              <h3 className="text-lg font-bold text-foreground mb-1">
-                {taskProposal.title || 'Your Design Brief'}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                {taskProposal.description}
-              </p>
+              {/* Task title (description removed — title is sufficient context) */}
+              <motion.div variants={itemVariants}>
+                <h3 className="text-lg font-bold text-foreground mb-3">
+                  {taskProposal.title || 'Your Design Brief'}
+                </h3>
+              </motion.div>
 
               {/* Brief review section */}
               {brief && (
-                <BriefReviewSection
-                  brief={brief}
-                  isOpen={isBriefReviewOpen}
-                  onToggle={() => setIsBriefReviewOpen((v) => !v)}
-                />
+                <motion.div variants={itemVariants}>
+                  <BriefReviewSection
+                    brief={brief}
+                    isOpen={isBriefReviewOpen}
+                    onToggle={() => setIsBriefReviewOpen((v) => !v)}
+                  />
+                </motion.div>
               )}
 
-              {/* Moodboard thumbnails */}
+              {/* Moodboard thumbnails with pop-in */}
               {moodboardImages.length > 0 && (
-                <div className="mb-4">
+                <motion.div variants={itemVariants} className="mb-4">
                   <div className="flex gap-2 overflow-x-auto pb-1">
-                    {moodboardImages.map((item) => (
-                      <div
+                    {moodboardImages.map((item, index) => (
+                      <motion.div
                         key={item.id}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05, ...buttonSpring }}
+                        whileHover={{ scale: 1.05 }}
                         className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-border/50 shrink-0"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -237,73 +277,84 @@ export function SubmitActionBar({
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               )}
 
-              {/* What happens next */}
-              <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border/50">
-                <p className="text-xs font-medium text-foreground mb-1.5">After submission</p>
-                <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>Upload brand assets, logos, and product screenshots</li>
-                  <li>A matched designer starts working on your brief</li>
-                  <li>First draft delivered by {deliveryDate}</li>
-                </ul>
-              </div>
-
-              {/* Order summary */}
-              <div className="mb-5 rounded-xl border border-border/50 bg-muted/30 overflow-hidden">
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-crafted-green/10">
-                      <Coins className="h-4 w-4 text-crafted-green" />
+              {/* What happens next — numbered timeline */}
+              <motion.div variants={itemVariants} className="mb-4">
+                <p className="text-xs font-medium text-foreground mb-2.5">What happens next</p>
+                <div className="space-y-2.5">
+                  {[
+                    'Upload brand assets, logos, and product screenshots',
+                    'A matched designer starts working on your brief',
+                    `First draft delivered by ${deliveryDate}`,
+                  ].map((step, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-crafted-green/10 shrink-0 mt-px">
+                        <span className="text-[10px] font-semibold text-crafted-green">
+                          {i + 1}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{step}</p>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {creditsRequired} credits
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Order summary + credit balance — merged card */}
+              <motion.div variants={itemVariants} className="mb-5">
+                <div className="rounded-xl border border-border/50 overflow-hidden">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-crafted-green/10">
+                        <Coins className="h-4 w-4 text-crafted-green" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {creditsRequired} credits
+                        </p>
+                        <p className="text-xs text-muted-foreground">2 revisions included</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <p className="text-sm font-semibold text-foreground">{deliveryDate}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">estimated delivery</p>
+                    </div>
+                  </div>
+                  {hasEnoughCredits ? (
+                    <div className="px-4 py-2.5 bg-crafted-green/5 border-t border-crafted-green/10">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-medium text-crafted-green">
+                          {userCredits} credits available
+                        </span>
+                        <span className="text-muted-foreground">
+                          ({userCredits - creditsRequired} remaining after)
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-2.5 bg-ds-warning/5 border-t border-ds-warning/20">
+                      <p className="text-xs text-ds-warning">
+                        <span className="font-medium">Insufficient credits.</span> You need{' '}
+                        {creditsRequired - userCredits} more credits ({creditsRequired} required,{' '}
+                        {userCredits} available).
                       </p>
-                      <p className="text-xs text-muted-foreground">Includes 2 revision rounds</p>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1.5 justify-end">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                      <p className="text-sm font-semibold text-foreground">{deliveryDate}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground">estimated delivery</p>
-                  </div>
+                  )}
                 </div>
-              </div>
-
-              {/* Credit balance */}
-              {!hasEnoughCredits && (
-                <div className="mb-4 p-3 rounded-lg bg-ds-warning/10 border border-ds-warning/30">
-                  <p className="text-sm text-ds-warning">
-                    <span className="font-medium">Insufficient credits.</span> You need{' '}
-                    {creditsRequired - userCredits} more credits ({creditsRequired} required,{' '}
-                    {userCredits} available).
-                  </p>
-                </div>
-              )}
-
-              {hasEnoughCredits && (
-                <div className="mb-4 flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="text-crafted-green border-crafted-green/20 bg-crafted-green/10 dark:bg-crafted-green/10"
-                  >
-                    {userCredits} credits available
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    ({userCredits - creditsRequired} remaining after)
-                  </span>
-                </div>
-              )}
+              </motion.div>
 
               {/* Action buttons */}
-              <div className="flex items-center justify-between gap-3">
+              <motion.div
+                variants={itemVariants}
+                className="flex items-center justify-between gap-3"
+              >
                 <Button
                   variant="ghost"
                   onClick={handleGoBack}
@@ -312,35 +363,42 @@ export function SubmitActionBar({
                 >
                   Go Back
                 </Button>
-                <Button
-                  size="lg"
-                  onClick={hasEnoughCredits ? handleConfirm : onInsufficientCredits}
-                  disabled={isSubmitting || isAnimating}
-                  className={cn(
-                    'gap-2 rounded-xl px-8 font-semibold h-12 sm:h-14 text-base',
-                    hasEnoughCredits
-                      ? 'bg-crafted-green hover:bg-crafted-forest text-white shadow-lg shadow-crafted-green/25'
-                      : 'bg-ds-warning hover:bg-ds-warning/90 text-white'
-                  )}
+                <motion.div
+                  className="group"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={buttonSpring}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <LoadingSpinner size="sm" />
-                      Submitting...
-                    </>
-                  ) : hasEnoughCredits ? (
-                    <>
-                      Confirm & Submit
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="h-4 w-4" />
-                      Get Credits to Submit
-                    </>
-                  )}
-                </Button>
-              </div>
+                  <Button
+                    size="lg"
+                    onClick={hasEnoughCredits ? handleConfirm : onInsufficientCredits}
+                    disabled={isSubmitting || isAnimating}
+                    className={cn(
+                      'gap-2 rounded-xl px-8 font-semibold h-12 sm:h-14 text-base',
+                      hasEnoughCredits
+                        ? 'bg-crafted-green hover:bg-crafted-forest text-white shadow-lg shadow-crafted-green/25'
+                        : 'bg-ds-warning hover:bg-ds-warning/90 text-white'
+                    )}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        Submitting...
+                      </>
+                    ) : hasEnoughCredits ? (
+                      <>
+                        Confirm & Submit
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="h-4 w-4" />
+                        Get Credits to Submit
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

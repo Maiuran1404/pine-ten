@@ -839,3 +839,7 @@ export {
   similarWebsitesSchema,
   approveWebsiteProjectSchema,
 } from './website-flow-schemas'
+
+// Style preview schemas
+export { stylePreviewSchema, saveStylePreviewSchema } from './style-preview'
+export type { StylePreviewInput, SaveStylePreviewInput } from './style-preview'

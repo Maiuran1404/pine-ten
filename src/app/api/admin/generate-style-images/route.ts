@@ -8,61 +8,9 @@ import { generateSceneImage } from '@/lib/ai/dalle-image-generation'
 import { uploadToStorage } from '@/lib/storage'
 import { generateStyleImageSchema } from '@/lib/validations'
 import { logger } from '@/lib/logger'
+import { extractHexColors, buildStylePreviewPrompt } from '@/lib/ai/style-prompt-builder'
 
 const BUCKET = 'deliverable-styles'
-
-/**
- * Extract hex color codes from a prompt guide text.
- * Matches patterns like #0047AB, #E63946, etc.
- */
-function extractHexColors(text: string): string[] {
-  const hexRegex = /#[0-9A-Fa-f]{6}\b/g
-  const matches = text.match(hexRegex) || []
-  // Deduplicate and limit to 8 colors
-  return [...new Set(matches.map((c) => c.toUpperCase()))].slice(0, 8)
-}
-
-/**
- * Condense a 300-500 word prompt guide into a focused ~150-200 word image generation prompt.
- * Extracts key visual characteristics: color palette, lighting, mood, textures, composition.
- */
-function buildImagePrompt(name: string, promptGuide: string): string {
-  // Extract the most visually descriptive sentences
-  const sentences = promptGuide
-    .split(/\.\s+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 10)
-
-  // Prioritize sentences with visual keywords
-  const visualKeywords =
-    /color|light|shadow|texture|gradient|palette|tone|mood|surface|grain|lens|camera|shot|photograph|background|foreground|atmosphere|warm|cool|contrast|matte|gloss|metallic|organic|soft|hard|bright|dark|minimal|rich|clean|raw|polished/i
-  const visualSentences = sentences.filter((s) => visualKeywords.test(s))
-
-  // Take the most relevant visual descriptions, capped at ~150 words
-  const selectedSentences: string[] = []
-  let wordCount = 0
-  for (const sentence of visualSentences) {
-    const words = sentence.split(/\s+/).length
-    if (wordCount + words > 150) break
-    selectedSentences.push(sentence)
-    wordCount += words
-  }
-
-  // If we didn't get enough from visual-keyword filtering, add more
-  if (wordCount < 80) {
-    for (const sentence of sentences) {
-      if (selectedSentences.includes(sentence)) continue
-      const words = sentence.split(/\s+/).length
-      if (wordCount + words > 150) break
-      selectedSentences.push(sentence)
-      wordCount += words
-    }
-  }
-
-  const visualDescription = selectedSentences.join('. ').replace(/\.\./g, '.')
-
-  return `Create a professional visual reference image for the "${name}" style direction. ${visualDescription}. This is a standalone atmospheric mood image showcasing this aesthetic. Photorealistic, editorial quality, 16:10 aspect ratio.`
-}
 
 /**
  * Delay helper for rate limiting between API calls.
@@ -145,7 +93,7 @@ export async function POST(request: NextRequest) {
         logger.info({ styleId: preset.id, name: preset.name }, 'Generating style image')
 
         // Build condensed prompt from the full prompt guide
-        const imagePrompt = buildImagePrompt(preset.name, promptGuide)
+        const imagePrompt = buildStylePreviewPrompt(preset.name, promptGuide)
 
         // Generate image via DALL-E (1024x1024 for style thumbnails, medium quality)
         const result = await generateSceneImage(imagePrompt, {
