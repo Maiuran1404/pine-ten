@@ -93,6 +93,7 @@ interface StructurePanelProps {
   onApproveNarrative?: () => void
   onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
   // Error recovery for storyboard generation after narrative approval
+  isChatLoading?: boolean
   lastSendError?: string | null
   onRetryGeneration?: () => void
   onEditNarrative?: () => void
@@ -251,6 +252,7 @@ export function StructurePanel({
   narrativeApproved,
   onApproveNarrative,
   onNarrativeFieldEdit,
+  isChatLoading,
   lastSendError,
   onRetryGeneration,
   onEditNarrative,
@@ -346,6 +348,37 @@ export function StructurePanel({
                   Retry
                 </Button>
               </div>
+            </div>
+          </div>
+        )
+      }
+      // If chat is not loading and no error, the auto-trigger may have failed silently
+      // Show a generate button so the user can manually kick off storyboard generation
+      if (!isChatLoading && !isRegenerating && onRetryGeneration) {
+        return (
+          <div className={cn('flex flex-col h-full bg-background', className)}>
+            <div className="shrink-0 px-4 py-3 border-b border-border/40">
+              <div className="flex items-center gap-2">
+                <Film className="h-4 w-4 text-crafted-green" />
+                <span className="text-sm font-semibold text-foreground">Storyboard</span>
+              </div>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-crafted-green/10 flex items-center justify-center">
+                <Sparkles className="h-6 w-6 text-crafted-green" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">
+                  Ready to build your storyboard
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Your narrative is approved. Generate the storyboard to continue.
+                </p>
+              </div>
+              <Button size="sm" onClick={onRetryGeneration} className="gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                Generate Storyboard
+              </Button>
             </div>
           </div>
         )

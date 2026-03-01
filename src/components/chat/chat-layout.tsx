@@ -66,7 +66,8 @@ interface ChatLayoutProps {
   storyboardSceneCount?: number
   // Scene image data from multi-source search (Film-Grab, Flim.ai, Pexels, Eyecannndy)
   sceneImageData?: Map<number, SceneImageData>
-  // Loading state for regeneration
+  // Loading state for regeneration / chat activity
+  isChatLoading?: boolean
   isRegenerating?: boolean
   // Changed scene numbers for visual diff highlighting (#21: field-level diffs)
   changedScenes?: Map<number, { field: string; oldValue: string; newValue: string }[]>
@@ -183,6 +184,7 @@ export function ChatLayout({
   onApplyMoodboardToScene,
   storyboardSceneCount,
   sceneImageData,
+  isChatLoading,
   isRegenerating,
   changedScenes,
   onUndo,
@@ -320,6 +322,7 @@ export function ChatLayout({
                     structureData={structureData ?? null}
                     briefingStage={briefingStage ?? undefined}
                     sceneImageData={sceneImageData}
+                    isChatLoading={isChatLoading}
                     isRegenerating={isRegenerating}
                     changedScenes={changedScenes}
                     onUndo={onUndo}
@@ -376,6 +379,7 @@ export function ChatLayout({
                     structureData={structureData ?? null}
                     briefingStage={briefingStage ?? undefined}
                     sceneImageData={sceneImageData}
+                    isChatLoading={isChatLoading}
                     isRegenerating={isRegenerating}
                     changedScenes={changedScenes}
                     onUndo={onUndo}

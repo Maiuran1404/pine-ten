@@ -618,7 +618,7 @@ Create 4-6 scenes following the narrative's emotional arc: tension, turning poin
   - fullScript: Complete narration/dialogue script
   - directorNotes: Shooting direction, pacing, talent direction, mood cues
   - referenceDescription: Description of what the reference visual should look like
-  - imageGenerationPrompt: 2-3 sentence visual description for DALL-E. Describe what the camera sees — subjects, setting, lighting, mood, composition. Be concrete and cinematic. Incorporate the selected visual style.
+  - imageGenerationPrompt: 2-3 sentence visual description for DALL-E image generation. Describe what the camera sees — subjects, setting, lighting, mood, composition. CRITICAL: This prompt MUST faithfully reflect the selected visual style. If the style is "Clean & Minimal", use soft diffused lighting, white/neutral backgrounds, negative space, matte surfaces. If the style is "Bold & Cinematic", use dramatic shadows, saturated colors, wide compositions. Match the style's aesthetic in every detail — lighting, color palette, framing, background.
   - imageSearchTerms: Array of 3-5 specific Pexels search keywords
   - filmTitleSuggestions: Array of 1-3 film titles matching the scene's visual mood
   - visualTechniques: Array of 1-2 camera/editing techniques

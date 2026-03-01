@@ -72,6 +72,11 @@ export async function POST(request: NextRequest) {
           featuredOrder: validated.featuredOrder,
           displayOrder: validated.displayOrder,
           isActive: true,
+          promptGuide: validated.promptGuide || null,
+          colorTemperature: validated.colorTemperature || null,
+          energyLevel: validated.energyLevel || null,
+          formalityLevel: validated.formalityLevel || null,
+          moodKeywords: validated.moodKeywords || [],
         })
         .returning()
 

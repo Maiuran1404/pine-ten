@@ -951,9 +951,11 @@ export function ChatMessageList({
 
           {/* Inline submit prompt - shown as an AI message when ready to submit */}
           {/* Hidden during mid-flow stages; visible at REVIEW/SUBMIT or when no state machine */}
+          {/* Also hidden when structure panel is active (storyboard/layout editing) */}
           {!isLoading &&
             !pendingTask &&
             !isTaskMode &&
+            !structurePanelVisible &&
             (!briefingStage || briefingStage === 'REVIEW' || briefingStage === 'SUBMIT') &&
             (() => {
               // Check if the last assistant message asked a question (ends with ?)

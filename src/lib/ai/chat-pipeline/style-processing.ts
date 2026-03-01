@@ -60,27 +60,28 @@ export async function handleStyleShortcut(
   const isVideoType = isVideoDeliverableType(normalizedType)
 
   try {
-    if (type === 'initial' && isVideoType) {
-      // For video initial, load curated presets from DB first
-      deliverableStyles = await getVideoStylePresets(normalizedType)
+    if (type === 'initial') {
+      // For ALL initial requests, try curated DB presets first
+      deliverableStyles = await getStylePresets(normalizedType)
       if (!deliverableStyles?.length) {
-        // Fallback to brand-aware styles
-        deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
-          includeAllAxes: true,
-          context: styleContext,
-        })
-      }
-    } else if (type === 'initial') {
-      // For non-video initial, search for styles
-      deliverableStyles = await searchStyleImages(
-        { searchTerms: clientStyleMarker.searchTerms, deliverableType: normalizedType },
-        { count: 6, styleContext }
-      )
-      if (!deliverableStyles || deliverableStyles.length === 0) {
-        deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
-          includeAllAxes: true,
-          context: styleContext,
-        })
+        // No curated presets — fall through to type-specific pipeline
+        if (isVideoType) {
+          deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
+            includeAllAxes: true,
+            context: styleContext,
+          })
+        } else {
+          deliverableStyles = await searchStyleImages(
+            { searchTerms: clientStyleMarker.searchTerms, deliverableType: normalizedType },
+            { count: 6, styleContext }
+          )
+          if (!deliverableStyles || deliverableStyles.length === 0) {
+            deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
+              includeAllAxes: true,
+              context: styleContext,
+            })
+          }
+        }
       }
     } else if (isVideoType) {
       const lastUserMessage = messages[messages.length - 1]?.content || ''
@@ -257,64 +258,62 @@ export async function processStylesAndVideo(
             deliverableStyleMarker = undefined
             break
           }
-          // For video types at INSPIRATION, load curated presets from DB
-          if (isVideoType) {
-            if (isInspirationStage) {
-              deliverableStyles = await getVideoStylePresets(normalizedType)
-              logger.debug(
-                { count: deliverableStyles?.length, deliverableType: normalizedType },
-                'Loaded curated video style presets from DB'
-              )
+          // For ALL types at INSPIRATION, try curated DB presets first
+          if (isInspirationStage) {
+            deliverableStyles = await getStylePresets(normalizedType)
+            logger.debug(
+              { count: deliverableStyles?.length, deliverableType: normalizedType },
+              'Loaded curated style presets from DB'
+            )
+          }
+          // If no curated presets, fall through to type-specific pipeline
+          if (!deliverableStyles?.length) {
+            if (isVideoType) {
+              // Video fallback: web search at non-INSPIRATION, brand-aware otherwise
+              if (!isInspirationStage) {
+                deliverableStyles = await searchStyleImages(
+                  {
+                    searchTerms: deliverableStyleMarker.searchTerms,
+                    deliverableType: normalizedType,
+                  },
+                  { count: 6, styleContext }
+                )
+              }
+              if (!deliverableStyles?.length) {
+                deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
+                  includeAllAxes: true,
+                  context: styleContext,
+                })
+              }
             } else {
-              // Non-INSPIRATION: use existing web search logic
+              // Non-video fallback: enriched web search
+              let enrichedSearchTerms = deliverableStyleMarker.searchTerms
+              if (updatedBriefingState) {
+                const contextTerms: string[] = []
+                if (updatedBriefingState.styleKeywords?.length) {
+                  contextTerms.push(...updatedBriefingState.styleKeywords.slice(0, 3))
+                }
+                if (updatedBriefingState.inspirationRefs?.length) {
+                  contextTerms.push(...updatedBriefingState.inspirationRefs.slice(0, 2))
+                }
+                if (contextTerms.length > 0 && enrichedSearchTerms) {
+                  enrichedSearchTerms = [...enrichedSearchTerms, ...contextTerms]
+                }
+              }
               deliverableStyles = await searchStyleImages(
-                {
-                  searchTerms: deliverableStyleMarker.searchTerms,
-                  deliverableType: normalizedType,
-                },
+                { searchTerms: enrichedSearchTerms, deliverableType: normalizedType },
                 { count: 6, styleContext }
               )
+              if (!deliverableStyles || deliverableStyles.length === 0) {
+                deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
+                  includeAllAxes: true,
+                  context: styleContext,
+                })
+              }
             }
-            if (!deliverableStyles?.length) {
-              // Fallback to brand-aware styles if no presets found
-              deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
-                includeAllAxes: true,
-                context: styleContext,
-              })
-            }
-            if (!deliverableStyles?.length) {
-              deliverableStyleMarker = undefined
-            }
-            break
           }
-          {
-            // Enrich search terms with accumulated style context from briefing state
-            let enrichedSearchTerms = deliverableStyleMarker.searchTerms
-            if (updatedBriefingState) {
-              const contextTerms: string[] = []
-              if (updatedBriefingState.styleKeywords?.length) {
-                contextTerms.push(...updatedBriefingState.styleKeywords.slice(0, 3))
-              }
-              if (updatedBriefingState.inspirationRefs?.length) {
-                contextTerms.push(...updatedBriefingState.inspirationRefs.slice(0, 2))
-              }
-              if (contextTerms.length > 0 && enrichedSearchTerms) {
-                enrichedSearchTerms = [...enrichedSearchTerms, ...contextTerms]
-              }
-            }
-
-            // Dynamic web image search using AI-provided search terms or context
-            deliverableStyles = await searchStyleImages(
-              { searchTerms: enrichedSearchTerms, deliverableType: normalizedType },
-              { count: 6, styleContext }
-            )
-            // Fallback to DB styles if dynamic search returns nothing
-            if (!deliverableStyles || deliverableStyles.length === 0) {
-              deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
-                includeAllAxes: true,
-                context: styleContext,
-              })
-            }
+          if (!deliverableStyles?.length) {
+            deliverableStyleMarker = undefined
           }
           break
         case 'more':
@@ -534,9 +533,9 @@ export async function processStylesAndVideo(
   return { deliverableStyles, deliverableStyleMarker, videoReferences }
 }
 
-// ── Helper: Load curated video style presets from DB ──
+// ── Helper: Load curated style presets from DB (all deliverable types) ──
 
-async function getVideoStylePresets(
+async function getStylePresets(
   deliverableType: string
 ): Promise<SearchedDeliverableStyle[] | undefined> {
   try {
@@ -572,7 +571,7 @@ async function getVideoStylePresets(
       },
     }))
   } catch (err) {
-    logger.error({ err }, 'Error loading video style presets from DB')
+    logger.error({ err }, 'Error loading style presets from DB')
     return undefined
   }
 }

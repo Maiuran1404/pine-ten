@@ -45,6 +45,7 @@ import {
   Upload,
   Palette,
   History,
+  Sparkles,
 } from 'lucide-react'
 import {
   DELIVERABLE_TYPES,
@@ -73,6 +74,8 @@ interface DeliverableStyleReference {
   isActive: boolean
   usageCount: number
   createdAt: string
+  // Preset metadata
+  promptGuide?: string | null
   // Extended fields
   colorTemperature?: string
   energyLevel?: string
@@ -108,6 +111,11 @@ const defaultFormState = {
   semanticTags: '',
   featuredOrder: 0,
   displayOrder: 0,
+  promptGuide: '',
+  colorTemperature: '',
+  energyLevel: '',
+  formalityLevel: '',
+  moodKeywords: '',
 }
 
 // Matrix cell component
@@ -277,6 +285,11 @@ export default function DeliverableStylesPage() {
       semanticTags: style.semanticTags.join(', '),
       featuredOrder: style.featuredOrder,
       displayOrder: style.displayOrder,
+      promptGuide: style.promptGuide || '',
+      colorTemperature: style.colorTemperature || '',
+      energyLevel: style.energyLevel || '',
+      formalityLevel: style.formalityLevel || '',
+      moodKeywords: style.moodKeywords?.join(', ') || '',
     })
     setDialogOpen(true)
   }
@@ -302,6 +315,14 @@ export default function DeliverableStylesPage() {
           .filter(Boolean),
         featuredOrder: formState.featuredOrder,
         displayOrder: formState.displayOrder,
+        promptGuide: formState.promptGuide || null,
+        colorTemperature: formState.colorTemperature || null,
+        energyLevel: formState.energyLevel || null,
+        formalityLevel: formState.formalityLevel || null,
+        moodKeywords: formState.moodKeywords
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
       }
 
       if (editingStyle) {
@@ -597,6 +618,102 @@ export default function DeliverableStylesPage() {
                   Tags help AI match styles to brand context
                 </p>
               </div>
+
+              {/* Preset Metadata Section */}
+              <Collapsible>
+                <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-accent/50">
+                  <Sparkles className="h-4 w-4 text-crafted-sage" />
+                  Preset Metadata
+                  <ChevronDown className="ml-auto h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3 space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    Styles with a prompt guide are treated as curated presets and shown first in
+                    chat.
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="promptGuide">Prompt Guide</Label>
+                    <Textarea
+                      id="promptGuide"
+                      value={formState.promptGuide}
+                      onChange={(e) => setFormState({ ...formState, promptGuide: e.target.value })}
+                      placeholder="Describe the visual direction for AI — e.g. 'Clean minimal aesthetic with ample whitespace, muted earth tones, elegant sans-serif typography'"
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Describes the visual direction for AI when this style is selected
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="colorTemperature">Color Temperature</Label>
+                      <Select
+                        value={formState.colorTemperature || 'none'}
+                        onValueChange={(v) =>
+                          setFormState({ ...formState, colorTemperature: v === 'none' ? '' : v })
+                        }
+                      >
+                        <SelectTrigger id="colorTemperature">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not set</SelectItem>
+                          <SelectItem value="warm">Warm</SelectItem>
+                          <SelectItem value="cool">Cool</SelectItem>
+                          <SelectItem value="neutral">Neutral</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="energyLevel">Energy Level</Label>
+                      <Select
+                        value={formState.energyLevel || 'none'}
+                        onValueChange={(v) =>
+                          setFormState({ ...formState, energyLevel: v === 'none' ? '' : v })
+                        }
+                      >
+                        <SelectTrigger id="energyLevel">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not set</SelectItem>
+                          <SelectItem value="calm">Calm</SelectItem>
+                          <SelectItem value="balanced">Balanced</SelectItem>
+                          <SelectItem value="energetic">Energetic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="formalityLevel">Formality Level</Label>
+                      <Select
+                        value={formState.formalityLevel || 'none'}
+                        onValueChange={(v) =>
+                          setFormState({ ...formState, formalityLevel: v === 'none' ? '' : v })
+                        }
+                      >
+                        <SelectTrigger id="formalityLevel">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not set</SelectItem>
+                          <SelectItem value="casual">Casual</SelectItem>
+                          <SelectItem value="balanced">Balanced</SelectItem>
+                          <SelectItem value="formal">Formal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="moodKeywords">Mood Keywords (comma-separated)</Label>
+                    <Input
+                      id="moodKeywords"
+                      value={formState.moodKeywords}
+                      onChange={(e) => setFormState({ ...formState, moodKeywords: e.target.value })}
+                      placeholder="serene, professional, bold, playful"
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>

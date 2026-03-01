@@ -376,6 +376,7 @@ export function ChatInterface({
         storyboardSceneCount={
           storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes.length : 0
         }
+        isChatLoading={isLoading}
         isRegenerating={isLoading}
         changedScenes={changedScenes}
         onUndo={undo}

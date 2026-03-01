@@ -16,28 +16,30 @@ interface ScenePromptInput {
 
 /**
  * Build a DALL-E prompt from scene data and style context.
- * Combines scene visual information with the user's selected style direction.
+ * Style context is placed FIRST so DALL-E treats it as the dominant aesthetic
+ * direction. Scene content follows as the subject matter within that style.
  */
 export function buildScenePrompt(scene: ScenePromptInput, styleContext: string): string {
   const parts: string[] = []
 
-  // Prefer the dedicated AI-generated image prompt if available
+  // Style context goes FIRST — DALL-E weights earlier tokens more heavily.
+  // This ensures the selected visual style (e.g. "Clean & Minimal") shapes
+  // the entire image rather than being an afterthought.
+  if (styleContext) {
+    parts.push(`STYLE DIRECTION: ${styleContext}`)
+  }
+
+  // Scene content — what to depict within the style
   if (scene.imageGenerationPrompt) {
     parts.push(scene.imageGenerationPrompt)
   } else {
-    // Fall back to composing from scene fields
     if (scene.visualNote) parts.push(scene.visualNote)
     if (scene.description) parts.push(scene.description)
     if (scene.cameraNote) parts.push(`Camera: ${scene.cameraNote}`)
   }
 
-  // Append style context
-  if (styleContext) {
-    parts.push(`Visual style: ${styleContext}`)
-  }
-
-  // Add quality directives
-  parts.push('Photorealistic, cinematic lighting, professional production quality.')
+  // Quality directive — no "cinematic lighting" which conflicts with minimal styles
+  parts.push('Professional production quality, photorealistic.')
 
   return parts.join('. ').slice(0, 4000) // DALL-E prompt limit
 }

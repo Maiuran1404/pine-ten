@@ -305,7 +305,11 @@ function buildRetryCandidates(input: ParseWithRetryInput): RetryCandidate[] {
   // 4. Structure retry at STRUCTURE stage (priority 4)
   candidates.push({
     markerType: 'STRUCTURE',
-    shouldRetry: stageBeforePhaseA === 'STRUCTURE' && !structureData && !!structureType,
+    shouldRetry:
+      stageBeforePhaseA === 'STRUCTURE' &&
+      !structureData &&
+      !!structureType &&
+      !(briefingState.deliverableCategory === 'video' && narrativeApproved),
     priority: 4,
     buildReinforcement: () => getFormatReinforcement(structureType!),
     parseRetryResponse: (content: string) => {

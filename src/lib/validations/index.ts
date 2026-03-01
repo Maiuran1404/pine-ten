@@ -496,6 +496,12 @@ export const createDeliverableStyleSchema = z.object({
   semanticTags: z.array(z.string()).optional().default([]),
   featuredOrder: z.number().int().optional().default(0),
   displayOrder: z.number().int().optional().default(0),
+  // Preset metadata — styles with a promptGuide are treated as curated presets
+  promptGuide: z.string().max(2000).optional().nullable(),
+  colorTemperature: z.string().optional().nullable(),
+  energyLevel: z.string().optional().nullable(),
+  formalityLevel: z.string().optional().nullable(),
+  moodKeywords: z.array(z.string()).optional().default([]),
 })
 
 // ============ Onboarding Request Schema ============

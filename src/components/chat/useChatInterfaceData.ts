@@ -649,6 +649,39 @@ export function useChatInterfaceData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_briefingState?.videoNarrative, _briefingState?.narrativeApproved])
 
+  // ─── Auto-trigger storyboard generation at ELABORATE entry ──────
+  // When the state machine advances to ELABORATE for a video project (after style
+  // selection), nobody fires the AI call that generates the storyboard. This effect
+  // detects that entry and sends the storyboard generation request.
+  // We use handleSendOption (same as handleRetryGeneration) rather than
+  // runAutoContinue because after style confirmation the last message is from the
+  // assistant — runAutoContinue requires the last message to be from the user.
+  const elaborateTriggeredRef = useRef(false)
+  useEffect(() => {
+    const stage = _briefingState?.stage
+    const category = _briefingState?.deliverableCategory
+    if (stage !== 'ELABORATE') {
+      elaborateTriggeredRef.current = false
+      return
+    }
+    if (category !== 'video') return
+    if (storyboard.storyboardScenes) return
+    if (elaborateTriggeredRef.current) return
+    if (chatMessages.isLoading) return
+    if (messagesRef.current.length === 0) return
+    elaborateTriggeredRef.current = true
+    chatMessages.handleSendOption(
+      'Now build the full storyboard based on the approved narrative and selected visual style.',
+      { narrativeApproved: true }
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    _briefingState?.stage,
+    _briefingState?.deliverableCategory,
+    storyboard.storyboardScenes,
+    chatMessages.isLoading,
+  ])
+
   // ─── Auto-fetch styles when entering INSPIRATION with no styles ──
   const styleFetchTriggeredRef = useRef(false)
   useEffect(() => {
@@ -681,15 +714,17 @@ export function useChatInterfaceData({
     chatMessages.messages,
   ])
 
-  // ─── DALL-E generation trigger: after INSPIRATION → ELABORATE for video ──
+  // ─── DALL-E generation trigger: when storyboard first appears for video ──
   const dalleTriggeredRef = useRef(false)
   useEffect(() => {
-    const stage = _briefingState?.stage
     const category = _briefingState?.deliverableCategory
     const structure = storyboard.storyboardScenes
 
-    // Only trigger for video projects that just entered ELABORATE with a storyboard
-    if (stage !== 'ELABORATE' || category !== 'video') {
+    // Only trigger for video projects that have a storyboard
+    // Note: we don't gate on stage === 'ELABORATE' because the stage may have
+    // already advanced to DEEPEN/REVIEW by the time the storyboard arrives
+    // (stage derivation happens in the same API response that produces the storyboard)
+    if (category !== 'video') {
       dalleTriggeredRef.current = false
       return
     }
@@ -714,7 +749,6 @@ export function useChatInterfaceData({
     storyboard.generateDalleImages(structure.scenes, styleContext, briefId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    _briefingState?.stage,
     _briefingState?.deliverableCategory,
     _briefingState?.brief?.visualDirection?.selectedStyles,
     storyboard.storyboardScenes,

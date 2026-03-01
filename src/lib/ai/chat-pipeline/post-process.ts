@@ -195,7 +195,7 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
       // Detect narrative approval
       const lastUserContent = messages[messages.length - 1]?.content || ''
       const approvalPattern =
-        /\b(looks good|approve|approved|let'?s build|build the storyboard|go ahead|perfect|love it|great|that works|move forward|nail(ed)? it)\b/i
+        /\b(looks good|approve|approved|let'?s build|build the storyboard|that works|move forward)\b/i
       if (
         !briefingState.narrativeApproved &&
         briefingState.videoNarrative &&

@@ -29,6 +29,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       if (validated.featuredOrder !== undefined) updateData.featuredOrder = validated.featuredOrder
       if (validated.displayOrder !== undefined) updateData.displayOrder = validated.displayOrder
       if (validated.isActive !== undefined) updateData.isActive = validated.isActive
+      if (validated.promptGuide !== undefined) updateData.promptGuide = validated.promptGuide
+      if (validated.colorTemperature !== undefined)
+        updateData.colorTemperature = validated.colorTemperature
+      if (validated.energyLevel !== undefined) updateData.energyLevel = validated.energyLevel
+      if (validated.formalityLevel !== undefined)
+        updateData.formalityLevel = validated.formalityLevel
+      if (validated.moodKeywords !== undefined) updateData.moodKeywords = validated.moodKeywords
 
       const [updatedStyle] = await db
         .update(deliverableStyleReferences)
