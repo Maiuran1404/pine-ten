@@ -80,6 +80,7 @@ export interface DeliverableStyle {
   styleAxis: string
   subStyle: string | null
   semanticTags: string[]
+  colorSamples?: string[] // Hex color values for palette display
   promptGuide?: string // DALL-E prompt template for storyboard image generation
   // Brand-aware scoring fields
   brandMatchScore?: number

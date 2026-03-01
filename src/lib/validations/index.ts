@@ -714,6 +714,16 @@ export const updateDeliverableStyleSchema = createDeliverableStyleSchema.partial
   isActive: z.boolean().optional(),
 })
 
+// ============ Admin Generate Style Images Schema ============
+
+export const generateStyleImageSchema = z.object({
+  styleId: z.string().uuid().optional(),
+  dryRun: z
+    .string()
+    .optional()
+    .transform((v) => v === 'true'),
+})
+
 // ============ Admin Orshot Template Schema ============
 
 export const createOrshotTemplateSchema = z.object({

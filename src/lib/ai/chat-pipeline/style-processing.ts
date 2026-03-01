@@ -563,6 +563,7 @@ async function getStylePresets(
       styleAxis: preset.styleAxis,
       subStyle: preset.subStyle,
       semanticTags: preset.semanticTags || [],
+      colorSamples: preset.colorSamples || [],
       promptGuide: preset.promptGuide ?? undefined,
       attribution: {
         source: 'db' as const,
