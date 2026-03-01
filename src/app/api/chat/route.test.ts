@@ -191,7 +191,8 @@ describe('POST /api/chat', () => {
       validBody.messages,
       'user-1',
       expect.objectContaining({}),
-      undefined
+      undefined,
+      expect.objectContaining({})
     )
   })
 
