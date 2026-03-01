@@ -68,10 +68,17 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             defaultOpen={false}
             className=""
             style={
-              { fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif" } as React.CSSProperties
+              {
+                fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
+                '--sidebar-width': '16rem',
+                '--sidebar-width-icon': '4.5rem',
+              } as React.CSSProperties
             }
           >
-            <div className="h-screen w-screen overflow-hidden bg-background">{children}</div>
+            <AppSidebar />
+            <SidebarInset className="bg-transparent">
+              <div className="h-screen w-full overflow-hidden bg-background">{children}</div>
+            </SidebarInset>
           </SidebarProvider>
         </CreditProvider>
       </SentryProvider>
