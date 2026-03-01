@@ -141,8 +141,9 @@ describe('saveDraft', () => {
     expect(stored.length).toBeLessThanOrEqual(10)
   })
 
-  it('dispatches drafts-updated event', () => {
+  it('dispatches drafts-updated event', async () => {
     saveDraft(createMockDraft() as never)
+    await new Promise((resolve) => queueMicrotask(resolve))
     expect(mockDispatchEvent).toHaveBeenCalled()
   })
 })
