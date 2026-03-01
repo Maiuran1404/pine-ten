@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Coins,
   Calendar,
-  RotateCcw,
   Pencil,
   ChevronDown,
   ChevronRight,
@@ -254,25 +253,27 @@ export function SubmitActionBar({
                 </ul>
               </div>
 
-              {/* Stats cards */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
-                <div className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center">
-                  <Coins className="h-4 w-4 mx-auto mb-1 text-crafted-green" />
-                  <p className="text-base font-bold text-foreground">{creditsRequired}</p>
-                  <p className="text-xs text-muted-foreground">credits</p>
-                </div>
-                <div className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center">
-                  <Calendar className="h-4 w-4 mx-auto mb-1 text-ds-info" />
-                  <p className="text-base font-bold text-foreground">{deliveryDate}</p>
-                  <p className="text-xs text-muted-foreground">delivery</p>
-                </div>
-                <div
-                  className="rounded-xl bg-muted/50 border border-border/50 p-3 text-center"
-                  title="Includes 2 rounds of revisions with your designer"
-                >
-                  <RotateCcw className="h-4 w-4 mx-auto mb-1 text-ds-role-transition" />
-                  <p className="text-base font-bold text-foreground">2</p>
-                  <p className="text-xs text-muted-foreground">revisions included</p>
+              {/* Order summary */}
+              <div className="mb-5 rounded-xl border border-border/50 bg-muted/30 overflow-hidden">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-crafted-green/10">
+                      <Coins className="h-4 w-4 text-crafted-green" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {creditsRequired} credits
+                      </p>
+                      <p className="text-xs text-muted-foreground">Includes 2 revision rounds</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <p className="text-sm font-semibold text-foreground">{deliveryDate}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">estimated delivery</p>
+                  </div>
                 </div>
               </div>
 

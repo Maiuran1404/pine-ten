@@ -217,7 +217,12 @@ export function constructTaskFromConversation(
   }
 
   // Build description — prefer brief topic over raw first message
-  let description = briefTopic && briefTopic.length >= 5 ? briefTopic : firstUserMsg
+  // API requires minimum 10 characters, so build a sufficiently long description
+  let description = briefTopic && briefTopic.length >= 10 ? briefTopic : firstUserMsg
+  if (description.length < 10) {
+    // Pad short descriptions with the title context to meet API minimum
+    description = `${title} — ${description || 'Design request'}`.substring(0, 200)
+  }
   if (description.length > 200) {
     description = description.substring(0, 197) + '...'
   }
