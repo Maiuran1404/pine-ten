@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,11 +18,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Plus, Sparkles } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { DELIVERABLE_TYPES } from '@/lib/constants/reference-libraries'
 import { useCsrfContext } from '@/providers/csrf-provider'
 import { SubjectBar } from './subject-bar'
-import { PresetCard } from './preset-card'
+import { PresetListTable } from './preset-list-table'
+import { PresetDetailView } from './preset-detail-view'
+import { PresetEmptyState } from './preset-empty-state'
 import { CreatePresetDialog } from './create-preset-dialog'
 import { useStyleGeneration } from './use-style-generation'
 import type { DeliverableStyleReference, CardEditState, CreateFormState } from './types'
@@ -33,6 +37,8 @@ export function StylePromptsManager() {
   const [styles, setStyles] = useState<DeliverableStyleReference[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [typeFilter, setTypeFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Edit state
   const [editStates, setEditStates] = useState<Record<string, CardEditState>>({})
@@ -56,6 +62,27 @@ export function StylePromptsManager() {
   const filteredPresets =
     typeFilter === 'all' ? presets : presets.filter((s) => s.deliverableType === typeFilter)
   const typesWithPresets = new Set(presets.map((s) => s.deliverableType))
+
+  // Search-filtered presets for the list
+  const searchFilteredPresets = useMemo(() => {
+    if (!searchQuery.trim()) return filteredPresets
+    const q = searchQuery.toLowerCase()
+    return filteredPresets.filter((s) => s.name.toLowerCase().includes(q))
+  }, [filteredPresets, searchQuery])
+
+  // Resolve selected preset
+  const selectedPreset = presets.find((s) => s.id === selectedId) ?? null
+
+  // Clear selection if selected preset is filtered out
+  useEffect(() => {
+    if (selectedId && !searchFilteredPresets.some((s) => s.id === selectedId)) {
+      // Don't clear if the preset exists but just doesn't match search/filter
+      // Only clear if it was truly deleted
+      if (!presets.some((s) => s.id === selectedId)) {
+        setSelectedId(null)
+      }
+    }
+  }, [selectedId, searchFilteredPresets, presets])
 
   // Fetch styles
   useEffect(() => {
@@ -191,7 +218,9 @@ export function StylePromptsManager() {
       if (!response.ok) throw new Error('Failed to create')
 
       const result = await response.json()
-      setStyles((prev) => [...prev, result.data.style])
+      const newStyle = result.data.style
+      setStyles((prev) => [...prev, newStyle])
+      setSelectedId(newStyle.id)
       setDialogOpen(false)
       setCreateForm(DEFAULT_CREATE_FORM)
       toast.success('New style preset created')
@@ -220,6 +249,9 @@ export function StylePromptsManager() {
           delete next[style.id]
           return next
         })
+        if (selectedId === style.id) {
+          setSelectedId(null)
+        }
         toast.success('Style preset deleted')
       } catch (error) {
         console.error('Failed to delete:', error)
@@ -229,7 +261,7 @@ export function StylePromptsManager() {
         setDeleteTarget(null)
       }
     },
-    [csrfFetch]
+    [csrfFetch, selectedId]
   )
 
   // Save preview as reference → update local styles array
@@ -326,103 +358,131 @@ export function StylePromptsManager() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="h-[calc(100vh-8rem)] p-6 space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-10 w-40" />
         </div>
-        <Skeleton className="h-20 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <div className="grid gap-4 md:grid-cols-1 xl:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-64" />
-          ))}
-        </div>
+        <Skeleton className="h-[calc(100%-4rem)] w-full rounded-lg" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="h-[calc(100vh-8rem)] flex flex-col">
+      {/* Top bar: title + create button */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Visual Style Prompts</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage curated style presets, preview AI-generated images, and compare results.{' '}
-            <span className="text-foreground font-medium">{presets.length}</span> presets
-            configured.
+          <p className="text-sm text-muted-foreground mt-0.5">
+            <span className="text-foreground font-medium">{presets.length}</span> presets configured
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add New Preset
+        <Button onClick={() => setDialogOpen(true)} size="sm">
+          <Plus className="mr-1.5 h-4 w-4" />
+          New Preset
         </Button>
       </div>
 
-      {/* Subject Bar */}
-      <SubjectBar
-        subject={subject}
-        onSubjectChange={setSubject}
-        onGenerateAll={handleGenerateAll}
-        onStop={generation.stopBatch}
-        batch={generation.batch}
-      />
+      {/* Master-detail split */}
+      <ResizablePanelGroup orientation="horizontal" className="flex-1">
+        {/* Left Panel: List */}
+        <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
+          <div className="flex flex-col h-full">
+            {/* Search */}
+            <div className="p-3 border-b border-border shrink-0">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search presets..."
+                  className="pl-8 h-8 text-sm"
+                />
+              </div>
+            </div>
 
-      {/* Filter Tabs */}
-      <Tabs value={typeFilter} onValueChange={setTypeFilter}>
-        <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="all">All ({presets.length})</TabsTrigger>
-          {DELIVERABLE_TYPES.filter((t) => typesWithPresets.has(t.value)).map((type) => (
-            <TabsTrigger key={type.value} value={type.value}>
-              {type.label} ({presets.filter((s) => s.deliverableType === type.value).length})
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+            {/* Filter tabs */}
+            <div className="px-3 py-2 border-b border-border shrink-0">
+              <Tabs value={typeFilter} onValueChange={setTypeFilter}>
+                <TabsList className="flex-wrap h-auto gap-0.5 w-full justify-start">
+                  <TabsTrigger value="all" className="text-xs px-2 py-1 h-7">
+                    All ({presets.length})
+                  </TabsTrigger>
+                  {DELIVERABLE_TYPES.filter((t) => typesWithPresets.has(t.value)).map((type) => (
+                    <TabsTrigger
+                      key={type.value}
+                      value={type.value}
+                      className="text-xs px-2 py-1 h-7"
+                    >
+                      {type.label} ({presets.filter((s) => s.deliverableType === type.value).length}
+                      )
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
 
-      {/* Preset Grid */}
-      {filteredPresets.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Sparkles className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground text-center">
-              {typeFilter === 'all'
-                ? 'No curated presets found. Create one to get started.'
-                : 'No presets for this deliverable type.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-1 xl:grid-cols-2">
-          {filteredPresets.map((style) => {
-            const edit = getEditState(style)
-            const dirty = isDirty(style)
-            const isSaving = savingIds.has(style.id)
-            const genState = generation.getCardState(style.id)
-
-            return (
-              <PresetCard
-                key={style.id}
-                style={style}
-                editState={edit}
-                isDirty={dirty}
-                isSaving={isSaving}
-                genState={genState}
-                hasSubject={subject.trim().length >= 5}
-                onUpdateEdit={(updates) => updateEditState(style.id, updates)}
-                onSave={() => handleSaveCard(style)}
-                onDelete={() => setDeleteTarget(style)}
-                onGenerate={() => generation.generatePreview(style, subject)}
-                onSaveAsReference={() => handleSaveAsReference(style.id)}
-                onClearPreview={() => generation.clearPreview(style.id)}
-                onUploadReferenceImages={(files) => handleUploadReferenceImages(style.id, files)}
-                onDeleteReferenceImage={(url) => handleDeleteReferenceImage(style.id, url)}
+            {/* Scrollable preset list */}
+            <ScrollArea className="flex-1">
+              <PresetListTable
+                presets={searchFilteredPresets}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                editStates={editStates}
+                generationStates={generation.cardStates}
               />
-            )
-          })}
-        </div>
-      )}
+            </ScrollArea>
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        {/* Right Panel: Detail */}
+        <ResizablePanel defaultSize={65} minSize={50} maxSize={75}>
+          <div className="flex flex-col h-full">
+            {/* Subject bar (sticky in right panel) */}
+            <div className="p-3 border-b border-border shrink-0">
+              <SubjectBar
+                subject={subject}
+                onSubjectChange={setSubject}
+                onGenerateAll={handleGenerateAll}
+                onStop={generation.stopBatch}
+                batch={generation.batch}
+              />
+            </div>
+
+            {/* Detail content */}
+            <ScrollArea className="flex-1">
+              {selectedPreset ? (
+                <PresetDetailView
+                  key={selectedPreset.id}
+                  style={selectedPreset}
+                  editState={getEditState(selectedPreset)}
+                  isDirty={isDirty(selectedPreset)}
+                  isSaving={savingIds.has(selectedPreset.id)}
+                  genState={generation.getCardState(selectedPreset.id)}
+                  hasSubject={subject.trim().length >= 5}
+                  onUpdateEdit={(updates) => updateEditState(selectedPreset.id, updates)}
+                  onSave={() => handleSaveCard(selectedPreset)}
+                  onDelete={() => setDeleteTarget(selectedPreset)}
+                  onGenerate={() => generation.generatePreview(selectedPreset, subject)}
+                  onSaveAsReference={() => handleSaveAsReference(selectedPreset.id)}
+                  onClearPreview={() => generation.clearPreview(selectedPreset.id)}
+                  onUploadReferenceImages={(files) =>
+                    handleUploadReferenceImages(selectedPreset.id, files)
+                  }
+                  onDeleteReferenceImage={(url) =>
+                    handleDeleteReferenceImage(selectedPreset.id, url)
+                  }
+                />
+              ) : (
+                <PresetEmptyState />
+              )}
+            </ScrollArea>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       {/* Create Dialog */}
       <CreatePresetDialog

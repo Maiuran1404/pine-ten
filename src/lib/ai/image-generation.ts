@@ -87,7 +87,6 @@ export async function generateSceneImage(
       contents: [{ role: 'user', parts }],
       config: {
         responseModalities: [Modality.TEXT, Modality.IMAGE],
-        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
       },
     })
   } catch (err: unknown) {
