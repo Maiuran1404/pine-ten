@@ -88,11 +88,14 @@ export async function GET(request: NextRequest) {
       if (!tableName) {
         const safeCount = async (name: string, query: Promise<{ count: number }[]>) => {
           try {
-            const [r] = await query
+            const timeout = new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error(`Timeout counting ${name}`)), 5000)
+            )
+            const [r] = await Promise.race([query, timeout])
             return { name, count: r.count }
           } catch (err) {
             logger.error({ error: err, table: name }, 'Failed to count table')
-            return { name, count: 0 }
+            return { name, count: -1 }
           }
         }
 

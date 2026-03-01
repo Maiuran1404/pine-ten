@@ -142,7 +142,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="creditPrice">Credit Price ($)</Label>
+                <Label htmlFor="creditPrice">Credit Price (cents per credit)</Label>
                 <Input
                   id="creditPrice"
                   type="number"
@@ -155,7 +155,11 @@ export default function SettingsPage() {
                   }
                   className="rounded-lg"
                 />
-                <p className="text-xs text-muted-foreground">Price per credit in USD</p>
+                <p className="text-xs text-muted-foreground">
+                  Value {localSettings.creditPrice} = $
+                  {((localSettings.creditPrice ?? 0) / 100).toFixed(2)} per credit shown to
+                  customers
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="platformFee">Platform Fee (%)</Label>

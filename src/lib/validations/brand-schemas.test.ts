@@ -94,8 +94,16 @@ describe('Brand Schemas', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should reject invalid website URL', () => {
-      const result = updateBrandSchema.safeParse({ website: 'not-a-url' })
+    it('should auto-prepend https:// to website without protocol', () => {
+      const result = updateBrandSchema.safeParse({ website: 'hiero.no' })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.website).toBe('https://hiero.no')
+      }
+    })
+
+    it('should reject completely invalid website URL', () => {
+      const result = updateBrandSchema.safeParse({ website: '://bad' })
       expect(result.success).toBe(false)
     })
 

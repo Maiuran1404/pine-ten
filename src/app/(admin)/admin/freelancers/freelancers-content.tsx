@@ -294,7 +294,7 @@ export function FreelancersContent() {
             Not Onboarded ({freelancers.filter((f) => f.status === 'NOT_ONBOARDED').length})
           </TabsTrigger>
           <TabsTrigger value="rejected" className="text-xs sm:text-sm">
-            Rejected
+            Rejected ({freelancers.filter((f) => f.status === 'REJECTED').length})
           </TabsTrigger>
         </TabsList>
 

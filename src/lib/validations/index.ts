@@ -148,11 +148,12 @@ export const updateBrandSchema = z.object({
     .transform((val) => {
       if (!val) return val
       // Auto-prepend https:// if no protocol given
-      if (val && !val.startsWith('http://') && !val.startsWith('https://')) {
+      if (!val.startsWith('http://') && !val.startsWith('https://')) {
         return `https://${val}`
       }
       return val
-    }),
+    })
+    .pipe(z.string().url().optional().or(z.literal('')).nullable()),
   industry: z.string().max(100).optional().nullable(),
   industryArchetype: z.string().max(100).optional().nullable(),
   description: z.string().max(1000).optional().nullable(),

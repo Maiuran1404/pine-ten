@@ -69,7 +69,7 @@ function AuthErrorContent() {
 
       {/* Error Message */}
       <div className="space-y-3 text-center lg:text-left">
-        <h1 className="text-2xl font-bold tracking-tight">{errorInfo.title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{errorInfo.title}</h1>
         <p className="text-muted-foreground leading-relaxed">{errorInfo.description}</p>
         {errorDescription && (
           <p className="text-sm text-muted-foreground/70 bg-muted/30 p-3 rounded-lg">
@@ -111,7 +111,7 @@ function AuthErrorContent() {
         <Button
           variant="outline"
           onClick={() => router.push('/')}
-          className="h-12 text-base font-medium flex-1"
+          className="h-12 text-base font-medium flex-1 text-foreground border-border"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Go home

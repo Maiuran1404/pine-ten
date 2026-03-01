@@ -9,7 +9,7 @@ import { Check, Coins, Sparkles, RefreshCw, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const formatPrice = (price: number) => {
-  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'")
+  return price.toLocaleString('en-US')
 }
 
 const creditPackages = [

@@ -67,7 +67,7 @@ export default function NotificationsPage() {
       const response = await fetch('/api/admin/notifications')
       if (response.ok) {
         const data = await response.json()
-        setSettings(data.settings)
+        setSettings(data.data?.settings ?? [])
       } else {
         toast.error('Failed to load notification settings')
       }
@@ -113,7 +113,7 @@ export default function NotificationsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setSettings(data.settings)
+        setSettings(data.data?.settings ?? [])
         toast.success('Settings reset to defaults')
       } else {
         toast.error('Failed to reset settings')
@@ -216,7 +216,7 @@ export default function NotificationsPage() {
 
       {/* Settings List */}
       <div className="space-y-4">
-        {settings.map((setting) => (
+        {settings?.map((setting) => (
           <Card key={setting.id} className="p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">

@@ -52,7 +52,7 @@ export default function DatabasePage() {
       const response = await fetch('/api/admin/database')
       const data = await response.json()
       if (response.ok) {
-        setTables(data.tables || [])
+        setTables(data.data?.tables || [])
       } else {
         setError(data.error || 'Failed to fetch tables')
       }

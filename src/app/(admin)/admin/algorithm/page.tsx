@@ -154,9 +154,10 @@ export default function AlgorithmPage() {
       if (!response.ok) throw new Error('Failed to fetch')
       const data = await response.json()
 
-      setConfigurations(data.configurations || [])
-      setActiveConfig(data.activeConfig)
-      setEditingConfig(JSON.parse(JSON.stringify(data.activeConfig))) // Deep clone
+      const result = data.data ?? data
+      setConfigurations(result.configurations || [])
+      setActiveConfig(result.activeConfig)
+      setEditingConfig(JSON.parse(JSON.stringify(result.activeConfig))) // Deep clone
     } catch {
       toast.error('Failed to load algorithm configuration')
     } finally {
