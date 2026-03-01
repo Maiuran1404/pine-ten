@@ -26,6 +26,10 @@ import {
   Camera,
   Mic,
 } from 'lucide-react'
+import {
+  buildScenePrompt as buildScenePromptShared,
+  type ScenePromptInput,
+} from '@/lib/ai/scene-prompt-builder'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -118,28 +122,19 @@ const MOCK_SCENES: StoryboardScene[] = [
 
 const DEFAULT_BASE_PROMPT = `A high-quality cinematic storyboard frame. Photorealistic rendering with dramatic lighting and strong composition. Professional film production quality. Wide 16:9 cinematic aspect ratio. No text, no UI elements, no watermarks, no words, no logos.`
 
-// ─── Prompt builder ──────────────────────────────────────────────────────────
+// ─── Prompt builder (delegates to shared module for parity with production) ─
 
-function buildScenePrompt(scene: StoryboardScene, basePrompt: string): string {
-  const parts = [basePrompt]
-
-  parts.push(`\n\nScene ${scene.sceneNumber}: "${scene.title}"`)
-  parts.push(`Description: ${scene.description}`)
-
-  if (scene.visualNote) {
-    parts.push(`Visual Direction: ${scene.visualNote}`)
+function buildAdminScenePrompt(scene: StoryboardScene, styleContext: string): string {
+  const input: ScenePromptInput = {
+    sceneNumber: scene.sceneNumber,
+    title: scene.title,
+    description: scene.description,
+    visualNote: scene.visualNote,
+    cameraNote: scene.cameraNote,
+    voiceover: scene.voiceover,
+    transition: scene.transition,
   }
-  if (scene.cameraNote) {
-    parts.push(`Camera: ${scene.cameraNote}`)
-  }
-  if (scene.voiceover) {
-    parts.push(`Voiceover context (for mood, not text): ${scene.voiceover}`)
-  }
-  if (scene.transition) {
-    parts.push(`Transition: ${scene.transition}`)
-  }
-
-  return parts.join('\n')
+  return buildScenePromptShared(input, styleContext)
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -254,7 +249,7 @@ export function StoryboardImageGenerator() {
       setErrors((e) => ({ ...e, [key]: '' }))
 
       try {
-        const prompt = buildScenePrompt(scene, basePrompt)
+        const prompt = buildAdminScenePrompt(scene, basePrompt)
         const res = await fetch('/api/admin/storyboard-images/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -467,7 +462,7 @@ export function StoryboardImageGenerator() {
           ) : (
             <ChevronDown className="h-3.5 w-3.5" />
           )}
-          Base Style Prompt
+          Style Context
           {basePrompt !== DEFAULT_BASE_PROMPT && (
             <Badge variant="secondary" className="text-[10px] ml-1">
               Modified
@@ -632,7 +627,7 @@ export function StoryboardImageGenerator() {
 
                   {isExpanded && (
                     <pre className="text-[11px] text-muted-foreground bg-muted/30 rounded-md p-3 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto font-mono">
-                      {buildScenePrompt(scene, basePrompt)}
+                      {buildAdminScenePrompt(scene, basePrompt)}
                     </pre>
                   )}
 

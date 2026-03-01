@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Lightweight projection for list views — excludes heavy JSONB columns
-      // (moodboardItems, styleReferences, structureData, chatHistory, briefData, deliverables)
+      // (structureData, chatHistory, briefData, deliverables)
       const clients = alias(users, 'clients')
 
       const taskListSelect = {
@@ -115,6 +115,8 @@ export async function GET(request: NextRequest) {
         requirements: tasks.requirements,
         assignedAt: tasks.assignedAt,
         completedAt: tasks.completedAt,
+        moodboardItems: tasks.moodboardItems,
+        styleReferences: tasks.styleReferences,
         freelancerName: users.name,
         freelancerImage: users.image,
         clientName: clients.name,
@@ -214,6 +216,8 @@ export async function GET(request: NextRequest) {
         requirements: task.requirements,
         assignedAt: task.assignedAt,
         completedAt: task.completedAt,
+        moodboardItems: task.moodboardItems || [],
+        styleReferences: task.styleReferences || [],
         thumbnailUrl: thumbnailByTaskId.get(task.id) || null,
         freelancer: task.freelancerId
           ? {

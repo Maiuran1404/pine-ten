@@ -679,15 +679,11 @@ function SceneThumbnail({
         isGenerating && 'skeleton-shimmer'
       )}
     >
-      {/* DALL-E generating state */}
+      {/* DALL-E generating state — shimmer is the primary visual, overlay is subtle */}
       {isGenerating && !imageUrl && (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
-          <div className="relative">
-            <Sparkles className="h-6 w-6 text-crafted-sage animate-pulse" />
-          </div>
-          <span className="text-xs font-medium text-muted-foreground mt-2 animate-pulse">
-            Generating...
-          </span>
+          <Sparkles className="h-5 w-5 text-muted-foreground/60" />
+          <span className="text-[10px] text-muted-foreground/60 mt-1.5">Generating...</span>
         </div>
       )}
 
