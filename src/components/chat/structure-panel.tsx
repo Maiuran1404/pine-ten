@@ -7,13 +7,10 @@ import {
   Layout,
   Calendar,
   Palette,
-  Loader2,
   Sparkles,
   RefreshCw,
   Pencil,
   Clapperboard,
-  Wand2,
-  ImageIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -153,12 +150,71 @@ const TYPE_CONFIG: Record<
 }
 
 // =============================================================================
-// PLACEHOLDER STATE — skeleton cards with pulse animation
+// LOADING MESSAGES — stage-specific flavor text
 // =============================================================================
 
-function PlaceholderState({ structureType }: { structureType: StructureData['type'] }) {
+const LOADING_MESSAGES: Record<StructureData['type'], string[]> = {
+  storyboard: [
+    'Scripting your scenes...',
+    'Setting the stage...',
+    'Composing visual flow...',
+    'Mapping the narrative arc...',
+    'Timing each beat...',
+    'Polishing transitions...',
+  ],
+  layout: [
+    'Wireframing sections...',
+    'Arranging the layout...',
+    'Positioning content blocks...',
+    'Optimizing visual hierarchy...',
+    'Refining spacing...',
+    'Finalizing the grid...',
+  ],
+  calendar: [
+    'Mapping content pillars...',
+    'Scheduling your posts...',
+    'Balancing the mix...',
+    'Adding variety...',
+    'Spacing for impact...',
+    'Finalizing the rhythm...',
+  ],
+  single_design: [
+    'Defining the composition...',
+    'Setting type hierarchy...',
+    'Choosing the palette...',
+    'Applying your style...',
+    'Refining details...',
+    'Finishing touches...',
+  ],
+}
+
+// =============================================================================
+// PLACEHOLDER STATE — animated cinematic loading
+// =============================================================================
+
+function PlaceholderState({
+  structureType,
+  progress,
+}: {
+  structureType: StructureData['type']
+  progress?: { done: number; total: number; message?: string }
+}) {
   const config = TYPE_CONFIG[structureType]
   const Icon = config.icon
+  const messages = LOADING_MESSAGES[structureType]
+
+  const [messageIndex, setMessageIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % messages.length)
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [messages.length])
+
+  const progressPercent = progress
+    ? Math.round((progress.done / Math.max(progress.total, 1)) * 100)
+    : null
 
   return (
     <div className="flex flex-col h-full">
@@ -170,23 +226,109 @@ function PlaceholderState({ structureType }: { structureType: StructureData['typ
         </div>
       </div>
 
-      {/* Skeleton cards */}
-      <div className="flex-1 p-4 space-y-4">
-        <div className="flex items-center gap-2 text-muted-foreground/60 mb-4">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          <span className="text-xs">{config.loadingMessage}</span>
-        </div>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-lg border border-border/30 p-4 space-y-3 animate-pulse">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-16 bg-muted-foreground/10 rounded" />
-              <div className="h-3 w-24 bg-muted-foreground/10 rounded" />
-            </div>
-            <div className="h-3 w-full bg-muted-foreground/10 rounded" />
-            <div className="h-3 w-3/4 bg-muted-foreground/10 rounded" />
-            <div className="h-8 w-full bg-muted-foreground/5 rounded" />
+      {/* Animated loading content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8 gap-8">
+        {/* Animated icon ring */}
+        <div className="relative">
+          {/* Outer rotating ring */}
+          <motion.div
+            className="absolute inset-0 rounded-full border-2 border-dashed border-crafted-green/20"
+            style={{ width: 96, height: 96, margin: -8 }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+          />
+          {/* Inner pulsing glow */}
+          <motion.div
+            className="absolute inset-0 rounded-full bg-crafted-green/5"
+            style={{ width: 80, height: 80 }}
+            animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          {/* Center icon */}
+          <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-crafted-green/10 to-crafted-forest/10 flex items-center justify-center">
+            <motion.div
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              {structureType === 'storyboard' ? (
+                <Clapperboard className="h-8 w-8 text-crafted-green" />
+              ) : (
+                <Icon className="h-8 w-8 text-crafted-green" />
+              )}
+            </motion.div>
           </div>
-        ))}
+        </div>
+
+        {/* Cycling message */}
+        <div className="text-center space-y-2 min-h-[56px]">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={progress?.message ?? messageIndex}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35 }}
+              className="text-sm font-medium text-foreground"
+            >
+              {progress?.message ?? messages[messageIndex]}
+            </motion.p>
+          </AnimatePresence>
+          {progressPercent !== null ? (
+            <p className="text-xs text-muted-foreground">
+              {progress!.done} of {progress!.total} ready
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">This usually takes a few moments</p>
+          )}
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full max-w-[240px]">
+          {progressPercent !== null ? (
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-crafted-green rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              />
+            </div>
+          ) : (
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                className="h-full w-1/3 bg-crafted-green/60 rounded-full"
+                animate={{ x: ['-100%', '400%'] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Floating scene preview cards (storyboard only) */}
+        {structureType === 'storyboard' && (
+          <div className="flex gap-2 mt-2">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 + i * 0.15, duration: 0.4 }}
+                className="w-16 h-10 rounded-md bg-muted/60 border border-border/30 overflow-hidden"
+              >
+                <motion.div
+                  className="w-full h-full bg-gradient-to-br from-crafted-green/5 to-crafted-forest/5"
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: i * 0.4,
+                    ease: 'easeInOut',
+                  }}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -425,6 +567,33 @@ export function StructurePanel({
         <PlaceholderState structureType={structureType} />
       </div>
     )
+  }
+
+  // Storyboard: show loading screen while images are still generating
+  if (
+    structureData?.type === 'storyboard' &&
+    imageGenerationProgress &&
+    imageGenerationProgress.size > 0
+  ) {
+    const entries = Array.from(imageGenerationProgress.values())
+    const allDone = entries.every((s) => s === 'done' || s === 'error')
+    if (!allDone) {
+      const doneCount = entries.filter((s) => s === 'done').length
+      const generatingCount = entries.filter((s) => s === 'generating').length
+      const total = entries.length
+      const message =
+        generatingCount > 0
+          ? `Generating scene visuals (${doneCount}/${total})...`
+          : `Preparing scene images...`
+      return (
+        <div className={cn('flex flex-col h-full bg-background', className)}>
+          <PlaceholderState
+            structureType="storyboard"
+            progress={{ done: doneCount, total, message }}
+          />
+        </div>
+      )
+    }
   }
 
   // Active — render the appropriate view
