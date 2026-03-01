@@ -18,6 +18,7 @@ import { BrandInputStep } from '@/app/(auth)/onboarding/_components/route-a/bran
 import { ScanningStep } from '@/app/(auth)/onboarding/_components/route-a/scanning-step'
 import { BrandDNARevealStep } from '@/app/(auth)/onboarding/_components/route-a/brand-dna-reveal-step'
 import { FineTuneStep } from '@/app/(auth)/onboarding/_components/route-a/fine-tune-step'
+import { BrandCardPreviewPanel } from '@/app/(auth)/onboarding/_components/route-a/brand-card-preview-panel'
 
 // Route B components
 import { BrandIntentStep } from '@/app/(auth)/onboarding/_components/route-b/brand-intent-step'
@@ -85,7 +86,7 @@ function OnboardingContent() {
 
   return (
     <motion.div
-      className="min-h-dvh relative flex flex-col lg:flex-row items-center overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-background"
+      className="h-dvh relative flex flex-col lg:flex-row items-center overflow-x-hidden overflow-y-auto lg:overflow-hidden bg-background"
       style={{
         fontFamily: "var(--font-satoshi, 'Satoshi'), sans-serif",
       }}
@@ -104,9 +105,9 @@ function OnboardingContent() {
         sphereColors={sphereColors}
         className="!fixed inset-0"
       />
-      <Header userEmail={userEmail} />
+      <Header userEmail={userEmail} forceWhiteLogo />
 
-      <main className="relative z-10 px-4 sm:px-6 py-20 sm:py-16 mx-auto lg:mx-0 lg:ml-[10%] w-full max-w-2xl">
+      <main className="relative z-10 px-4 sm:px-6 py-20 sm:py-16 mx-auto lg:mx-0 lg:ml-[10%] w-full max-w-2xl lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col justify-center">
         {step !== 'welcome' && step !== 'scanning' && step !== 'complete' && (
           <div className="mb-6">
             <ProgressIndicator steps={currentSteps} currentStep={step} />
@@ -287,8 +288,11 @@ function OnboardingContent() {
         </AnimatePresence>
       </main>
 
-      <div className="relative z-10 flex-1 h-full hidden lg:flex items-center justify-center pr-[10%]">
+      <div className="relative z-10 flex-1 min-h-0 h-full hidden lg:flex items-center justify-center pr-[10%]">
         <AnimatePresence mode="wait">
+          {step === 'brand-dna-reveal' && (
+            <BrandCardPreviewPanel key="brand-card-preview" brandData={brandData} />
+          )}
           {step === 'fine-tune' && <MoodPreviewPanel key="mood-preview" brandData={brandData} />}
         </AnimatePresence>
       </div>

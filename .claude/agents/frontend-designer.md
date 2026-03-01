@@ -78,6 +78,18 @@ Every animation must have a **reason**:
 
 If an animation serves none of these purposes, remove it.
 
+### Instant Feedback (Brett Victor)
+
+The gap between action and reaction should be imperceptible. Users should feel they are directly manipulating the interface, not issuing commands to a machine. Every click, drag, and keystroke should produce immediate visual response — even if the underlying operation is async (use optimistic updates, loading spinners, skeleton states).
+
+### Subtractive Design (Dieter Rams)
+
+Every element must earn its place. If removing an element doesn't reduce clarity or functionality, remove it. Beauty emerges from function — ornamentation that doesn't serve the user is noise. Apply this especially during review: for each UI element, ask "what happens if I remove this?"
+
+### Inevitable Interfaces
+
+The best designs feel like the only possible solution. When reviewing your work, ask: "Could this reasonably be designed any other way?" If yes, you likely haven't found the simplest, most natural arrangement yet. Push toward designs where every element feels like it _has_ to be there, in exactly that position.
+
 ---
 
 ## Crafted Design System Tokens
@@ -230,15 +242,91 @@ const staggerItem = {
 | `slideFromRight` | Sidebars, slide-over panels, sheet content            |
 | `stagger`        | Lists, grids, sequential card groups                  |
 
+### Custom Easing Variables
+
+For animations beyond the standard presets, use these easing curves as CSS custom properties or Framer Motion cubic-bezier values:
+
+```tsx
+// Easing curves for precise control
+const easings = {
+  easeOutQuart: [0.25, 1, 0.5, 1], // Fast start, gentle stop — best for entrances
+  easeInOutCubic: [0.65, 0, 0.35, 1], // Symmetric — good for toggles, tabs
+  easeOutExpo: [0.16, 1, 0.3, 1], // Snappy entrance — modals, popovers
+  easeInOutQuint: [0.83, 0, 0.17, 1], // Dramatic — page transitions
+}
+```
+
+### Spring-First Rule
+
+Prefer spring animations over duration-based easing for interactive elements. Springs feel more natural because they model real physics — they overshoot, settle, and respond to velocity.
+
+```tsx
+// Use spring for interactive elements (buttons, toggles, drags)
+transition: { type: "spring", stiffness: 400, damping: 30 }
+
+// Use duration-based easing for non-interactive entrances (fade-in, slide-up)
+transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }
+```
+
+**When to use springs**: drag interactions, toggles, switches, button press feedback, layout animations.
+**When to use easing**: entrance/exit animations, opacity fades, page transitions.
+
+### Animation Performance Rules
+
+- **Only animate `opacity` and `transform`** — these are GPU-composited and don't trigger layout/paint
+- **Never animate** `top`, `left`, `width`, `height`, `margin`, `padding` — use `transform: translate/scale` instead
+- **Blur effects**: keep `blur()` values ≤ 20px — higher values cause GPU memory spikes
+- **`will-change`**: use sparingly and only on elements that actually animate. Remove after animation completes. Never apply to > 5 elements simultaneously
+- **No animation > 1s** — UI animations should feel fast and responsive. If it takes longer than 1 second, the user will perceive it as slow
+
+### Radix UI + Framer Motion Integration
+
+When combining Radix UI primitives (used by shadcn/ui) with Framer Motion:
+
+```tsx
+// Pattern: asChild + motion.div for animated Radix components
+<DialogContent asChild forceMount>
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.95 }}
+  >
+    {/* content */}
+  </motion.div>
+</DialogContent>
+
+// Pattern: AnimatePresence + forceMount for exit animations
+<AnimatePresence>
+  {isOpen && (
+    <PopoverContent forceMount asChild>
+      <motion.div
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+      >
+        {/* content */}
+      </motion.div>
+    </PopoverContent>
+  )}
+</AnimatePresence>
+```
+
+Key points:
+
+- Use `forceMount` on Radix components to prevent unmounting during exit animations
+- Use `asChild` to replace the Radix wrapper with `motion.div`
+- Wrap in `AnimatePresence` for exit animations
+
 ### Duration Guidelines
 
-| Context            | Duration  | Reasoning                             |
-| ------------------ | --------- | ------------------------------------- |
-| Micro-interactions | 100-150ms | Button press, toggle, checkbox        |
-| Small elements     | 200ms     | Tooltips, badges, chips               |
-| Medium elements    | 300ms     | Cards, panels, notifications          |
-| Large elements     | 400-500ms | Modals, page transitions, full sheets |
-| Lists (stagger)    | 50ms gap  | Per-item delay in stagger sequences   |
+| Context            | Duration   | Reasoning                             |
+| ------------------ | ---------- | ------------------------------------- |
+| Micro-interactions | 100-150ms  | Button press, toggle, checkbox        |
+| Small elements     | 200ms      | Tooltips, badges, chips               |
+| Medium elements    | 300ms      | Cards, panels, notifications          |
+| Large elements     | 400-500ms  | Modals, page transitions, full sheets |
+| Lists (stagger)    | 50ms gap   | Per-item delay in stagger sequences   |
+| **Hard max**       | **1000ms** | **No UI animation should exceed 1s**  |
 
 ### Reduced Motion
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { AdminSidebar } from '@/components/admin/sidebar'
 import { Header } from '@/components/dashboard/header'
 import { FullPageLoader } from '@/components/shared/loading'
-import { useSession } from '@/lib/auth-client'
+import { useSession, signOut } from '@/lib/auth-client'
 import { useSubdomain } from '@/hooks/use-subdomain'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { CreditProvider } from '@/providers/credit-provider'
@@ -71,6 +71,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const user = session.user as { role?: string }
   if (user.role !== 'ADMIN' || portal.type !== 'superadmin') {
+    // Build the client portal URL from the current hostname so the link works
+    // in both dev (superadmin.localhost:3000 → app.localhost:3000) and production.
+    const appHostname = window.location.hostname.replace('superadmin.', 'app.')
+    const appOrigin = `${window.location.protocol}//${appHostname}${window.location.port ? `:${window.location.port}` : ''}`
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="text-center space-y-4">
@@ -78,9 +83,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <p className="text-muted-foreground">
             You don&apos;t have permission to access the admin portal.
           </p>
+          {/* If the role in the session looks wrong, signing out clears the
+              5-minute cookie cache so the next sign-in reads the DB role fresh. */}
+          <p className="text-xs text-muted-foreground">
+            If you are an admin, your session may be stale. Sign out and sign back in.
+          </p>
           <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => signOut({ fetchOptions: { onSuccess: () => router.push('/login') } })}
+              className="px-4 py-2 rounded-md border border-border text-sm font-medium hover:opacity-90"
+            >
+              Sign Out
+            </button>
             <a
-              href={`http://${typeof window !== 'undefined' ? window.location.hostname.replace('superadmin.', 'app.') : 'app.localhost'}:${typeof window !== 'undefined' ? window.location.port : '3000'}/dashboard`}
+              href={`${appOrigin}/dashboard`}
               className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
             >
               Go to Dashboard

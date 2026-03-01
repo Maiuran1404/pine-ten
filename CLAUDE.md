@@ -296,7 +296,21 @@ Apply these 5 mental checks during every plan phase. This is a 30-second discipl
 4. **Bug magnet check** — Am I creating a new coordination point that will break? Race conditions, ordering dependencies, implicit contracts between components — these are the things that end up in "Known Fragile Areas."
 5. **Fresh-eyes check** — If I were building this subsystem from scratch today, would I choose this design? If no, consider whether the refactor cost is worth paying now vs. accumulating more debt.
 
+6. **Prevention check** — Am I designing out bugs, or will I need to catch them at runtime? Prefer compile-time guarantees (types, exhaustive switches) over runtime checks. If you're adding a try/catch, ask whether the error could be prevented structurally instead.
+
 **Escape hatch**: If any check raises a red flag on a non-trivial change, dispatch `/first-principles` for a deep audit before proceeding with implementation.
+
+## Debugging Protocol
+
+When something is broken, follow this sequence — don't guess-and-check:
+
+1. **Reproduce** — Confirm the bug exists. Check `git log --oneline -10` for recent changes that could be the cause.
+2. **Hypothesize** — Generate 2-3 ranked hypotheses. Common culprits: null/undefined values, race conditions, stale cache (React Query / Better Auth ~5min TTL), type mismatches, env differences.
+3. **Isolate** — Divide and conquer. Is it client or server? Data layer or render layer? Bisect the code path until you find the boundary where data goes wrong.
+4. **Test** — One change at a time. If you change two things and the bug disappears, you don't know which fixed it.
+5. **Explain** — Rubber duck: can you explain the root cause in one sentence? If not, you haven't found it yet.
+
+For systematic investigation, dispatch `/debug` which uses the full debugging agent with Pine Ten-specific guidance for auth, briefing flow, and database issues.
 
 ## Multi-Fix Workflow
 
@@ -330,6 +344,7 @@ Visual verification catches layout bugs, responsive issues, render errors, and c
 | `first-principles`   | Fresh-eyes architectural audit — wrong abstractions, complexity, bug magnets |
 | `qa-stress-test`     | Autonomous E2E QA stress testing with Chrome browser automation              |
 | `solution-architect` | Root cause analysis + elegant fix design from QA findings or bug reports     |
+| `debug`              | Systematic debugging — reproduce, isolate, fix with structured methodology   |
 
 | Command             | Purpose                                                                       |
 | ------------------- | ----------------------------------------------------------------------------- |
@@ -343,7 +358,8 @@ Visual verification catches layout bugs, responsive issues, render errors, and c
 | `/add-test`         | Generate co-located tests (dispatches test-writer)                            |
 | `/security-audit`   | Run security audit (dispatches security-auditor)                              |
 | `/cleanup`          | Remove debug artifacts and flag dead code                                     |
-| `/refactor`         | DRY analysis and extraction (dispatches refactor)                             |
+| `/refactor`         | DRY + performance refactoring (dispatches refactor)                           |
+| `/debug`            | Systematic bug investigation (dispatches debug)                               |
 | `/check-ready`      | Pre-push safety gate with readiness report                                    |
 | `/add-env`          | Scaffold env var across env.ts + .env.example + CI                            |
 | `/verify`           | Visual verification loop (browser screenshots + console)                      |
@@ -373,6 +389,7 @@ Use these commands automatically in the appropriate context — don't wait for t
 | Major refactor planned (new boundaries or patterns)   | `/first-principles` before impl       |
 | After major feature complete, before PR               | `/qa` on affected flows               |
 | After QA finds 5+ issues                              | `/qa-fix` for root cause analysis     |
+| Something is broken and the cause isn't obvious       | `/debug`                              |
 
 ## Sub-Agent Dispatch Rules
 
@@ -455,6 +472,30 @@ For any UI/UX decisions, use the `frontend-designer` agent and `/design-review`.
 - **NEVER** use arbitrary color values like `bg-[#10b981]`, `text-[#9AA48C]`, `border-[rgba(99,102,241,0.5)]` — add a CSS variable if the token doesn't exist.
 - **NEVER** introduce a new color without adding it as a CSS custom property in `globals.css` first.
 - **NEVER** use different color values between light and dark mode for the same semantic purpose unless intentionally designed (e.g., `--ds-accent` should feel like the same brand color in both modes).
+
+### Viewport-Height Design (Single-Screen Rule)
+
+All pages and flows MUST fit within a single viewport height (`h-dvh`) by default. Users should not need to scroll to see the complete UI including all CTAs and action buttons.
+
+**When to apply:**
+
+- Onboarding flows, auth pages, modals, settings panels, dashboards, portals
+- Any page with a primary action (submit, continue, save) — the CTA must be visible without scrolling
+
+**Exceptions (scrolling allowed):**
+
+- Data tables with many rows
+- Infinite scroll / feed-style content
+- Long-form content pages (articles, documentation)
+- Chat message history
+- Pages where the user explicitly requested scrollable layout
+
+**Implementation pattern:**
+
+- Use `h-dvh` (not `min-h-dvh`) on the outermost container
+- Use `flex` + `flex-1` + `min-h-0` + `overflow-y-auto` on content areas as a safety valve
+- Design step/card content to fit comfortably — prefer compact spacing over scroll
+- On mobile, allow `overflow-y-auto` since small viewports may not fit all content
 
 ## Known Fragile Areas
 

@@ -5,7 +5,13 @@ import { signOut } from '@/lib/auth-client'
 import { ChevronDown } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 
-export function Header({ userEmail }: { userEmail?: string }) {
+export function Header({
+  userEmail,
+  forceWhiteLogo,
+}: {
+  userEmail?: string
+  forceWhiteLogo?: boolean
+}) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -15,13 +21,13 @@ export function Header({ userEmail }: { userEmail?: string }) {
         <img
           src="/craftedcombinedwhite.png"
           alt="Crafted"
-          className="h-6 sm:h-8 w-auto hidden dark:block"
+          className={`h-6 sm:h-8 w-auto ${forceWhiteLogo ? 'block' : 'hidden dark:block'}`}
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/craftedcombintedblack.png"
           alt="Crafted"
-          className="h-6 sm:h-8 w-auto block dark:hidden"
+          className={`h-6 sm:h-8 w-auto ${forceWhiteLogo ? 'hidden' : 'block dark:hidden'}`}
         />
       </div>
 

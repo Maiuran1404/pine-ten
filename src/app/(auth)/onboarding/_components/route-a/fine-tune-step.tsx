@@ -99,20 +99,20 @@ export function FineTuneStep({
     <GlowingCard glowColor="var(--crafted-olive)" className="max-w-lg">
       <motion.div variants={staggerContainer} initial="hidden" animate="show">
         {/* Heading + AI voice summary */}
-        <motion.div variants={staggerItem} className="text-left mb-4">
+        <motion.div variants={staggerItem} className="text-left mb-3">
           <h1
             className="text-2xl sm:text-3xl text-white mb-2"
             style={{ fontFamily: "'Times New Roman', serif" }}
           >
             Your brand voice
           </h1>
-          <p className="text-white/60 text-sm leading-relaxed">{voiceSummary}</p>
+          <p className="text-white/60 text-sm leading-relaxed line-clamp-3">{voiceSummary}</p>
         </motion.div>
 
         {/* Archetype assessment card */}
         <motion.div
           variants={staggerItem}
-          className="rounded-xl p-3 mb-3"
+          className="rounded-xl p-3 mb-2"
           style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
         >
           <div className="flex items-center gap-3 flex-wrap">
@@ -133,13 +133,13 @@ export function FineTuneStep({
         </motion.div>
 
         {/* Fine-tune label */}
-        <motion.div variants={staggerItem} className="mb-3">
+        <motion.div variants={staggerItem} className="mb-2">
           <span className="text-white/30 text-[11px] uppercase tracking-wider font-medium">
             Fine-tune if needed
           </span>
         </motion.div>
 
-        <div className="space-y-3 mb-4">
+        <div className="space-y-2 mb-3">
           {BRAND_SIGNAL_SLIDERS.map((slider) => (
             <motion.div key={slider.id} variants={staggerItem}>
               <BrandSignalSlider
@@ -155,14 +155,14 @@ export function FineTuneStep({
         <motion.div variants={staggerItem} className="flex gap-3">
           <button
             onClick={onBack}
-            className="flex-1 py-3.5 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
+            className="flex-1 py-3 rounded-xl font-medium text-sm border border-white/10 text-white/70 hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 inline mr-2" />
             Back
           </button>
           <button
             onClick={onContinue}
-            className="flex-1 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-90"
+            className="flex-1 py-3 rounded-xl font-medium text-sm transition-all hover:opacity-90"
             style={{ background: 'var(--button-cream)', color: 'var(--button-cream-foreground)' }}
           >
             Save & continue

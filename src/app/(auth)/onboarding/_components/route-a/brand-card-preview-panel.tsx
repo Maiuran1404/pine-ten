@@ -32,29 +32,52 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="w-full"
+      className="w-full max-w-sm"
     >
       <div className="relative">
-        {/* Mock Social Post Card */}
+        {/* Holographic shimmer overlay */}
+        <div
+          className="absolute -inset-[1px] rounded-2xl opacity-30 pointer-events-none"
+          style={{
+            background: `linear-gradient(135deg, ${primaryColor}40, transparent 30%, ${secondaryColor}30, transparent 60%, ${accentColor}40, transparent 80%, ${primaryColor}20)`,
+            filter: 'blur(1px)',
+          }}
+        />
+
+        {/* Square-ish Brand Card */}
         <motion.div
           key={animationKey}
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="relative rounded-2xl overflow-hidden"
+          className="relative rounded-2xl overflow-hidden aspect-square flex flex-col"
           style={{
             background: 'var(--surface-overlay)',
+            backdropFilter: 'blur(40px)',
+            WebkitBackdropFilter: 'blur(40px)',
             border: '1px solid var(--border-subtle)',
-            boxShadow: `0 0 60px ${primaryColor}10, 0 0 30px ${secondaryColor}08`,
+            boxShadow: `0 0 80px ${primaryColor}12, 0 0 40px ${secondaryColor}08, inset 0 1px 0 rgba(255,255,255,0.06)`,
           }}
         >
+          {/* Holographic gradient overlay inside card */}
+          <div
+            className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor}, ${accentColor}, ${primaryColor})`,
+              backgroundSize: '200% 200%',
+            }}
+          />
+
           {/* Post header - avatar + name + industry */}
-          <div className="p-5 pb-0">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="relative p-6 pb-0 flex-shrink-0">
+            <div className="flex items-center gap-3 mb-5">
               <div
-                className="w-11 h-11 rounded-full flex items-center justify-center overflow-hidden shrink-0"
+                className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden shrink-0"
                 style={{
-                  background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+                  background:
+                    (brandData.logoUrl || brandData.faviconUrl) && !logoErr
+                      ? '#ffffff'
+                      : `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
                 }}
               >
                 {(brandData.logoUrl || brandData.faviconUrl) && !logoErr ? (
@@ -84,27 +107,30 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
 
             {/* Post body */}
             <p
-              className="text-white/70 text-sm leading-relaxed mb-4 line-clamp-3"
+              className="text-white/60 text-sm leading-relaxed mb-5 line-clamp-4"
               style={{ fontFamily }}
             >
               {brandData.tagline ||
-                brandData.description?.slice(0, 120) ||
+                brandData.description?.slice(0, 160) ||
                 'Your brand story appears here — edit colors, fonts, and details on the left to see changes in real-time.'}
             </p>
           </div>
 
+          {/* Spacer to push color bar and engagement to bottom */}
+          <div className="flex-1" />
+
           {/* Brand color banner */}
-          <div className="flex h-2">
+          <div className="flex h-2.5">
             <div className="flex-1" style={{ backgroundColor: primaryColor }} />
             <div className="flex-1" style={{ backgroundColor: secondaryColor }} />
             <div className="flex-1" style={{ backgroundColor: accentColor }} />
           </div>
 
           {/* Mock engagement row */}
-          <div className="px-5 py-3 flex items-center justify-between border-t border-white/[0.06]">
-            <div className="flex items-center gap-4">
-              <span className="text-white/30 text-xs flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="relative px-6 py-4 flex items-center justify-between border-t border-white/[0.06]">
+            <div className="flex items-center gap-5">
+              <span className="text-white/30 text-xs flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -114,8 +140,8 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                 </svg>
                 42
               </span>
-              <span className="text-white/30 text-xs flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="text-white/30 text-xs flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -125,8 +151,8 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                 </svg>
                 7
               </span>
-              <span className="text-white/30 text-xs flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="text-white/30 text-xs flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

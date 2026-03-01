@@ -18,7 +18,7 @@ export function GlowingCard({
         }}
       />
       <div
-        className="relative rounded-2xl p-5 sm:p-8 md:p-10 flex flex-col justify-center"
+        className="relative rounded-2xl p-5 sm:p-8 md:p-8 flex flex-col justify-center"
         style={{
           background: 'var(--surface-inset)',
           backdropFilter: 'blur(20px)',

@@ -14,7 +14,7 @@ export function ProgressIndicator({
   const currentIndex = steps.findIndex((s) => s.id === currentStep)
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 mb-6 sm:mb-8 overflow-x-auto pb-2">
+    <div className="flex items-center gap-1 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1">
       {steps.map((step, index) => (
         <div key={step.id} className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <div className="flex flex-col items-center gap-1">
