@@ -218,17 +218,8 @@ export function StyleSelectionPanel({
     [styles]
   )
 
-  // Find the best match style (highest brandMatchScore >= 70)
-  const bestMatchId =
-    sortedStyles.length > 0
-      ? sortedStyles.reduce<string | null>((bestId, s) => {
-          const score = s.brandMatchScore ?? 0
-          if (score < 70) return bestId
-          const bestStyle = bestId ? sortedStyles.find((d) => d.id === bestId) : null
-          if (!bestStyle || score > (bestStyle.brandMatchScore ?? 0)) return s.id
-          return bestId
-        }, null)
-      : null
+  // Best match is always the first sorted style (highest brandMatchScore)
+  const bestMatchId = sortedStyles.length > 0 ? sortedStyles[0].id : null
 
   const totalPages = Math.ceil(sortedStyles.length / PAGE_SIZE)
   const pageStyles = sortedStyles.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
