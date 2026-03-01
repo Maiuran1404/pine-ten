@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +18,9 @@ import {
   RotateCcw,
   Download,
   Copy,
+  ImagePlus,
+  X,
+  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DELIVERABLE_TYPES, STYLE_AXES } from '@/lib/constants/reference-libraries'
@@ -38,6 +41,8 @@ interface PresetCardProps {
   onGenerate: () => void
   onSaveAsReference: () => void
   onClearPreview: () => void
+  onUploadReferenceImages: (files: File[]) => Promise<string[] | null>
+  onDeleteReferenceImage: (imageUrl: string) => Promise<boolean>
 }
 
 export function PresetCard({
@@ -53,8 +58,13 @@ export function PresetCard({
   onGenerate,
   onSaveAsReference,
   onClearPreview,
+  onUploadReferenceImages,
+  onDeleteReferenceImage,
 }: PresetCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [deletingUrl, setDeletingUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const truncatedPrompt =
     editState.promptGuide.length > 200
@@ -65,6 +75,30 @@ export function PresetCard({
     navigator.clipboard.writeText(editState.promptGuide)
     toast.success('Prompt guide copied')
   }
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    setIsUploading(true)
+    try {
+      await onUploadReferenceImages(files)
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteRefImage = async (imageUrl: string) => {
+    setDeletingUrl(imageUrl)
+    try {
+      await onDeleteReferenceImage(imageUrl)
+    } finally {
+      setDeletingUrl(null)
+    }
+  }
+
+  const referenceImages = style.styleReferenceImages ?? []
 
   return (
     <Card
@@ -114,6 +148,60 @@ export function PresetCard({
               )}
             </div>
           </div>
+        </div>
+
+        {/* Reference Images */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">
+              Reference Images{referenceImages.length > 0 && ` (${referenceImages.length})`}
+            </Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-1.5 text-xs text-muted-foreground"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <ImagePlus className="h-3 w-3" />
+              )}
+              {isUploading ? 'Uploading...' : 'Add'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+          </div>
+          {referenceImages.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {referenceImages.map((url) => (
+                <div
+                  key={url}
+                  className="relative group h-12 w-12 rounded border border-border overflow-hidden"
+                >
+                  <img src={url} alt="Reference" className="h-full w-full object-cover" />
+                  <button
+                    onClick={() => handleDeleteRefImage(url)}
+                    disabled={deletingUrl === url}
+                    className="absolute inset-0 flex items-center justify-center bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    {deletingUrl === url ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 text-destructive" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Prompt Guide */}

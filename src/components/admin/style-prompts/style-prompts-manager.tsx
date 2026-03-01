@@ -243,6 +243,82 @@ export function StylePromptsManager() {
     [generation]
   )
 
+  // Upload reference images for a style
+  const handleUploadReferenceImages = useCallback(
+    async (styleId: string, files: File[]): Promise<string[] | null> => {
+      try {
+        const formData = new FormData()
+        files.forEach((file) => formData.append('files', file))
+
+        const response = await csrfFetch(
+          `/api/admin/deliverable-styles/${styleId}/reference-images`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        )
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null)
+          throw new Error(errorData?.error || `HTTP ${response.status}`)
+        }
+
+        const result = await response.json()
+        const updatedImages: string[] = result.data?.styleReferenceImages ?? []
+
+        // Update local styles state
+        setStyles((prev) =>
+          prev.map((s) => (s.id === styleId ? { ...s, styleReferenceImages: updatedImages } : s))
+        )
+
+        toast.success(`${files.length} reference image${files.length > 1 ? 's' : ''} uploaded`)
+        return updatedImages
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Upload failed'
+        toast.error(`Failed to upload: ${message}`)
+        return null
+      }
+    },
+    [csrfFetch]
+  )
+
+  // Delete a reference image from a style
+  const handleDeleteReferenceImage = useCallback(
+    async (styleId: string, imageUrl: string): Promise<boolean> => {
+      try {
+        const response = await csrfFetch(
+          `/api/admin/deliverable-styles/${styleId}/reference-images`,
+          {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl }),
+          }
+        )
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null)
+          throw new Error(errorData?.error || `HTTP ${response.status}`)
+        }
+
+        const result = await response.json()
+        const updatedImages: string[] = result.data?.styleReferenceImages ?? []
+
+        // Update local styles state
+        setStyles((prev) =>
+          prev.map((s) => (s.id === styleId ? { ...s, styleReferenceImages: updatedImages } : s))
+        )
+
+        toast.success('Reference image removed')
+        return true
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Delete failed'
+        toast.error(`Failed to delete: ${message}`)
+        return false
+      }
+    },
+    [csrfFetch]
+  )
+
   // Generate All filtered presets
   const handleGenerateAll = useCallback(() => {
     generation.generateAll(filteredPresets, subject)
@@ -340,6 +416,8 @@ export function StylePromptsManager() {
                 onGenerate={() => generation.generatePreview(style, subject)}
                 onSaveAsReference={() => handleSaveAsReference(style.id)}
                 onClearPreview={() => generation.clearPreview(style.id)}
+                onUploadReferenceImages={(files) => handleUploadReferenceImages(style.id, files)}
+                onDeleteReferenceImage={(url) => handleDeleteReferenceImage(style.id, url)}
               />
             )
           })}

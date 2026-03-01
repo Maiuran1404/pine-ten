@@ -52,6 +52,7 @@ export function useStyleGeneration() {
             subject,
             promptGuide: style.promptGuide,
             styleName: style.name,
+            styleId: style.id,
           }),
           signal,
         })

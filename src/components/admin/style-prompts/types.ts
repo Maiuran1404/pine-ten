@@ -24,6 +24,7 @@ export interface DeliverableStyleReference {
   targetAudience?: string
   visualElements?: string[]
   moodKeywords?: string[]
+  styleReferenceImages?: string[]
 }
 
 export interface CardEditState {

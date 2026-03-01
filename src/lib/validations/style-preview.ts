@@ -16,6 +16,7 @@ export const stylePreviewSchema = z.object({
   styleName: z.string().min(1).max(200),
   size: z.enum(['1536x1024', '1024x1024', '1024x1536']).optional().default('1024x1024'),
   quality: z.enum(['low', 'medium', 'high']).optional().default('medium'),
+  styleId: z.string().uuid('Invalid style ID').optional(),
 })
 
 /**

@@ -1,8 +1,12 @@
 import { NextRequest } from 'next/server'
 import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
-import { buildScenePrompt, generateSceneImage } from '@/lib/ai/dalle-image-generation'
+import { buildScenePrompt, generateSceneImage } from '@/lib/ai/image-generation'
 import { uploadToStorage } from '@/lib/storage'
+import { fetchReferenceImagesAsBase64 } from '@/lib/ai/reference-image-utils'
+import { db } from '@/db'
+import { deliverableStyleReferences } from '@/db/schema'
+import { inArray } from 'drizzle-orm'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
@@ -23,6 +27,7 @@ const generateSchema = z.object({
   scenes: z.array(sceneSchema).min(1).max(12),
   styleContext: z.string().max(2000),
   briefId: z.string().min(1),
+  styleIds: z.array(z.string().uuid()).max(5).optional(),
 })
 
 /** Concurrency-limited parallel execution */
@@ -55,11 +60,31 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth()
     const body = generateSchema.parse(await request.json())
 
+    // Fetch reference images from selected styles (if any)
+    let referenceImages: Array<{ base64: string; mimeType: string }> | undefined
+    if (body.styleIds && body.styleIds.length > 0) {
+      const styles = await db
+        .select({ styleReferenceImages: deliverableStyleReferences.styleReferenceImages })
+        .from(deliverableStyleReferences)
+        .where(inArray(deliverableStyleReferences.id, body.styleIds))
+
+      // Collect all reference image URLs (deduplicated, max 10)
+      const allUrls = [...new Set(styles.flatMap((s) => s.styleReferenceImages ?? []))]
+      if (allUrls.length > 0) {
+        referenceImages = await fetchReferenceImagesAsBase64(allUrls, 10)
+        logger.info(
+          { refImageCount: referenceImages.length },
+          'Fetched style reference images for storyboard'
+        )
+      }
+    }
+
     const tasks = body.scenes.map((scene) => async () => {
       const prompt = buildScenePrompt(scene, body.styleContext)
       const result = await generateSceneImage(prompt, {
         size: '1536x1024',
         quality: 'low',
+        referenceImages,
       })
 
       // Upload to Supabase
@@ -74,8 +99,13 @@ export async function POST(request: NextRequest) {
     })
 
     logger.info(
-      { sceneCount: body.scenes.length, userId: session.user.id, briefId: body.briefId },
-      'Starting batch DALL-E generation'
+      {
+        sceneCount: body.scenes.length,
+        userId: session.user.id,
+        briefId: body.briefId,
+        hasRefImages: !!referenceImages?.length,
+      },
+      'Starting batch Gemini generation'
     )
 
     // Run with concurrency limit of 3
@@ -91,7 +121,7 @@ export async function POST(request: NextRequest) {
       }
       logger.error(
         { sceneNumber: body.scenes[i].sceneNumber, err: result.reason },
-        'DALL-E generation failed for scene'
+        'Gemini generation failed for scene'
       )
       return {
         sceneNumber: body.scenes[i].sceneNumber,
@@ -103,7 +133,7 @@ export async function POST(request: NextRequest) {
     const successCount = results.filter((r) => r.status === 'success').length
     logger.info(
       { successCount, totalCount: results.length, briefId: body.briefId },
-      'Batch DALL-E generation complete'
+      'Batch Gemini generation complete'
     )
 
     if (successCount === 0) {

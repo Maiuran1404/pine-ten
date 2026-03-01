@@ -905,6 +905,9 @@ export const deliverableStyleReferences = pgTable(
     visualElements: jsonb('visual_elements').$type<string[]>().default([]), // typography-heavy, photo-centric, etc.
     moodKeywords: jsonb('mood_keywords').$type<string[]>().default([]), // professional, playful, elegant, etc.
 
+    // Style reference images (for Gemini multimodal generation)
+    styleReferenceImages: jsonb('style_reference_images').$type<string[]>().default([]),
+
     // Duplicate detection
     imageHash: text('image_hash'), // Perceptual hash for content-based deduplication
     sourceUrl: text('source_url'), // Original URL before upload to storage

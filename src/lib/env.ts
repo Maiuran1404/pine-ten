@@ -44,6 +44,9 @@ const envSchema = z.object({
   // OpenAI (optional - for storyboard AI image generation)
   OPENAI_API_KEY: z.string().startsWith('sk-').optional(),
 
+  // Google Gemini (optional - for AI image generation with style references)
+  GEMINI_API_KEY: z.string().min(1).optional(),
+
   // Orshot (optional - for quick design generation)
   ORSHOT_API_KEY: z.string().min(1).optional(),
 

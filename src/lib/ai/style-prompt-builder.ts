@@ -25,7 +25,8 @@ export function extractHexColors(text: string): string[] {
 export function buildStylePreviewPrompt(
   name: string,
   promptGuide: string,
-  subject?: string
+  subject?: string,
+  hasReferenceImages?: boolean
 ): string {
   // Extract the most visually descriptive sentences
   const sentences = promptGuide
@@ -61,9 +62,13 @@ export function buildStylePreviewPrompt(
 
   const visualDescription = selectedSentences.join('. ').replace(/\.\./g, '.')
 
+  const refImageHint = hasReferenceImages
+    ? ' Reference images are provided showing the target visual style. Match their aesthetic, color palette, lighting, and mood closely.'
+    : ''
+
   if (subject) {
-    return `Create a professional visual of: ${subject}. Apply the "${name}" style direction: ${visualDescription}. Photorealistic, editorial quality, 16:10 aspect ratio.`
+    return `Create a professional visual of: ${subject}. Apply the "${name}" style direction: ${visualDescription}.${refImageHint} Photorealistic, editorial quality, 16:10 aspect ratio.`
   }
 
-  return `Create a professional visual reference image for the "${name}" style direction. ${visualDescription}. This is a standalone atmospheric mood image showcasing this aesthetic. Photorealistic, editorial quality, 16:10 aspect ratio.`
+  return `Create a professional visual reference image for the "${name}" style direction. ${visualDescription}.${refImageHint} This is a standalone atmospheric mood image showcasing this aesthetic. Photorealistic, editorial quality, 16:10 aspect ratio.`
 }

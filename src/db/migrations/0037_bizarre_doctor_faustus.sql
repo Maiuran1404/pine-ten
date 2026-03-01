@@ -1,0 +1,1 @@
+ALTER TABLE "deliverable_style_references" ADD COLUMN "style_reference_images" jsonb DEFAULT '[]'::jsonb;

@@ -307,17 +307,21 @@ export function useStyleSelection({
         const data = await response.json()
 
         if (data.videoReferences && data.videoReferences.length > 0) {
-          const assistantMessage: Message = {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: `Here are more video style options:`,
-            timestamp: new Date(),
-            videoReferences: data.videoReferences,
-            deliverableStyleMarker: data.deliverableStyleMarker,
-          }
-
-          setMessages((prev) => [...prev, assistantMessage])
-          setAnimatingMessageId(assistantMessage.id)
+          // Update the latest style message in-place (no new chat bubble)
+          setMessages((prev) => {
+            const idx = [...prev]
+              .reverse()
+              .findIndex((m) => m.videoReferences?.length || m.deliverableStyles?.length)
+            if (idx === -1) return prev
+            const realIdx = prev.length - 1 - idx
+            const updated = [...prev]
+            updated[realIdx] = {
+              ...updated[realIdx],
+              videoReferences: data.videoReferences,
+              deliverableStyleMarker: data.deliverableStyleMarker,
+            }
+            return updated
+          })
         } else if (data.deliverableStyles && data.deliverableStyles.length > 0) {
           const isCycled = data.deliverableStyles.some(
             (s: { matchReason?: string }) =>
@@ -331,19 +335,21 @@ export function useStyleSelection({
             [styleAxis]: isCycled ? 0 : newOffset,
           }))
 
-          const assistantMessage: Message = {
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: isCycled
-              ? `Here are some recommended ${styleAxis} styles:`
-              : `Here are more ${styleAxis} style options:`,
-            timestamp: new Date(),
-            deliverableStyles: data.deliverableStyles,
-            deliverableStyleMarker: data.deliverableStyleMarker,
-          }
-
-          setMessages((prev) => [...prev, assistantMessage])
-          setAnimatingMessageId(assistantMessage.id)
+          // Update the latest style message in-place (no new chat bubble)
+          setMessages((prev) => {
+            const idx = [...prev]
+              .reverse()
+              .findIndex((m) => m.deliverableStyles?.length || m.videoReferences?.length)
+            if (idx === -1) return prev
+            const realIdx = prev.length - 1 - idx
+            const updated = [...prev]
+            updated[realIdx] = {
+              ...updated[realIdx],
+              deliverableStyles: data.deliverableStyles,
+              deliverableStyleMarker: data.deliverableStyleMarker,
+            }
+            return updated
+          })
         } else {
           toast.info('Showing top recommended styles')
         }
@@ -361,7 +367,6 @@ export function useStyleSelection({
       selectedStylesProp,
       setIsLoading,
       setMessages,
-      setAnimatingMessageId,
       csrfFetch,
     ]
   )
@@ -419,31 +424,39 @@ export function useStyleSelection({
       const data = await response.json()
 
       if (data.videoReferences && data.videoReferences.length > 0) {
-        const assistantMessage: Message = {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: 'Here are some different video style directions:',
-          timestamp: new Date(),
-          videoReferences: data.videoReferences,
-          deliverableStyleMarker: data.deliverableStyleMarker,
-        }
-
-        setMessages((prev) => [...prev, assistantMessage])
-        setAnimatingMessageId(assistantMessage.id)
+        // Update the latest style message in-place (no new chat bubble)
+        setMessages((prev) => {
+          const idx = [...prev]
+            .reverse()
+            .findIndex((m) => m.videoReferences?.length || m.deliverableStyles?.length)
+          if (idx === -1) return prev
+          const realIdx = prev.length - 1 - idx
+          const updated = [...prev]
+          updated[realIdx] = {
+            ...updated[realIdx],
+            videoReferences: data.videoReferences,
+            deliverableStyleMarker: data.deliverableStyleMarker,
+          }
+          return updated
+        })
       } else if (data.deliverableStyles && data.deliverableStyles.length > 0) {
         setExcludedStyleAxes(newExcludedAxes)
 
-        const assistantMessage: Message = {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: 'Here are some different style directions:',
-          timestamp: new Date(),
-          deliverableStyles: data.deliverableStyles,
-          deliverableStyleMarker: data.deliverableStyleMarker,
-        }
-
-        setMessages((prev) => [...prev, assistantMessage])
-        setAnimatingMessageId(assistantMessage.id)
+        // Update the latest style message in-place (no new chat bubble)
+        setMessages((prev) => {
+          const idx = [...prev]
+            .reverse()
+            .findIndex((m) => m.deliverableStyles?.length || m.videoReferences?.length)
+          if (idx === -1) return prev
+          const realIdx = prev.length - 1 - idx
+          const updated = [...prev]
+          updated[realIdx] = {
+            ...updated[realIdx],
+            deliverableStyles: data.deliverableStyles,
+            deliverableStyleMarker: data.deliverableStyleMarker,
+          }
+          return updated
+        })
       } else {
         toast.info('No more style directions available')
         setExcludedStyleAxes([])
@@ -461,7 +474,6 @@ export function useStyleSelection({
     selectedStylesProp,
     setIsLoading,
     setMessages,
-    setAnimatingMessageId,
     csrfFetch,
   ])
 

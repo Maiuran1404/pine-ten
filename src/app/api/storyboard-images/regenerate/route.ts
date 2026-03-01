@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling, successResponse } from '@/lib/errors'
-import { buildScenePrompt, generateSceneImage } from '@/lib/ai/dalle-image-generation'
+import { buildScenePrompt, generateSceneImage } from '@/lib/ai/image-generation'
 import { uploadToStorage } from '@/lib/storage'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'

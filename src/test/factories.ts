@@ -628,6 +628,7 @@ export function createMockDeliverableStyleReference(
     videoThumbnailUrl: null,
     videoDuration: null,
     videoTags: [],
+    styleReferenceImages: [],
     featuredOrder: 0,
     displayOrder: 0,
     isActive: true,

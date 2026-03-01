@@ -260,6 +260,13 @@
       "when": 1772261719523,
       "tag": "0036_sparkling_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1772346891914,
+      "tag": "0037_bizarre_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }
