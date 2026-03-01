@@ -34,12 +34,16 @@ vi.mock('@anthropic-ai/sdk', () => ({
 const { POST } = await import('./route')
 
 function makeRequest(body: unknown) {
-  return {
+  const req = {
     url: 'http://localhost/api/brand/extract',
     method: 'POST',
     json: vi.fn().mockResolvedValue(body),
     headers: { get: () => null, has: () => false },
+    clone: () => ({
+      json: vi.fn().mockResolvedValue(body),
+    }),
   }
+  return req
 }
 
 function setupAuth() {
