@@ -172,7 +172,7 @@ export default function TasksPage() {
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Display settings
-  const [viewMode, setViewMode] = useState<ViewMode>('rows')
+  const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [ordering, setOrdering] = useState<OrderingKey>('date_created')
   const [showCancelled, setShowCancelled] = useState(false)
   const [displayProperties, setDisplayProperties] = useState<DisplayProperties>({
@@ -617,9 +617,19 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-full bg-background">
-      {/* Header - Minimal like Dub */}
-      <div className="border-b border-border">
+    <div className="relative min-h-full bg-background">
+      {/* Ambient gradient — curtain light effect */}
+      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden="true">
+        <div
+          className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full opacity-[0.07] blur-[120px]"
+          style={{
+            background: `radial-gradient(ellipse at center, var(--crafted-green), transparent 70%)`,
+          }}
+        />
+      </div>
+
+      {/* Header */}
+      <div className="relative z-10 border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold text-foreground">Tasks</h1>
@@ -634,7 +644,7 @@ export default function TasksPage() {
       </div>
 
       {/* Controls Bar - Filter, Display, Search like Dub */}
-      <div className="bg-background">
+      <div className="relative z-10 bg-background">
         <div className="max-w-6xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between gap-4">
             {/* Left: Filter & Display Dropdowns */}
@@ -830,7 +840,7 @@ export default function TasksPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-6 py-4">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 py-4">
         {/* Tasks needing review banner */}
         {(() => {
           const reviewTasks = filteredTasks.filter((t) => t.status === 'IN_REVIEW')
@@ -894,8 +904,8 @@ export default function TasksPage() {
           )
         ) : filteredTasks.length === 0 ? (
           <div className="rounded-lg border border-border bg-card p-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <Palette className="h-6 w-6 text-muted-foreground" />
+            <div className="w-12 h-12 rounded-full bg-crafted-green/10 flex items-center justify-center mx-auto mb-4">
+              <Palette className="h-6 w-6 text-crafted-green" />
             </div>
             <h3 className="text-lg font-medium text-foreground mb-1">
               {searchQuery
@@ -936,23 +946,25 @@ export default function TasksPage() {
               </div>
             )}
 
-            {/* Pagination Footer */}
-            <div className="flex items-center justify-center mt-4 py-3 text-sm text-muted-foreground">
-              <div className="flex items-center gap-4">
-                <span>
-                  Viewing {filteredTasks.length} of {tasks.length} task
-                  {tasks.length !== 1 ? 's' : ''}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Button variant="outline" size="sm" disabled className="h-8 px-3">
-                    Previous
-                  </Button>
-                  <Button variant="outline" size="sm" disabled className="h-8 px-3">
-                    Next
-                  </Button>
+            {/* Pagination Footer — only show when there are more tasks than displayed */}
+            {filteredTasks.length < tasks.length && (
+              <div className="flex items-center justify-center mt-4 py-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4">
+                  <span>
+                    Viewing {filteredTasks.length} of {tasks.length} task
+                    {tasks.length !== 1 ? 's' : ''}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="sm" disabled className="h-8 px-3">
+                      Previous
+                    </Button>
+                    <Button variant="outline" size="sm" disabled className="h-8 px-3">
+                      Next
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>

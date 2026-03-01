@@ -13,6 +13,7 @@ import {
   type DeepenOption,
   type SerializedBriefingState,
   createInitialBriefingState,
+  deriveStage,
   goBackTo,
   pivotCategory,
   serialize,
@@ -188,6 +189,13 @@ export function useBriefingStateMachine(
         const newBrief = updater(prev.brief)
         if (newBrief === prev.brief) return prev
         const newState = { ...prev, brief: newBrief }
+        // Re-derive the stage since brief changes can unlock gate conditions
+        // (e.g., adding selectedStyles advances INSPIRATION → ELABORATE)
+        const derivedStage = deriveStage(newState)
+        if (derivedStage !== prev.stage) {
+          newState.stage = derivedStage
+          newState.turnsInCurrentStage = 0
+        }
         persistState(newState)
         return newState
       })

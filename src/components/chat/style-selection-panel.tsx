@@ -30,56 +30,129 @@ function PanelStyleCard({
   isBestMatch: boolean
   onClick: () => void
 }) {
+  const tags = style.semanticTags?.slice(0, 3) ?? []
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
-        opacity: { duration: 0.2 },
-        y: { duration: 0.35, delay: index * 0.08 },
+        opacity: { duration: 0.3, delay: index * 0.12 },
+        y: { duration: 0.5, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] },
       }}
-      className="flex flex-col gap-1.5"
+      className="flex flex-col"
     >
       <motion.button
-        whileHover={{ scale: 1.03, y: -2 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        whileHover="hover"
         onClick={onClick}
         className={cn(
-          'relative overflow-hidden rounded-2xl cursor-pointer group aspect-video w-full',
-          isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:ring-2 hover:ring-primary/30'
+          'relative overflow-hidden rounded-2xl cursor-pointer group w-full text-left',
+          'transition-shadow duration-300',
+          isSelected
+            ? 'ring-2 ring-crafted-green shadow-lg shadow-crafted-green/10'
+            : 'ring-1 ring-border/50 hover:ring-border'
         )}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={style.imageUrl}
-          alt={style.name}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x225?text=Style'
-          }}
-        />
+        {/* Image container with zoom effect */}
+        <div className="relative aspect-[16/9] overflow-hidden">
+          <motion.div
+            className="w-full h-full"
+            variants={{
+              hover: { scale: 1.06 },
+            }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={style.imageUrl}
+              alt={style.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                ;(e.target as HTMLImageElement).src =
+                  'https://via.placeholder.com/400x225?text=Style'
+              }}
+            />
+          </motion.div>
 
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+          {/* Gradient overlay — deepens on hover */}
+          <div
+            className={cn(
+              'absolute inset-0 transition-all duration-500',
+              'bg-gradient-to-t from-black/60 via-black/10 to-transparent',
+              'group-hover:from-black/70 group-hover:via-black/20'
+            )}
+          />
 
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-6">
-          <p className="text-white text-xs font-medium truncate">{style.name}</p>
-          {style.matchReason && (
-            <p className="text-white/70 text-[10px] truncate mt-0.5">{style.matchReason}</p>
-          )}
+          {/* Best match badge */}
+          <AnimatePresence>
+            {isBestMatch && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, x: -8 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                transition={{
+                  delay: index * 0.12 + 0.3,
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 20,
+                }}
+                className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-1 bg-crafted-green/90 backdrop-blur-sm rounded-full text-[10px] text-white font-medium"
+              >
+                <Sparkles className="w-2.5 h-2.5" />
+                Best match
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Selection indicator */}
+          <AnimatePresence>
+            {isSelected && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                className="absolute top-2.5 right-2.5"
+              >
+                <div className="w-6 h-6 rounded-full bg-crafted-green flex items-center justify-center shadow-lg shadow-crafted-green/30">
+                  <Check className="w-3.5 h-3.5 text-white" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Bottom info overlay */}
+          <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3 pt-8">
+            <p className="text-white text-sm font-semibold">{style.name}</p>
+            {style.description && (
+              <motion.p
+                className="text-white/60 text-xs mt-0.5 line-clamp-2 leading-relaxed"
+                variants={{
+                  hover: { color: 'rgba(255,255,255,0.8)' },
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                {style.description}
+              </motion.p>
+            )}
+          </div>
         </div>
 
-        {isBestMatch && (
-          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-2 py-0.5 bg-crafted-green rounded-full text-[10px] text-white font-medium">
-            <Sparkles className="w-2.5 h-2.5" />
-            Best match
-          </div>
-        )}
-
-        {isSelected && (
-          <div className="absolute top-1.5 right-1.5">
-            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-lg">
-              <Check className="w-3 h-3 text-primary-foreground" />
-            </div>
+        {/* Tags row — below image */}
+        {tags.length > 0 && (
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/30">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] text-muted-foreground px-2 py-0.5 rounded-full bg-muted/60 capitalize"
+              >
+                {tag}
+              </span>
+            ))}
+            {style.matchReason && (
+              <span className="ml-auto text-[10px] text-crafted-sage truncate max-w-[120px]">
+                {style.matchReason}
+              </span>
+            )}
           </div>
         )}
       </motion.button>
@@ -89,13 +162,17 @@ function PanelStyleCard({
 
 function SkeletonCards() {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="flex flex-col gap-3">
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="rounded-2xl overflow-hidden animate-pulse">
-          <div className="aspect-video bg-muted-foreground/10" />
-          <div className="p-2 space-y-1.5">
-            <div className="h-3 w-20 bg-muted-foreground/10 rounded" />
-            <div className="h-2 w-28 bg-muted-foreground/10 rounded" />
+          <div className="aspect-[16/9] bg-muted-foreground/10" />
+          <div className="p-3 space-y-2 bg-muted/30">
+            <div className="h-3.5 w-32 bg-muted-foreground/10 rounded" />
+            <div className="flex gap-1.5">
+              <div className="h-4 w-14 bg-muted-foreground/10 rounded-full" />
+              <div className="h-4 w-16 bg-muted-foreground/10 rounded-full" />
+              <div className="h-4 w-12 bg-muted-foreground/10 rounded-full" />
+            </div>
           </div>
         </div>
       ))}
@@ -180,7 +257,7 @@ export function StyleSelectionPanel({
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content — vertical stack */}
       <ScrollArea className="flex-1">
         <div className="p-4">
           {!hasStyles && isLoading ? (
@@ -191,7 +268,7 @@ export function StyleSelectionPanel({
               <p className="text-sm text-muted-foreground">Preparing style options...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               {displayedStyles.map((style, index) => (
                 <PanelStyleCard
                   key={style.id}
@@ -205,14 +282,18 @@ export function StyleSelectionPanel({
             </div>
           )}
 
-          {/* Confirm button — directly below the grid */}
+          {/* Confirm button — slides in when a style is selected */}
           <AnimatePresence>
             {selectedStyle && onConfirmSelection && (
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.97 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 30,
+                }}
                 className="mt-4"
               >
                 <Button

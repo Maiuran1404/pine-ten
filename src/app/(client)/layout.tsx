@@ -19,8 +19,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isWebsiteProjectPage = pathname?.startsWith('/dashboard/website-project')
   const isFullScreenPage = isWebsiteProjectPage || isChatPage
   const isDashboardRoot = pathname === '/dashboard'
-  // Sidebar collapsed by default on dashboard root and chat pages
-  const [sidebarOpen, setSidebarOpen] = useState(!isDashboardRoot && !isChatPage)
+  const isCreditsPage = pathname === '/dashboard/credits'
+  // Sidebar collapsed by default on dashboard root, chat, and credits pages
+  const [sidebarOpen, setSidebarOpen] = useState(!isDashboardRoot && !isChatPage && !isCreditsPage)
 
   // Redirect based on auth state only (NOT role)
   // Users stay on the subdomain they logged into - no role-based redirects
