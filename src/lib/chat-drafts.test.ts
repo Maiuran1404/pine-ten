@@ -143,7 +143,7 @@ describe('saveDraft', () => {
 
   it('dispatches drafts-updated event', async () => {
     saveDraft(createMockDraft() as never)
-    await new Promise((resolve) => queueMicrotask(resolve))
+    await new Promise<void>((resolve) => queueMicrotask(resolve))
     expect(mockDispatchEvent).toHaveBeenCalled()
   })
 })
