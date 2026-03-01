@@ -16,6 +16,7 @@ const regenerateSchema = z.object({
     visualNote: z.string().optional(),
     cameraNote: z.string().optional(),
     voiceover: z.string().optional(),
+    transition: z.string().optional(),
     imageGenerationPrompt: z.string().optional(),
   }),
   styleContext: z.string().max(2000),

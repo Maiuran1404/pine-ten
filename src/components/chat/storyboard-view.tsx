@@ -676,7 +676,7 @@ function SceneThumbnail({
       className={cn(
         'relative aspect-video w-full rounded-t-lg overflow-hidden',
         !imageUrl && !isGenerating && `bg-gradient-to-br ${gradient.bg}`,
-        isGenerating && 'bg-gradient-to-br from-muted/50 to-muted'
+        isGenerating && 'skeleton-shimmer'
       )}
     >
       {/* DALL-E generating state */}

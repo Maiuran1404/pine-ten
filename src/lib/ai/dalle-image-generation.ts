@@ -1,48 +1,12 @@
 import 'server-only'
 import { logger } from '@/lib/logger'
 
+// Re-export prompt builder from shared module (no server-only restriction)
+export { buildScenePrompt, type ScenePromptInput } from './scene-prompt-builder'
+
 // =============================================================================
-// DALL-E IMAGE GENERATION — shared module for storyboard scene images
+// DALL-E IMAGE GENERATION — server-only module for calling OpenAI API
 // =============================================================================
-
-interface ScenePromptInput {
-  description?: string
-  visualNote?: string
-  cameraNote?: string
-  title?: string
-  voiceover?: string
-  imageGenerationPrompt?: string
-}
-
-/**
- * Build a DALL-E prompt from scene data and style context.
- * Style context is placed FIRST so DALL-E treats it as the dominant aesthetic
- * direction. Scene content follows as the subject matter within that style.
- */
-export function buildScenePrompt(scene: ScenePromptInput, styleContext: string): string {
-  const parts: string[] = []
-
-  // Style context goes FIRST — DALL-E weights earlier tokens more heavily.
-  // This ensures the selected visual style (e.g. "Clean & Minimal") shapes
-  // the entire image rather than being an afterthought.
-  if (styleContext) {
-    parts.push(`STYLE DIRECTION: ${styleContext}`)
-  }
-
-  // Scene content — what to depict within the style
-  if (scene.imageGenerationPrompt) {
-    parts.push(scene.imageGenerationPrompt)
-  } else {
-    if (scene.visualNote) parts.push(scene.visualNote)
-    if (scene.description) parts.push(scene.description)
-    if (scene.cameraNote) parts.push(`Camera: ${scene.cameraNote}`)
-  }
-
-  // Quality directive — no "cinematic lighting" which conflicts with minimal styles
-  parts.push('Professional production quality, photorealistic.')
-
-  return parts.join('. ').slice(0, 4000) // DALL-E prompt limit
-}
 
 export interface GenerateImageOptions {
   size?: '1536x1024' | '1024x1024' | '1024x1536'
