@@ -80,14 +80,32 @@ export async function generateSceneImage(
     'Calling Gemini image generation'
   )
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
-    contents: [{ role: 'user', parts }],
-    config: {
-      responseModalities: [Modality.TEXT, Modality.IMAGE],
-      ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-    },
-  })
+  let response
+  try {
+    response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash-exp-image-generation',
+      contents: [{ role: 'user', parts }],
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+      },
+    })
+  } catch (err: unknown) {
+    // Extract readable message from Gemini SDK errors (they stringify as [object Object])
+    const errObj = err as { message?: string; status?: number }
+    let msg = 'Gemini API error'
+    if (typeof errObj.message === 'string') {
+      // Gemini SDK wraps the error JSON in the message field
+      try {
+        const parsed = JSON.parse(errObj.message)
+        msg = parsed?.error?.message ?? errObj.message
+      } catch {
+        msg = errObj.message
+      }
+    }
+    logger.error({ err, msg }, 'Gemini generateContent failed')
+    throw new Error(msg)
+  }
 
   // Extract image from response
   const candidates = response.candidates
