@@ -3,6 +3,17 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -17,6 +28,7 @@ import {
   ImagePlus,
   X,
   Loader2,
+  Expand,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DELIVERABLE_TYPES, STYLE_AXES } from '@/lib/constants/reference-libraries'
@@ -59,6 +71,8 @@ export function PresetDetailView({
 }: PresetDetailViewProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [deletingUrl, setDeletingUrl] = useState<string | null>(null)
+  const [deleteConfirmUrl, setDeleteConfirmUrl] = useState<string | null>(null)
+  const [fullscreenRefSrc, setFullscreenRefSrc] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleCopyPrompt = () => {
@@ -251,17 +265,27 @@ export function PresetDetailView({
                 className="relative group h-20 w-20 rounded-lg border border-border overflow-hidden"
               >
                 <img src={url} alt="Reference" className="h-full w-full object-cover" />
-                <button
-                  onClick={() => handleDeleteRefImage(url)}
-                  disabled={deletingUrl === url}
-                  className="absolute inset-0 flex items-center justify-center bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  {deletingUrl === url ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <X className="h-4 w-4 text-destructive" />
-                  )}
-                </button>
+                <div className="absolute inset-0 bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                  <button
+                    onClick={() => setFullscreenRefSrc(url)}
+                    className="p-1.5 rounded-md bg-background/80 hover:bg-background transition-colors"
+                    title="View full size"
+                  >
+                    <Expand className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirmUrl(url)}
+                    disabled={deletingUrl === url}
+                    className="p-1.5 rounded-md bg-background/80 hover:bg-destructive/10 transition-colors"
+                    title="Remove image"
+                  >
+                    {deletingUrl === url ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    )}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -273,6 +297,58 @@ export function PresetDetailView({
           </div>
         )}
       </div>
+
+      {/* Reference image fullscreen dialog */}
+      <Dialog open={!!fullscreenRefSrc} onOpenChange={() => setFullscreenRefSrc(null)}>
+        <DialogContent className="max-w-3xl p-2">
+          <DialogTitle className="sr-only">Reference Image — Full Size</DialogTitle>
+          {fullscreenRefSrc && (
+            <img
+              src={fullscreenRefSrc}
+              alt="Reference full size"
+              className="w-full h-auto rounded-md"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete reference image confirmation */}
+      <AlertDialog
+        open={!!deleteConfirmUrl}
+        onOpenChange={(open) => !open && setDeleteConfirmUrl(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Reference Image</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this reference image? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteConfirmUrl && (
+            <div className="flex justify-center py-2">
+              <img
+                src={deleteConfirmUrl}
+                alt="Image to remove"
+                className="h-32 w-32 rounded-md object-cover border border-border"
+              />
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirmUrl) {
+                  handleDeleteRefImage(deleteConfirmUrl)
+                  setDeleteConfirmUrl(null)
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Section 4: Prompt Guide */}
       <div className="space-y-3">

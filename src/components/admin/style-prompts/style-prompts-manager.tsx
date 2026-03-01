@@ -18,13 +18,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, LayoutGrid } from 'lucide-react'
 import { DELIVERABLE_TYPES } from '@/lib/constants/reference-libraries'
 import { useCsrfContext } from '@/providers/csrf-provider'
 import { SubjectBar } from './subject-bar'
 import { PresetListTable } from './preset-list-table'
 import { PresetDetailView } from './preset-detail-view'
 import { PresetEmptyState } from './preset-empty-state'
+import { GenerationGallery } from './generation-gallery'
 import { CreatePresetDialog } from './create-preset-dialog'
 import { useStyleGeneration } from './use-style-generation'
 import type { DeliverableStyleReference, CardEditState, CreateFormState } from './types'
@@ -55,6 +56,7 @@ export function StylePromptsManager() {
 
   // Subject + generation
   const [subject, setSubject] = useState('')
+  const [showGallery, setShowGallery] = useState(false)
   const generation = useStyleGeneration()
 
   // Only show curated presets (styles with promptGuide)
@@ -353,8 +355,17 @@ export function StylePromptsManager() {
 
   // Generate All filtered presets
   const handleGenerateAll = useCallback(() => {
+    setShowGallery(true)
     generation.generateAll(filteredPresets, subject)
   }, [generation, filteredPresets, subject])
+
+  // Count how many presets have generation results (success, error, or generating)
+  const generatedCount = useMemo(() => {
+    return filteredPresets.filter((p) => {
+      const state = generation.getCardState(p.id)
+      return state.status !== 'idle'
+    }).length
+  }, [filteredPresets, generation])
 
   if (isLoading) {
     return (
@@ -440,47 +451,81 @@ export function StylePromptsManager() {
 
         {/* Right Panel: Detail */}
         <ResizablePanel defaultSize={65} minSize={50} maxSize={75}>
-          <div className="flex flex-col h-full">
-            {/* Subject bar (sticky in right panel) */}
-            <div className="p-3 border-b border-border shrink-0">
-              <SubjectBar
-                subject={subject}
-                onSubjectChange={setSubject}
-                onGenerateAll={handleGenerateAll}
-                onStop={generation.stopBatch}
-                batch={generation.batch}
-              />
-            </div>
-
-            {/* Detail content */}
-            <ScrollArea className="flex-1">
-              {selectedPreset ? (
-                <PresetDetailView
-                  key={selectedPreset.id}
-                  style={selectedPreset}
-                  editState={getEditState(selectedPreset)}
-                  isDirty={isDirty(selectedPreset)}
-                  isSaving={savingIds.has(selectedPreset.id)}
-                  genState={generation.getCardState(selectedPreset.id)}
-                  hasSubject={subject.trim().length >= 5}
-                  onUpdateEdit={(updates) => updateEditState(selectedPreset.id, updates)}
-                  onSave={() => handleSaveCard(selectedPreset)}
-                  onDelete={() => setDeleteTarget(selectedPreset)}
-                  onGenerate={() => generation.generatePreview(selectedPreset, subject)}
-                  onSaveAsReference={() => handleSaveAsReference(selectedPreset.id)}
-                  onClearPreview={() => generation.clearPreview(selectedPreset.id)}
-                  onUploadReferenceImages={(files) =>
-                    handleUploadReferenceImages(selectedPreset.id, files)
-                  }
-                  onDeleteReferenceImage={(url) =>
-                    handleDeleteReferenceImage(selectedPreset.id, url)
-                  }
+          {showGallery ? (
+            <ScrollArea className="h-full">
+              <div className="p-3 border-b border-border">
+                <SubjectBar
+                  subject={subject}
+                  onSubjectChange={setSubject}
+                  onGenerateAll={handleGenerateAll}
+                  onStop={generation.stopBatch}
+                  batch={generation.batch}
                 />
-              ) : (
-                <PresetEmptyState />
-              )}
+              </div>
+              <GenerationGallery
+                presets={filteredPresets}
+                subject={subject}
+                cardStates={generation.cardStates}
+                getCardState={generation.getCardState}
+                onClose={() => setShowGallery(false)}
+                onViewDetails={(id) => {
+                  setSelectedId(id)
+                  setShowGallery(false)
+                }}
+                onSaveAsReference={handleSaveAsReference}
+              />
             </ScrollArea>
-          </div>
+          ) : (
+            <div className="flex flex-col h-full">
+              <div className="p-3 border-b border-border shrink-0">
+                <SubjectBar
+                  subject={subject}
+                  onSubjectChange={setSubject}
+                  onGenerateAll={handleGenerateAll}
+                  onStop={generation.stopBatch}
+                  batch={generation.batch}
+                />
+                {generatedCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 w-full gap-1.5 text-xs"
+                    onClick={() => setShowGallery(true)}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    View Gallery ({generatedCount} images)
+                  </Button>
+                )}
+              </div>
+              <ScrollArea className="flex-1">
+                {selectedPreset ? (
+                  <PresetDetailView
+                    key={selectedPreset.id}
+                    style={selectedPreset}
+                    editState={getEditState(selectedPreset)}
+                    isDirty={isDirty(selectedPreset)}
+                    isSaving={savingIds.has(selectedPreset.id)}
+                    genState={generation.getCardState(selectedPreset.id)}
+                    hasSubject={subject.trim().length >= 5}
+                    onUpdateEdit={(updates) => updateEditState(selectedPreset.id, updates)}
+                    onSave={() => handleSaveCard(selectedPreset)}
+                    onDelete={() => setDeleteTarget(selectedPreset)}
+                    onGenerate={() => generation.generatePreview(selectedPreset, subject)}
+                    onSaveAsReference={() => handleSaveAsReference(selectedPreset.id)}
+                    onClearPreview={() => generation.clearPreview(selectedPreset.id)}
+                    onUploadReferenceImages={(files) =>
+                      handleUploadReferenceImages(selectedPreset.id, files)
+                    }
+                    onDeleteReferenceImage={(url) =>
+                      handleDeleteReferenceImage(selectedPreset.id, url)
+                    }
+                  />
+                ) : (
+                  <PresetEmptyState />
+                )}
+              </ScrollArea>
+            </div>
+          )}
         </ResizablePanel>
       </ResizablePanelGroup>
 
