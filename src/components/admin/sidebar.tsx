@@ -113,11 +113,6 @@ const navigationGroups: NavigationGroup[] = [
         icon: Palette,
       },
       {
-        name: 'Reference Library',
-        href: '/admin/deliverable-styles',
-        icon: LayoutTemplate,
-      },
-      {
         name: 'Template Images',
         href: '/admin/template-images',
         icon: GalleryThumbnails,
@@ -126,6 +121,21 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Video Library',
         href: '/admin/video-references',
         icon: Video,
+      },
+    ],
+  },
+  {
+    label: 'Prompts',
+    items: [
+      {
+        name: 'Reference Library',
+        href: '/admin/deliverable-styles',
+        icon: LayoutTemplate,
+      },
+      {
+        name: 'Intake Prompts',
+        href: '/admin/creative-intake-prompts',
+        icon: Sparkles,
       },
     ],
   },
@@ -146,11 +156,6 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Storyboard Images',
         href: '/admin/storyboard-images',
         icon: Image,
-      },
-      {
-        name: 'Intake Prompts',
-        href: '/admin/creative-intake-prompts',
-        icon: Sparkles,
       },
       {
         name: 'Coupons',

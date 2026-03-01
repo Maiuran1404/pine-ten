@@ -253,6 +253,7 @@ export function ChatInterface({
     handleEditNarrative,
     // DALL-E image generation
     imageGenerationProgress,
+    isGeneratingImages,
     handleRegenerateImage,
 
     // Website inspiration
