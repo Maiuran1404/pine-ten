@@ -127,10 +127,14 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: 'crafted',
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: isProduction ? `.${baseDomain}` : 'localhost',
-    },
+    // Share cookies across subdomains in production (app/artist/superadmin.getcrafted.ai)
+    // In dev, keep cookies isolated per subdomain so devs can test multiple roles simultaneously
+    ...(isProduction && {
+      crossSubDomainCookies: {
+        enabled: true,
+        domain: `.${baseDomain}`,
+      },
+    }),
     defaultCookieAttributes: {
       sameSite: 'lax',
       secure: isProduction,

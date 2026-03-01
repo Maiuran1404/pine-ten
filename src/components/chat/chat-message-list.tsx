@@ -99,12 +99,45 @@ const STAGE_LOADING_MESSAGES: Record<string, string[]> = {
     'Finalizing your options...',
   ],
   STRUCTURE: [
-    'Designing your storyboard...',
     'Building out the structure...',
-    'Crafting each scene...',
-    'Adding visual direction...',
-    'Polishing the narrative flow...',
+    'Laying out the framework...',
+    'Adding detail to each section...',
+    'Refining the flow...',
+    'Polishing the details...',
     'Putting the finishing touches...',
+  ],
+  // Structure sub-types — keyed as STRUCTURE_{type} for type-aware loading
+  STRUCTURE_storyboard: [
+    'Scripting your scenes...',
+    'Setting the stage...',
+    'Composing the visual flow...',
+    'Timing each beat...',
+    'Polishing transitions...',
+    'Putting the finishing touches...',
+  ],
+  STRUCTURE_layout: [
+    'Wireframing your sections...',
+    'Arranging the layout...',
+    'Positioning content blocks...',
+    'Optimizing visual hierarchy...',
+    'Refining spacing...',
+    'Finalizing the grid...',
+  ],
+  STRUCTURE_calendar: [
+    'Mapping content pillars...',
+    'Scheduling your posts...',
+    'Balancing the content mix...',
+    'Adding variety...',
+    'Spacing for impact...',
+    'Finalizing the rhythm...',
+  ],
+  STRUCTURE_single_design: [
+    'Defining the composition...',
+    'Setting type hierarchy...',
+    'Choosing the palette...',
+    'Applying your style...',
+    'Refining details...',
+    'Finishing touches...',
   ],
   STRATEGIC_REVIEW: [
     'Reviewing your strategy...',
@@ -164,16 +197,22 @@ const DEFAULT_LOADING_MESSAGES = [
 function LoadingIndicator({
   requestStartTime,
   briefingStage,
+  structureType,
 }: {
   requestStartTime: number | null
   briefingStage?: string | null
+  structureType?: string | null
 }) {
   const [loadingStage, setLoadingStage] = useState(0)
   const [elapsedTime, setElapsedTime] = useState(0)
 
+  // For STRUCTURE stage, use type-specific messages if available
+  const resolvedKey =
+    briefingStage === 'STRUCTURE' && structureType ? `STRUCTURE_${structureType}` : briefingStage
+
   const loadingMessages =
-    briefingStage && STAGE_LOADING_MESSAGES[briefingStage]
-      ? STAGE_LOADING_MESSAGES[briefingStage]
+    resolvedKey && STAGE_LOADING_MESSAGES[resolvedKey]
+      ? STAGE_LOADING_MESSAGES[resolvedKey]
       : DEFAULT_LOADING_MESSAGES
 
   useEffect(() => {
@@ -323,6 +362,9 @@ export interface ChatMessageListProps {
   // Briefing stage (used to gate legacy CTAs)
   briefingStage?: string | null
 
+  // Structure type for stage-aware loading messages (storyboard, layout, calendar, single_design)
+  structureType?: string | null
+
   // Scene click handler for storyboard interactivity
   onSceneClick?: (scene: {
     sceneNumber: number
@@ -396,6 +438,7 @@ export function ChatMessageList({
   handleRequestTaskSummary,
   onStrategicReviewAction,
   briefingStage,
+  structureType,
   onSceneClick: _onSceneClick,
   onMultiSceneFeedback: _onMultiSceneFeedback,
   onViewStoryboard,
@@ -920,6 +963,7 @@ export function ChatMessageList({
             <LoadingIndicator
               requestStartTime={requestStartTimeRef.current}
               briefingStage={briefingStage}
+              structureType={structureType}
             />
           )}
           {/* eslint-enable react-hooks/refs */}
