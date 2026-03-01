@@ -34,9 +34,14 @@ export interface AuthenticatedSession {
  * @throws {APIError} If user is not authenticated
  */
 export async function requireAuth(): Promise<AuthenticatedSession> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  let session
+  try {
+    session = await auth.api.getSession({
+      headers: await headers(),
+    })
+  } catch {
+    throw Errors.unauthorized('Authentication required')
+  }
 
   if (!session?.user) {
     throw Errors.unauthorized('Authentication required')
