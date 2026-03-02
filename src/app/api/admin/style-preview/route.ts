@@ -38,7 +38,11 @@ export async function POST(request: NextRequest) {
         .where(eq(deliverableStyleReferences.id, styleId))
         .limit(1)
 
-      const urls = style?.styleReferenceImages ?? []
+      const rawUrls = style?.styleReferenceImages
+      if (rawUrls != null && !Array.isArray(rawUrls)) {
+        logger.warn({ styleId, rawUrls }, 'styleReferenceImages is not an array in DB; skipping reference images')
+      }
+      const urls = Array.isArray(rawUrls) ? rawUrls : []
       if (urls.length > 0) {
         referenceImages = await fetchReferenceImagesAsBase64(urls)
         logger.info(
