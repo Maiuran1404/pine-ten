@@ -20,6 +20,7 @@ import {
   type SerializedBriefingState,
   deserialize,
   serialize,
+  deriveStage,
 } from '@/lib/ai/briefing-state-machine'
 import { calibrateTone } from '@/lib/ai/briefing-tone'
 import { buildSystemPrompt, type BrandContext } from '@/lib/ai/briefing-prompts'
@@ -369,6 +370,23 @@ export async function buildPipelineContext(
               },
             },
           }
+          // Derive the new stage so the AI prompt reflects the advancement.
+          // Without this, the AI would still get the INSPIRATION prompt even though
+          // styles are populated, because the client-sent stage is stale.
+          const tempState = deserialize(body.briefingState)
+          const derivedStage = deriveStage(tempState)
+          if (derivedStage !== body.briefingState.stage) {
+            body.briefingState = {
+              ...body.briefingState,
+              stage: derivedStage,
+              turnsInCurrentStage: 0,
+            }
+            logger.debug(
+              { from: tempState.stage, to: derivedStage },
+              'Advanced stage after style injection'
+            )
+          }
+
           logger.debug(
             { count: mapped.length, ids: newIds },
             'Injected confirmed styles into briefing state before pipeline'

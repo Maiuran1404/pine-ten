@@ -220,7 +220,15 @@ export function BrandDNARevealStep({
   }
 
   const accentColor = brandData.accentColor || '#f59e0b'
-  const descriptionText = brandData.description || brandData.industry || 'Your brand story'
+  // Only show description if it's meaningful (not just a number or very short garbage)
+  const rawDescription = brandData.description
+  const isDescriptionUsable =
+    rawDescription &&
+    rawDescription.trim().length > 10 &&
+    !/^\d+[\s%+]*$/.test(rawDescription.trim())
+  const descriptionText = isDescriptionUsable
+    ? rawDescription
+    : brandData.tagline || brandData.industry || 'Your brand story'
   const isDescriptionLong = descriptionText.length > 120
 
   return (

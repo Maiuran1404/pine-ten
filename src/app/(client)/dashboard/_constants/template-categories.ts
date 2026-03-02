@@ -183,16 +183,14 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
       {
         title: 'Multi-Platform Campaign',
         optionKey: 'multi-platform-campaign',
-        description:
-          'Coordinated messaging across channels with a consistent narrative and CTA flow.',
+        description: 'Amplify one message everywhere with a coordinated cross-platform rollout.',
         prompt: 'Plan a multi-platform content campaign',
         icon: Megaphone,
       },
       {
         title: 'Launch Content Plan',
         optionKey: 'launch-content-plan',
-        description:
-          'A pre-launch to post-launch timeline with teasers, announcements, and follow-ups.',
+        description: 'Build anticipation before launch day and keep momentum going after.',
         prompt: 'Create a product launch content plan',
         icon: Rocket,
       },
@@ -208,22 +206,21 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
       {
         title: 'Product Landing Page',
         optionKey: 'product-landing-page',
-        description: 'A conversion-focused page with hero visuals, benefits, and a clear CTA.',
+        description: 'Turn visitors into customers with a page built around one clear action.',
         prompt: 'Design a product landing page',
         icon: ShoppingBag,
       },
       {
         title: 'SaaS Landing Page',
         optionKey: 'saas-landing-page',
-        description:
-          'Feature highlights, pricing tiers, social proof, and sign-up flows for software.',
+        description: 'Convert free users to paid with a page that sells the upgrade.',
         prompt: 'Design a SaaS landing page',
         icon: Monitor,
       },
       {
         title: 'Event Landing Page',
         optionKey: 'event-landing-page',
-        description: 'Countdowns, speaker bios, agenda, and registration for launches or events.',
+        description: 'Fill every seat with a page that builds urgency and captures sign-ups.',
         prompt: 'Design an event landing page',
         icon: CalendarDays,
       },

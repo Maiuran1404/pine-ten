@@ -759,9 +759,12 @@ export function useChatInterfaceData({
     )
     if (!selectedStyles || selectedStyles.length === 0) return
 
-    const styleContext = selectedStyles
+    const rawStyleContext = selectedStyles
       .map((s) => s.promptGuide || `${s.name}${s.description ? `: ${s.description}` : ''}`)
       .join('; ')
+    // Truncate to fit the API's 2000-char Zod limit
+    const styleContext =
+      rawStyleContext.length > 1950 ? rawStyleContext.slice(0, 1950) : rawStyleContext
 
     const briefId = _briefingState?.brief?.id || draftId
     dalleTriggeredRef.current = true
@@ -780,10 +783,12 @@ export function useChatInterfaceData({
       const selectedStylesList = _briefingState?.brief?.visualDirection?.selectedStyles?.filter(
         (s) => s.id !== 'moodboard-synced' && s.imageUrl !== ''
       )
-      const styleCtx =
+      const rawCtx =
         selectedStylesList
           ?.map((s) => s.promptGuide || `${s.name}${s.description ? `: ${s.description}` : ''}`)
           .join('; ') || ''
+      // Truncate to fit the API's 2000-char Zod limit
+      const styleCtx = rawCtx.length > 1950 ? rawCtx.slice(0, 1950) : rawCtx
       const bId = _briefingState?.brief?.id || draftId
       storyboard.regenerateSceneImage(scene, styleCtx, bId)
     },

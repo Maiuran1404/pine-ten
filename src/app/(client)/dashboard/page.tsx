@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ImageWithSkeleton, MasonryGridSkeleton } from '@/components/ui/skeletons'
+import { ImageWithSkeleton } from '@/components/ui/skeletons'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   Paperclip,
@@ -65,7 +65,7 @@ function DashboardContent() {
 
   // React Query hooks — deduplicate across StrictMode remounts
   const { data: tasksData, error: tasksError } = useTasks({ limit: 10, view: 'client' })
-  const { data: styleRefsData, isLoading: isLoadingStyles } = useStyleReferencesMatch(150)
+  const { data: styleRefsData } = useStyleReferencesMatch(150)
   const { data: templateImagesData } = useTemplateImages()
 
   // Derive values from query data
@@ -497,7 +497,7 @@ function DashboardContent() {
                     : undefined
               }
             >
-              <div className="bg-card/80 backdrop-blur-xl rounded-[17px] border-0 shadow-lg shadow-black/[0.03] overflow-hidden">
+              <div className="bg-white dark:bg-card/90 backdrop-blur-xl rounded-[17px] border-0 shadow-lg shadow-black/[0.03] overflow-hidden">
                 {/* Uploaded files preview */}
                 {uploadedFiles.length > 0 && (
                   <div className="px-4 py-3 border-b border-border/30">
@@ -1340,154 +1340,6 @@ function DashboardContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Inspiration Gallery - Grouped by Content Type */}
-      {styleReferences.length > 0 && (
-        <div className="relative w-full pt-8">
-          {/* Explore divider - editorial style */}
-          <div className="flex items-center gap-4 max-w-7xl mx-auto px-4 sm:px-6 mb-10">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/60 to-border/60" />
-            <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
-              Explore styles
-            </span>
-            <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border/60 to-border/60" />
-          </div>
-
-          {/* Grouped Masonry Grid */}
-          <div className="relative pb-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6">
-              {/* Show skeleton while loading */}
-              {isLoadingStyles ? (
-                <MasonryGridSkeleton count={15} columns={5} showHeader={true} />
-              ) : (
-                /* Group references by contentCategory */
-                (() => {
-                  const groups = styleReferences.reduce(
-                    (acc, ref) => {
-                      const group = ref.contentCategory || 'other'
-                      if (!acc[group]) acc[group] = []
-                      acc[group].push(ref)
-                      return acc
-                    },
-                    {} as Record<string, StyleReference[]>
-                  )
-
-                  const groupLabels: Record<string, { label: string; icon: string }> = {
-                    instagram_post: {
-                      label: 'Popular Instagram posts',
-                      icon: '📱',
-                    },
-                    instagram_story: {
-                      label: 'Popular Instagram stories',
-                      icon: '📲',
-                    },
-                    instagram_reel: {
-                      label: 'Popular Instagram reels',
-                      icon: '🎬',
-                    },
-                    linkedin_post: {
-                      label: 'Popular LinkedIn posts',
-                      icon: '💼',
-                    },
-                    linkedin_banner: {
-                      label: 'Popular LinkedIn banners',
-                      icon: '🖼️',
-                    },
-                    static_ad: { label: 'Popular static ads', icon: '🎯' },
-                    facebook_ad: { label: 'Popular Facebook ads', icon: '👥' },
-                    twitter_post: {
-                      label: 'Popular Twitter posts',
-                      icon: '🐦',
-                    },
-                    youtube_thumbnail: {
-                      label: 'Popular YouTube thumbnails',
-                      icon: '▶️',
-                    },
-                    email_header: {
-                      label: 'Popular email headers',
-                      icon: '📧',
-                    },
-                    web_banner: { label: 'Popular web banners', icon: '🌐' },
-                    presentation_slide: {
-                      label: 'Popular presentation slides',
-                      icon: '📊',
-                    },
-                    video_ad: { label: 'Popular video ads', icon: '🎥' },
-                    other: { label: 'More inspiration', icon: '💡' },
-                  }
-
-                  const orderedGroups = [
-                    'instagram_post',
-                    'instagram_story',
-                    'linkedin_post',
-                    'static_ad',
-                    'facebook_ad',
-                    'instagram_reel',
-                    'twitter_post',
-                    'youtube_thumbnail',
-                    'linkedin_banner',
-                    'email_header',
-                    'web_banner',
-                    'presentation_slide',
-                    'video_ad',
-                    'other',
-                  ]
-
-                  return orderedGroups.map((groupKey, groupIndex) => {
-                    const allRefs = groups[groupKey]
-                    if (!allRefs || allRefs.length === 0) return null
-
-                    // Limit to 15 items per category for cleaner display
-                    const refs = allRefs.slice(0, 15)
-                    const { label, icon } = groupLabels[groupKey] || {
-                      label: groupKey,
-                      icon: '📌',
-                    }
-
-                    return (
-                      <div key={groupKey} className={groupIndex > 0 ? 'mt-12' : ''}>
-                        {/* Group Header */}
-                        <div className="flex items-center gap-3 mb-5">
-                          <span className="text-base">{icon}</span>
-                          <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-foreground">
-                            {label}
-                          </h3>
-                          <div className="flex-1 h-px bg-gradient-to-r from-border/60 to-transparent ml-2" />
-                          <span className="text-xs text-muted-foreground tabular-nums">
-                            {allRefs.length} {allRefs.length === 1 ? 'style' : 'styles'}
-                          </span>
-                        </div>
-                        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
-                          {refs.map((ref) => {
-                            const variantUrls = getImageVariantUrls(ref.imageUrl)
-                            return (
-                              <div
-                                key={ref.id}
-                                className="break-inside-avoid rounded-2xl overflow-hidden ring-1 ring-black/[0.04] shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer"
-                              >
-                                <ImageWithSkeleton
-                                  src={variantUrls.preview}
-                                  alt={ref.name}
-                                  className="w-full"
-                                  skeletonClassName="bg-muted/30 min-h-[150px]"
-                                  loading="lazy"
-                                />
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })
-                })()
-              )}
-            </div>
-
-            {/* Fade overlay at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background via-background/60 to-transparent pointer-events-none z-10" />
-          </div>
-        </div>
-      )}
-
       {/* Credit Purchase Dialog */}
       <CreditPurchaseDialog
         open={showCreditDialog}
@@ -1506,14 +1358,15 @@ function DashboardSkeleton() {
         <Skeleton className="h-8 w-80 mx-auto mb-2" />
         <Skeleton className="h-4 w-56 mx-auto" />
       </div>
-      <Skeleton className="h-28 w-full max-w-[640px] rounded-2xl mb-3" />
+      <Skeleton className="h-32 w-full max-w-[780px] rounded-2xl mb-3" />
       <Skeleton className="h-3.5 w-64 mx-auto mb-6" />
-      <div className="flex gap-2 flex-wrap justify-center">
-        <Skeleton className="h-9 w-32 rounded-xl" />
-        <Skeleton className="h-9 w-28 rounded-xl" />
-        <Skeleton className="h-9 w-24 rounded-xl" />
-        <Skeleton className="h-9 w-30 rounded-xl" />
-        <Skeleton className="h-9 w-32 rounded-xl" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-[510px] w-full">
+        <Skeleton className="h-[100px] rounded-xl" />
+        <Skeleton className="h-[100px] rounded-xl" />
+        <Skeleton className="h-[100px] rounded-xl" />
+        <Skeleton className="h-[100px] rounded-xl" />
+        <Skeleton className="h-[100px] rounded-xl" />
+        <Skeleton className="h-[100px] rounded-xl" />
       </div>
     </div>
   )

@@ -1034,6 +1034,64 @@ Return ONLY a valid JSON object with this exact structure:
     brandData.tagline = stripNonLatin(brandData.tagline)
   }
 
+  // Validate description quality — Claude sometimes returns garbage (e.g., a bare number
+  // like "500" extracted from the page instead of an actual description).
+  // Fall back to metadata.description, then try to extract from markdown.
+  const isDescriptionPoor = (desc: string | null | undefined): boolean => {
+    if (!desc) return true
+    const trimmed = desc.trim()
+    if (trimmed.length < 15) return true
+    if (/^\d+[\s%+]*$/.test(trimmed)) return true // Just a number, e.g. "500", "500+", "500%"
+    return false
+  }
+
+  if (isDescriptionPoor(brandData.description)) {
+    // Try metadata.description first (HTML meta description tag)
+    if (metadata?.description && !isDescriptionPoor(metadata.description)) {
+      brandData.description = metadata.description
+      logger.info(
+        { url: normalizedUrl, source: 'metadata' },
+        'Using metadata description (Claude description was poor)'
+      )
+    } else if (markdown) {
+      // Try to extract first meaningful paragraph from markdown content
+      const paragraphs = markdown
+        .split(/\n{2,}/)
+        .map((p) => p.trim())
+        .filter((p) => {
+          return (
+            p.length > 30 &&
+            !p.startsWith('#') &&
+            !p.startsWith('!') &&
+            !p.startsWith('[') &&
+            !p.startsWith('|') &&
+            !p.startsWith('```') &&
+            !/^[\d\s%+.,]+$/.test(p)
+          )
+        })
+      if (paragraphs.length > 0) {
+        // Clean markdown formatting and take first 200 chars
+        const cleaned = paragraphs[0]
+          .replace(/\*\*/g, '')
+          .replace(/\*/g, '')
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+          .trim()
+        if (cleaned.length > 15) {
+          brandData.description = cleaned.slice(0, 200)
+          logger.info(
+            { url: normalizedUrl, source: 'markdown' },
+            'Using markdown-extracted description (Claude + metadata descriptions were poor)'
+          )
+        }
+      }
+    }
+  }
+
+  // Also validate tagline quality — same issue can occur
+  if (brandData.tagline && /^\d+[\s%+]*$/.test(brandData.tagline.trim())) {
+    brandData.tagline = null
+  }
+
   // If Firecrawl had good branding colors (high confidence), prefer those over Claude's guesses
   // This gives us the best of both worlds: accurate colors from Firecrawl + audiences from Claude
   if (firecrawlBrandData && hasBrandingColors) {

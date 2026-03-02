@@ -105,13 +105,15 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
               <span className="text-white/20 text-[10px] ml-auto">1h</span>
             </div>
 
-            {/* Post body */}
+            {/* Post body — show description (prefer over tagline for richer content) */}
             <p
-              className="text-white/60 text-sm leading-relaxed mb-5 line-clamp-4"
+              className="text-white/60 text-sm leading-relaxed mb-5 line-clamp-5"
               style={{ fontFamily }}
             >
-              {brandData.tagline ||
-                brandData.description?.slice(0, 160) ||
+              {(brandData.description && brandData.description.length > 10
+                ? brandData.description.slice(0, 200)
+                : null) ||
+                (brandData.tagline && brandData.tagline.length > 5 ? brandData.tagline : null) ||
                 'Your brand story appears here — edit colors, fonts, and details on the left to see changes in real-time.'}
             </p>
           </div>
