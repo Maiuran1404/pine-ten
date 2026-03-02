@@ -4,6 +4,26 @@ import type { NextConfig } from 'next'
 const isDev = process.env.NODE_ENV === 'development'
 
 const nextConfig: NextConfig = {
+  // Reduce file watcher pressure — ignore large/generated folders
+  webpack: (config) => {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [
+        '**/node_modules/**',
+        '**/.next/**',
+        '**/.git/**',
+        '**/coverage/**',
+        '**/test-results/**',
+        '**/playwright-report/**',
+        '**/dist/**',
+        '**/out/**',
+        '**/.vercel/**',
+        '**/.sentry/**',
+      ],
+    }
+    return config
+  },
+
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 2592000, // 30 days — remote images are content-addressed
