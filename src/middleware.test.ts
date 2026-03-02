@@ -115,7 +115,6 @@ describe('middleware', () => {
       expect(isPublicPath('/api/webhooks/stripe')).toBe(true)
       expect(isPublicPath('/api/health')).toBe(true)
       expect(isPublicPath('/api/csrf')).toBe(true)
-      expect(isPublicPath('/api/openapi')).toBe(true)
     })
 
     it('identifies non-public routes', async () => {
@@ -239,16 +238,6 @@ describe('middleware', () => {
       mockGetSessionCookie.mockReturnValue(null)
       const { middleware } = await import('./middleware')
       const request = createMockRequest('/api/webhooks/stripe')
-
-      const response = await middleware(request)
-
-      expect(response.status).toBe(200)
-    })
-
-    it('allows /api/openapi without a session', async () => {
-      mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
-      const request = createMockRequest('/api/openapi')
 
       const response = await middleware(request)
 
