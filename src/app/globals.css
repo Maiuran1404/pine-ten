@@ -545,6 +545,37 @@
   }
 }
 
+/* Dashboard background blob breathing animations — subtle opacity pulse */
+@keyframes blob-breathe-slow {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes blob-breathe-medium {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes blob-breathe-fast {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
 /* Dashboard input card animations */
 @keyframes breathing-glow {
   0%,

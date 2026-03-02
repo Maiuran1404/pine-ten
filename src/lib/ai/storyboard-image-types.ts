@@ -14,7 +14,8 @@ export type ImageSource =
   | 'houzz'
   | 'arena'
   | 'serper'
-  | 'dalle'
+  | 'ai-generated'
+  | 'dalle' // backward compat — new code should use 'ai-generated'
 export type ImageMediaType = 'still' | 'gif'
 
 export interface StoryboardImageAttribution {

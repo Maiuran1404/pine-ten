@@ -216,7 +216,11 @@ export function runPreAiPipeline(
     }
 
     // 5. Resolve deliverable category
-    if (!briefingState.deliverableCategory || briefingState.deliverableCategory === 'unknown') {
+    const shouldResolveCategory =
+      !briefingState.deliverableCategory ||
+      briefingState.deliverableCategory === 'unknown' ||
+      briefingState.stage === 'TASK_TYPE'
+    if (shouldResolveCategory) {
       const category = resolveDeliverableCategory(inference)
       if (category !== 'unknown') {
         briefingState.deliverableCategory = category

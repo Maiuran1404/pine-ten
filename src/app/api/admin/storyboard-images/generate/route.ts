@@ -9,7 +9,6 @@ export const maxDuration = 120
 const generateSchema = z.object({
   prompt: z.string().min(1).max(10000),
   size: z.enum(['1536x1024', '1024x1024', '1024x1536']).default('1536x1024'),
-  quality: z.enum(['low', 'medium', 'high']).default('high'),
 })
 
 export async function POST(request: NextRequest) {
@@ -20,7 +19,6 @@ export async function POST(request: NextRequest) {
 
     const result = await generateSceneImage(body.prompt, {
       size: body.size,
-      quality: body.quality,
     })
 
     return successResponse({

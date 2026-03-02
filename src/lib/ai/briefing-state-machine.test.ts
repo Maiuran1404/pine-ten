@@ -43,17 +43,19 @@ describe('deriveStage', () => {
       expect(deriveStage(state)).toBe('TASK_TYPE')
     })
 
-    it('returns INTENT when topic + taskType satisfied but intent missing', () => {
+    it('returns INTENT when topic + taskType + deliverableCategory satisfied but intent missing', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS product launch', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.deliverableCategory = 'design'
       expect(deriveStage(state)).toBe('INTENT')
     })
 
-    it('returns STRUCTURE when topic + taskType + intent all satisfied', () => {
+    it('returns STRUCTURE when topic + taskType + deliverableCategory + intent all satisfied', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS product launch', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('announcement', 0.85)
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -62,6 +64,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS product launch', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('announcement', 0.85)
       state.structure = {
         type: 'storyboard',
@@ -82,6 +85,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS product launch', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('announcement', 0.85)
       state.brief.visualDirection = {
         selectedStyles: [
@@ -120,6 +124,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS product launch', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('announcement', 0.85)
       state.structure = {
         type: 'storyboard',
@@ -172,6 +177,7 @@ describe('deriveStage', () => {
     it('requires taskType confidence >= 0.4 for TASK_TYPE gate', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS', 0.8)
+      state.deliverableCategory = 'design'
       state.brief.taskType = makeInferredField('single_asset', 0.3)
       expect(deriveStage(state)).toBe('TASK_TYPE')
 
@@ -183,6 +189,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('announcement', 0.3)
       expect(deriveStage(state)).toBe('INTENT')
 
@@ -211,6 +218,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Stripe launch video for B2B SaaS', 0.9)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.deliverableCategory = 'video'
       state.brief.intent = makeInferredField('announcement', 0.85)
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -219,6 +227,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('30-day Instagram content plan', 0.9)
       state.brief.taskType = makeInferredField('multi_asset_plan', 0.95)
+      state.deliverableCategory = 'content'
       expect(deriveStage(state)).toBe('INTENT')
     })
 
@@ -234,6 +243,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Website landing page', 0.85)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.deliverableCategory = 'website'
       state.brief.intent = makeInferredField('signups', 0.75)
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -242,6 +252,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Logo for yoga studio', 0.85)
       state.brief.taskType = makeInferredField('single_asset', 0.85)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('awareness', 0.75)
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -250,6 +261,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Fitness app Instagram reels', 0.9)
       state.brief.taskType = makeInferredField('multi_asset_plan', 0.9)
+      state.deliverableCategory = 'video'
       state.brief.intent = makeInferredField('signups', 0.9)
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -258,6 +270,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('Pitch deck for investor meeting', 0.9)
       state.brief.taskType = makeInferredField('single_asset', 0.9)
+      state.deliverableCategory = 'design'
       expect(deriveStage(state)).toBe('INTENT')
     })
 
@@ -265,6 +278,7 @@ describe('deriveStage', () => {
       const state = createInitialBriefingState()
       state.brief.topic = makeInferredField('LinkedIn thought leadership', 0.9)
       state.brief.taskType = makeInferredField('multi_asset_plan', 0.85)
+      state.deliverableCategory = 'content'
       state.brief.intent = makeInferredField('authority', 0.95)
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -285,11 +299,12 @@ describe('deriveStage', () => {
       expect(deriveStage(state)).toBe('TASK_TYPE')
     })
 
-    it('advances from TASK_TYPE to INTENT when taskType at 0.4+', () => {
+    it('advances from TASK_TYPE to INTENT when taskType at 0.4+ and deliverableCategory set', () => {
       const state = createInitialBriefingState()
       state.stage = 'TASK_TYPE'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.4)
+      state.deliverableCategory = 'design'
       expect(deriveStage(state)).toBe('INTENT')
     })
 
@@ -298,6 +313,7 @@ describe('deriveStage', () => {
       state.stage = 'TASK_TYPE'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.4)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('signups', 0.4)
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -307,6 +323,7 @@ describe('deriveStage', () => {
       state.stage = 'INTENT'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('awareness', 0.4)
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -314,6 +331,7 @@ describe('deriveStage', () => {
     it('advances from STRUCTURE to INSPIRATION when structure set (non-video)', () => {
       const state = createInitialBriefingState()
       state.stage = 'STRUCTURE'
+      state.deliverableCategory = 'website'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
@@ -345,6 +363,7 @@ describe('deriveStage', () => {
     it('advances from INSPIRATION to ELABORATE when styles selected', () => {
       const state = createInitialBriefingState()
       state.stage = 'INSPIRATION'
+      state.deliverableCategory = 'design'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
@@ -384,6 +403,7 @@ describe('deriveStage', () => {
     it('stays at STRUCTURE when structure is null (non-video)', () => {
       const state = createInitialBriefingState()
       state.stage = 'STRUCTURE'
+      state.deliverableCategory = 'design'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
@@ -395,6 +415,7 @@ describe('deriveStage', () => {
     it('stays at REVIEW (terminal stage — exitWhen always false)', () => {
       const state = createInitialBriefingState()
       state.stage = 'REVIEW'
+      state.deliverableCategory = 'design'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
       state.brief.intent = makeInferredField('announcement', 0.8)
@@ -468,6 +489,7 @@ describe('deriveStage', () => {
       state.stage = 'INTENT'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.deliverableCategory = 'design'
       state.turnsInCurrentStage = 2
       expect(deriveStage(state)).toBe('STRUCTURE')
     })
@@ -477,6 +499,7 @@ describe('deriveStage', () => {
       state.stage = 'INTENT'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('awareness', 0.15) // Below threshold
       state.turnsInCurrentStage = 2
       expect(deriveStage(state)).toBe('STRUCTURE')
@@ -487,6 +510,7 @@ describe('deriveStage', () => {
       state.stage = 'STRUCTURE'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.deliverableCategory = 'design'
       state.brief.intent = makeInferredField('announcement', 0.8)
       state.structure = null
       state.turnsInCurrentStage = 10
@@ -498,7 +522,9 @@ describe('deriveStage', () => {
       state.stage = 'REVIEW'
       state.brief.topic = makeInferredField('SaaS', 0.8)
       state.brief.taskType = makeInferredField('single_asset', 0.8)
+      state.deliverableCategory = 'video'
       state.brief.intent = makeInferredField('announcement', 0.8)
+      state.narrativeApproved = true
       state.structure = {
         type: 'storyboard',
         scenes: [
@@ -693,6 +719,35 @@ describe('goBackTo', () => {
 // =============================================================================
 
 describe('pivotCategory', () => {
+  it('clears visualDirection when switching categories', () => {
+    const state = createInitialBriefingState()
+    state.stage = 'INSPIRATION'
+    state.deliverableCategory = 'design'
+    state.brief.visualDirection = {
+      selectedStyles: [
+        {
+          id: '1',
+          name: 'Brand Identity',
+          description: null,
+          imageUrl: '',
+          deliverableType: 'design',
+          styleAxis: 'brand',
+          subStyle: null,
+          semanticTags: [],
+        },
+      ],
+      moodKeywords: ['clean'],
+      colorPalette: [],
+      typography: { primary: '', secondary: '' },
+      avoidElements: [],
+    }
+
+    const result = pivotCategory(state, 'video')
+
+    expect(result.deliverableCategory).toBe('video')
+    expect(result.brief.visualDirection).toBeNull()
+  })
+
   it('preserves intent, topic, audience, styleKeywords, inspirationRefs', () => {
     const state = createInitialBriefingState()
     state.stage = 'STRUCTURE'
@@ -858,5 +913,36 @@ describe('BriefingState composes LiveBrief', () => {
     expect(state.brief.intent.value).toBe('sales')
     expect(state.brief.platform.value).toBe('instagram')
     expect(state.brief.topic.value).toBe('Summer collection')
+  })
+})
+
+// =============================================================================
+// TASK_TYPE gate requires deliverableCategory (video detection fix)
+// =============================================================================
+
+describe('TASK_TYPE gate requires deliverableCategory', () => {
+  it('stays at TASK_TYPE when taskType is set but deliverableCategory is null', () => {
+    const state = createInitialBriefingState()
+    state.brief.topic = makeInferredField('SaaS product launch', 0.8)
+    state.brief.taskType = makeInferredField('single_asset', 0.85)
+    // deliverableCategory is null → TASK_TYPE gate NOT satisfied
+    expect(deriveStage(state)).toBe('TASK_TYPE')
+  })
+
+  it('stays at TASK_TYPE when deliverableCategory is unknown', () => {
+    const state = createInitialBriefingState()
+    state.brief.topic = makeInferredField('SaaS product launch', 0.8)
+    state.brief.taskType = makeInferredField('single_asset', 0.85)
+    state.deliverableCategory = 'unknown'
+    expect(deriveStage(state)).toBe('TASK_TYPE')
+  })
+
+  it('exits TASK_TYPE when both taskType and deliverableCategory are set', () => {
+    const state = createInitialBriefingState()
+    state.brief.topic = makeInferredField('SaaS product launch', 0.8)
+    state.brief.taskType = makeInferredField('single_asset', 0.85)
+    state.deliverableCategory = 'video'
+    // Both set → TASK_TYPE gate satisfied → advances to INTENT
+    expect(deriveStage(state)).toBe('INTENT')
   })
 })

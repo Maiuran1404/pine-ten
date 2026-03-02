@@ -667,6 +667,7 @@ function SceneThumbnail({
         houzz: 'Houzz',
         arena: 'Are.na',
         serper: 'Web',
+        'ai-generated': 'AI Generated',
         dalle: 'AI Generated',
       }[sceneImageData.primarySource]
     : null
@@ -679,7 +680,7 @@ function SceneThumbnail({
         isGenerating && 'skeleton-shimmer'
       )}
     >
-      {/* DALL-E generating state — shimmer is the primary visual, overlay is subtle */}
+      {/* Generating state — shimmer is the primary visual, overlay is subtle */}
       {isGenerating && !imageUrl && (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
           <Sparkles className="h-5 w-5 text-muted-foreground/60" />
@@ -1073,7 +1074,7 @@ interface RichStoryboardPanelProps {
   onRedo?: () => void
   canUndo?: boolean
   canRedo?: boolean
-  // DALL-E image generation
+  // Scene image generation
   imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
   onRegenerateImage?: (scene: StoryboardScene) => void
   // User-specified target duration from briefing state (e.g. "45 second video")

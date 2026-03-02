@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     await requireAdmin()
 
     const body = stylePreviewSchema.parse(await request.json())
-    const { subject, promptGuide, styleName, size, quality, styleId } = body
+    const { subject, promptGuide, styleName, size, styleId } = body
 
     logger.info(
       { styleName, subject: subject.slice(0, 50), hasStyleId: !!styleId },
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const hasRefImages = !!referenceImages && referenceImages.length > 0
     const prompt = buildStylePreviewPrompt(styleName, promptGuide, subject, hasRefImages)
 
-    const result = await generateSceneImage(prompt, { size, quality, referenceImages })
+    const result = await generateSceneImage(prompt, { size, referenceImages })
 
     logger.info({ styleName }, 'Style preview generated')
 

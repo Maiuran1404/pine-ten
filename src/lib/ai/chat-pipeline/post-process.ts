@@ -107,7 +107,9 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
       }
       if (
         fields.deliverableCategory &&
-        (!briefingState.deliverableCategory || briefingState.deliverableCategory === 'unknown')
+        (!briefingState.deliverableCategory ||
+          briefingState.deliverableCategory === 'unknown' ||
+          briefingState.stage === 'TASK_TYPE')
       ) {
         const catMap: Record<string, DeliverableCategory> = {
           video: 'video',

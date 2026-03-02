@@ -287,7 +287,11 @@ const STAGE_DEFINITIONS: StageDefinition[] = [
   },
   {
     stage: 'TASK_TYPE',
-    exitWhen: (s) => s.brief.taskType.confidence >= 0.4 && s.brief.taskType.value !== null,
+    exitWhen: (s) =>
+      s.brief.taskType.confidence >= 0.4 &&
+      s.brief.taskType.value !== null &&
+      s.deliverableCategory !== null &&
+      s.deliverableCategory !== 'unknown',
     stall: { maxTurnsBeforeNarrow: 1, maxTurnsBeforeRecommend: 2, softNudgeAfter: null },
     legalTransitions: ['TASK_TYPE', 'INTENT', 'STRUCTURE'],
   },
@@ -604,6 +608,10 @@ export function pivotCategory(
     ...state,
     stage: 'STRUCTURE',
     deliverableCategory: newCategory,
+    brief: {
+      ...state.brief,
+      visualDirection: null,
+    },
     // Preserve: intent, topic, audience, styleKeywords, inspirationRefs, overallMoodboard
     // Clear downstream
     structure: null,

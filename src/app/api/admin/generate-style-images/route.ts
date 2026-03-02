@@ -95,10 +95,9 @@ export async function POST(request: NextRequest) {
         // Build condensed prompt from the full prompt guide
         const imagePrompt = buildStylePreviewPrompt(preset.name, promptGuide)
 
-        // Generate image via DALL-E (1024x1024 for style thumbnails, medium quality)
+        // Generate image (1024x1024 for style thumbnails)
         const result = await generateSceneImage(imagePrompt, {
           size: '1024x1024',
-          quality: 'medium',
         })
 
         // Upload to Supabase storage

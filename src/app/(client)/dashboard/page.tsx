@@ -4,9 +4,7 @@ import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { formatDistanceToNow } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ImageWithSkeleton } from '@/components/ui/skeletons'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   Paperclip,
@@ -21,7 +19,6 @@ import {
   Check,
   Zap,
   ArrowRight,
-  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
@@ -29,14 +26,13 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { LoadingSpinner } from '@/components/shared/loading'
 import { QuickBriefForm, type QuickBriefData } from '@/components/chat/quick-brief-form'
 import { useSession } from '@/lib/auth-client'
-import { getImageVariantUrls } from '@/lib/image/utils'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useCredits } from '@/providers/credit-provider'
-import { useTasks, useStyleReferencesMatch, useTemplateImages } from '@/hooks/use-queries'
+import { useTasks, useTemplateImages } from '@/hooks/use-queries'
 import { TEMPLATE_CATEGORIES } from './_constants/template-categories'
 import { SOCIAL_MEDIA_PLATFORMS, FREQUENCY_OPTIONS } from './_constants/social-media'
-import type { UploadedFile, StyleReference, PlatformSelection } from './_types/dashboard-types'
+import type { UploadedFile, PlatformSelection } from './_types/dashboard-types'
 
 function DashboardContent() {
   const router = useRouter()
@@ -65,7 +61,6 @@ function DashboardContent() {
 
   // React Query hooks — deduplicate across StrictMode remounts
   const { data: tasksData, error: tasksError } = useTasks({ limit: 10, view: 'client' })
-  const { data: styleRefsData } = useStyleReferencesMatch(150)
   const { data: templateImagesData } = useTemplateImages()
 
   // Derive values from query data
@@ -73,8 +68,6 @@ function DashboardContent() {
     const allTasks = tasksData?.tasks || []
     return allTasks.filter((t) => t.status === 'IN_REVIEW')
   }, [tasksData])
-
-  const styleReferences = styleRefsData?.data ?? []
 
   const templateImageMap = useMemo(() => {
     const map = new Map<string, string>()
@@ -278,7 +271,7 @@ function DashboardContent() {
           style={{
             background:
               'radial-gradient(ellipse at 40% 40%, rgba(140,190,130,0.35) 0%, rgba(160,200,150,0.18) 40%, transparent 70%)' /* --crafted-sage variants */,
-            animation: 'float1 45s ease-in-out infinite',
+            animation: 'float1 45s ease-in-out infinite, blob-breathe-slow 8s ease-in-out infinite',
           }}
         />
 
@@ -288,7 +281,8 @@ function DashboardContent() {
           style={{
             background:
               'radial-gradient(ellipse at 60% 50%, rgba(230,200,130,0.3) 0%, rgba(220,190,120,0.12) 50%, transparent 75%)' /* warm golden accent */,
-            animation: 'float2 55s ease-in-out infinite',
+            animation:
+              'float2 55s ease-in-out infinite, blob-breathe-medium 10s ease-in-out infinite',
           }}
         />
 
@@ -298,7 +292,7 @@ function DashboardContent() {
           style={{
             background:
               'radial-gradient(ellipse at 50% 60%, rgba(100,170,120,0.28) 0%, rgba(120,180,130,0.1) 45%, transparent 70%)' /* --crafted-green variants */,
-            animation: 'float3 60s ease-in-out infinite',
+            animation: 'float3 60s ease-in-out infinite, blob-breathe-fast 7s ease-in-out infinite',
           }}
         />
 
@@ -308,7 +302,8 @@ function DashboardContent() {
           style={{
             background:
               'radial-gradient(ellipse at 45% 50%, rgba(150,210,170,0.22) 0%, transparent 65%)' /* --crafted-mint variant */,
-            animation: 'float4 50s ease-in-out infinite',
+            animation:
+              'float4 50s ease-in-out infinite, blob-breathe-slow 12s ease-in-out infinite',
           }}
         />
 
@@ -318,7 +313,8 @@ function DashboardContent() {
           style={{
             background:
               'radial-gradient(circle, rgba(240,200,150,0.25) 0%, transparent 60%)' /* warm peach accent */,
-            animation: 'float5 35s ease-in-out infinite',
+            animation:
+              'float5 35s ease-in-out infinite, blob-breathe-medium 9s ease-in-out infinite',
           }}
         />
 
@@ -328,7 +324,8 @@ function DashboardContent() {
           style={{
             background:
               'radial-gradient(ellipse at 60% 60%, rgba(200,180,130,0.2) 0%, transparent 65%)' /* warm golden accent */,
-            animation: 'float1 65s ease-in-out infinite reverse',
+            animation:
+              'float1 65s ease-in-out infinite reverse, blob-breathe-fast 11s ease-in-out infinite',
           }}
         />
 
@@ -447,7 +444,7 @@ function DashboardContent() {
           becomes inaccessible (can't scroll to it). my-auto achieves the same
           visual centering but gracefully falls back to top-aligned on overflow. */}
       <div className="flex flex-col items-center px-4 sm:px-6 min-h-[calc(100vh-3rem)] pb-12">
-        <div className="my-auto flex flex-col items-center w-full">
+        <div className="mt-[18vh] flex flex-col items-center w-full">
           {/* Welcome Header */}
           <motion.div
             initial={prefersReduced ? false : { opacity: 0, y: 8 }}
@@ -649,6 +646,39 @@ function DashboardContent() {
               </button>{' '}
               to add your images, videos or files.
             </p>
+
+            {/* Recent Activity Chips */}
+            {recentActiveTasks.length > 0 && (
+              <div className="flex items-center justify-center gap-2 flex-wrap mt-3">
+                {recentActiveTasks.map((task) => {
+                  const config = statusConfig[task.status] || {
+                    label: task.status,
+                    colorClass: 'bg-muted-foreground',
+                  }
+                  return (
+                    <Link
+                      key={task.id}
+                      href={`/dashboard/tasks/${task.id}`}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/60 border border-border/40 backdrop-blur-sm text-xs hover:border-crafted-sage/30 hover:bg-card/80 transition-all duration-200"
+                    >
+                      <span
+                        className={cn('w-1.5 h-1.5 rounded-full shrink-0', config.colorClass)}
+                      />
+                      <span className="text-muted-foreground font-medium">{config.label}</span>
+                      <span className="text-foreground/70 truncate max-w-[120px]">
+                        {task.title}
+                      </span>
+                    </Link>
+                  )
+                })}
+                <Link
+                  href="/dashboard/tasks"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-crafted-sage hover:text-crafted-green transition-colors"
+                >
+                  View all <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            )}
           </motion.div>
 
           {/* Template Cards */}
@@ -660,7 +690,7 @@ function DashboardContent() {
               delay: prefersReduced ? 0 : 0.2,
               ease: [0.25, 0.1, 0.25, 1],
             }}
-            className="w-full max-w-[510px] mt-5"
+            className="w-full max-w-[480px] mt-4"
           >
             <p className="text-center text-xs text-muted-foreground/60 mb-4">
               or start from a template
@@ -697,7 +727,7 @@ function DashboardContent() {
                           setModalNotes('')
                           setPlatformSelections({})
                         }}
-                        className="group relative flex flex-col items-center justify-center gap-2 w-full h-[100px] rounded-xl overflow-hidden shadow-md ring-1 ring-transparent hover:ring-crafted-sage/40 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer"
+                        className="group relative flex flex-col items-center justify-center gap-2 w-full h-[85px] rounded-xl overflow-hidden shadow-md ring-1 ring-transparent hover:ring-crafted-sage/40 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer"
                       >
                         {categoryImage ? (
                           <>
@@ -743,143 +773,6 @@ function DashboardContent() {
               )}
             </div>
           </motion.div>
-
-          {/* Recent Activity Row */}
-          {recentActiveTasks.length > 0 && (
-            <motion.div
-              initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: prefersReduced ? 0 : 0.4,
-                delay: prefersReduced ? 0 : 0.4,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
-              className="w-full max-w-[780px] mt-8"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                  Recent activity
-                </span>
-                <Link
-                  href="/dashboard/tasks"
-                  className="text-xs text-crafted-sage hover:text-crafted-green transition-colors flex items-center gap-1"
-                >
-                  View all <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-                {recentActiveTasks.map((task) => {
-                  const config = statusConfig[task.status] || {
-                    label: task.status,
-                    colorClass: 'bg-muted-foreground',
-                  }
-                  return (
-                    <Link
-                      key={task.id}
-                      href={`/dashboard/tasks/${task.id}`}
-                      className="group flex-shrink-0 w-[200px] rounded-xl border border-border/50 bg-card/60 backdrop-blur-sm p-3.5 hover:border-crafted-sage/30 hover:bg-card/80 transition-all duration-200"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={cn('w-2 h-2 rounded-full shrink-0', config.colorClass)} />
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                          {config.label}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium text-foreground line-clamp-1 mb-1.5">
-                        {task.title}
-                      </p>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
-                        <Clock className="h-2.5 w-2.5" />
-                        <span>
-                          {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}
-                        </span>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Inspiration Peek — Horizontal Scroll */}
-          {styleReferences.length > 0 && (
-            <motion.div
-              initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: prefersReduced ? 0 : 0.4,
-                delay: prefersReduced ? 0 : 0.5,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
-              className="w-full max-w-[780px] mt-8"
-            >
-              {/* Explore divider */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/60 to-border/60" />
-                <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
-                  Explore styles
-                </span>
-                <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border/60 to-border/60" />
-              </div>
-
-              <div
-                className="flex gap-3 overflow-x-auto scrollbar-hide pb-2"
-                style={{ scrollSnapType: 'x mandatory' }}
-              >
-                {(() => {
-                  // Sample 2 images from each of the top 6 content categories
-                  const groups = styleReferences.reduce(
-                    (acc, ref) => {
-                      const group = ref.contentCategory || 'other'
-                      if (!acc[group]) acc[group] = []
-                      acc[group].push(ref)
-                      return acc
-                    },
-                    {} as Record<string, StyleReference[]>
-                  )
-
-                  const topCategories = Object.keys(groups).slice(0, 6)
-                  const sampledRefs = topCategories.flatMap((cat) =>
-                    (groups[cat] || []).slice(0, 2)
-                  )
-
-                  return (
-                    <>
-                      {sampledRefs.map((ref) => {
-                        const variantUrls = getImageVariantUrls(ref.imageUrl)
-                        return (
-                          <div
-                            key={ref.id}
-                            className="flex-shrink-0 w-[140px] h-[140px] rounded-xl overflow-hidden ring-1 ring-black/[0.04] hover:ring-crafted-sage/30 hover:scale-[1.03] transition-all duration-200 cursor-pointer"
-                            style={{ scrollSnapAlign: 'start' }}
-                          >
-                            <ImageWithSkeleton
-                              src={variantUrls.preview}
-                              alt={ref.name}
-                              className="w-full h-full object-cover"
-                              skeletonClassName="bg-muted/30 w-[140px] h-[140px]"
-                              loading="lazy"
-                            />
-                          </div>
-                        )
-                      })}
-                      {/* End card — "Explore all" */}
-                      <Link
-                        href="/dashboard/explore"
-                        className="flex-shrink-0 w-[140px] h-[140px] rounded-xl border border-border/50 bg-card/40 backdrop-blur-sm flex flex-col items-center justify-center gap-2 hover:border-crafted-sage/30 hover:bg-card/60 transition-all duration-200 cursor-pointer"
-                        style={{ scrollSnapAlign: 'start' }}
-                      >
-                        <ArrowRight className="h-5 w-5 text-crafted-sage" />
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Explore all styles
-                        </span>
-                      </Link>
-                    </>
-                  )
-                })()}
-              </div>
-            </motion.div>
-          )}
         </div>
       </div>
 
@@ -1359,14 +1252,20 @@ function DashboardSkeleton() {
         <Skeleton className="h-4 w-56 mx-auto" />
       </div>
       <Skeleton className="h-32 w-full max-w-[780px] rounded-2xl mb-3" />
-      <Skeleton className="h-3.5 w-64 mx-auto mb-6" />
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-[510px] w-full">
-        <Skeleton className="h-[100px] rounded-xl" />
-        <Skeleton className="h-[100px] rounded-xl" />
-        <Skeleton className="h-[100px] rounded-xl" />
-        <Skeleton className="h-[100px] rounded-xl" />
-        <Skeleton className="h-[100px] rounded-xl" />
-        <Skeleton className="h-[100px] rounded-xl" />
+      <Skeleton className="h-3.5 w-64 mx-auto mb-3" />
+      {/* Activity chip skeletons */}
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <Skeleton className="h-7 w-36 rounded-full" />
+        <Skeleton className="h-7 w-40 rounded-full" />
+        <Skeleton className="h-7 w-32 rounded-full" />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-[480px] w-full">
+        <Skeleton className="h-[85px] rounded-xl" />
+        <Skeleton className="h-[85px] rounded-xl" />
+        <Skeleton className="h-[85px] rounded-xl" />
+        <Skeleton className="h-[85px] rounded-xl" />
+        <Skeleton className="h-[85px] rounded-xl" />
+        <Skeleton className="h-[85px] rounded-xl" />
       </div>
     </div>
   )

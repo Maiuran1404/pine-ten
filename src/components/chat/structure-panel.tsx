@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Film,
@@ -110,7 +110,7 @@ interface StructurePanelProps {
   lastSendError?: string | null
   onRetryGeneration?: () => void
   onEditNarrative?: () => void
-  // DALL-E image generation
+  // Scene image generation
   imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
   isGeneratingImages?: boolean
   onRegenerateImage?: (scene: StoryboardScene) => void
@@ -518,12 +518,34 @@ export function StructurePanel({
   onStyleShowDifferent,
   className,
 }: StructurePanelProps) {
-  // INSPIRATION stage: show StyleSelectionPanel instead of structure
+  // Track when user confirms a style — used to show cinematic loading instead of skeleton cards.
+  // Derived from state + stage: auto-clears when stage advances past INSPIRATION.
+  const [styleConfirmingRaw, setStyleConfirming] = useState(false)
+  const styleConfirming = styleConfirmingRaw && briefingStage === 'INSPIRATION'
+
+  const wrappedStyleConfirm = useCallback(
+    (selectedStyles: DeliverableStyle[]) => {
+      setStyleConfirming(true)
+      onStyleConfirmSelection?.(selectedStyles)
+    },
+    [onStyleConfirmSelection]
+  )
+
+  // INSPIRATION stage: show StyleSelectionPanel or cinematic loading
   if (briefingStage === 'INSPIRATION') {
+    // After style confirmation, show cinematic loading while AI generates structure
+    if (styleConfirming && isChatLoading && structureType) {
+      return (
+        <div className={cn('flex flex-col h-full bg-background', className)}>
+          <PlaceholderState structureType={structureType} />
+        </div>
+      )
+    }
+
     return (
       <StyleSelectionPanel
         styles={styleSelectionStyles ?? []}
-        onConfirmSelection={onStyleConfirmSelection}
+        onConfirmSelection={wrappedStyleConfirm}
         onShowMore={onStyleShowMore}
         onShowDifferent={onStyleShowDifferent}
         isLoading={isRegenerating}
@@ -668,7 +690,7 @@ export function StructurePanel({
   }
 
   // Storyboard: show loading screen only during batch generation (not single-scene regen)
-  // isGeneratingImages is true only during generateDalleImages (batch), not regenerateSceneImage
+  // isGeneratingImages is true only during generateSceneImages (batch), not regenerateSceneImage
   if (
     structureData?.type === 'storyboard' &&
     isGeneratingImages &&

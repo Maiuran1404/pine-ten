@@ -731,8 +731,8 @@ export function useChatInterfaceData({
     chatMessages.messages,
   ])
 
-  // ─── DALL-E generation trigger: when storyboard first appears for video ──
-  const dalleTriggeredRef = useRef(false)
+  // ─── Image generation trigger: when storyboard first appears for video ──
+  const imageGenTriggeredRef = useRef(false)
   useEffect(() => {
     const category = _briefingState?.deliverableCategory
     const structure = storyboard.storyboardScenes
@@ -742,11 +742,11 @@ export function useChatInterfaceData({
     // already advanced to DEEPEN/REVIEW by the time the storyboard arrives
     // (stage derivation happens in the same API response that produces the storyboard)
     if (category !== 'video') {
-      dalleTriggeredRef.current = false
+      imageGenTriggeredRef.current = false
       return
     }
     if (!structure || structure.type !== 'storyboard') return
-    if (dalleTriggeredRef.current) return
+    if (imageGenTriggeredRef.current) return
     if (storyboard.isGeneratingImages) return
 
     // Check if scenes already have images (e.g. from draft restore)
@@ -767,8 +767,9 @@ export function useChatInterfaceData({
       rawStyleContext.length > 1950 ? rawStyleContext.slice(0, 1950) : rawStyleContext
 
     const briefId = _briefingState?.brief?.id || draftId
-    dalleTriggeredRef.current = true
-    storyboard.generateDalleImages(structure.scenes, styleContext, briefId)
+    const styleIds = selectedStyles.map((s) => s.id).filter((id) => id && id !== 'moodboard-synced')
+    imageGenTriggeredRef.current = true
+    storyboard.generateSceneImages(structure.scenes, styleContext, briefId, styleIds)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     _briefingState?.deliverableCategory,
@@ -777,7 +778,7 @@ export function useChatInterfaceData({
     storyboard.isGeneratingImages,
   ])
 
-  // Wrapped callback for single-scene DALL-E regeneration (auto-supplies style context + briefId)
+  // Wrapped callback for single-scene image regeneration (auto-supplies style context, briefId, styleIds)
   const handleRegenerateImage = useCallback(
     (scene: import('@/lib/ai/briefing-state-machine').StoryboardScene) => {
       const selectedStylesList = _briefingState?.brief?.visualDirection?.selectedStyles?.filter(
@@ -790,7 +791,10 @@ export function useChatInterfaceData({
       // Truncate to fit the API's 2000-char Zod limit
       const styleCtx = rawCtx.length > 1950 ? rawCtx.slice(0, 1950) : rawCtx
       const bId = _briefingState?.brief?.id || draftId
-      storyboard.regenerateSceneImage(scene, styleCtx, bId)
+      const sIds = selectedStylesList
+        ?.map((s) => s.id)
+        .filter((id) => id && id !== 'moodboard-synced')
+      storyboard.regenerateSceneImage(scene, styleCtx, bId, undefined, sIds)
     },
     [_briefingState, draftId, storyboard]
   )
@@ -1179,7 +1183,7 @@ export function useChatInterfaceData({
     sceneImageData: storyboard.sceneImageData,
     websiteGlobalStyles: storyboard.globalStyles,
     websiteFidelity: storyboard.websiteFidelity,
-    // DALL-E image generation
+    // Scene image generation
     isGeneratingImages: storyboard.isGeneratingImages,
     imageGenerationProgress: storyboard.imageGenerationProgress,
     handleRegenerateImage,

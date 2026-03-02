@@ -35,7 +35,7 @@ export interface SceneImageData {
   techniqueRef?: { name: string; url: string } // Eyecannndy technique link (if present)
 }
 
-export type DalleSceneStatus = 'pending' | 'generating' | 'done' | 'error'
+export type SceneGenerationStatus = 'pending' | 'generating' | 'done' | 'error'
 
 interface UseStoryboardOptions {
   inputRef: React.RefObject<HTMLTextAreaElement | null>
@@ -55,10 +55,10 @@ export function useStoryboard({
   const [_sceneImageData, setSceneImageData] = useState<Map<number, SceneImageData>>(new Map())
   const latestStoryboardRef = useRef<StructureData | null>(null)
 
-  // DALL-E image generation state
+  // Scene image generation state
   const [isGeneratingImages, setIsGeneratingImages] = useState(false)
   const [imageGenerationProgress, setImageGenerationProgress] = useState<
-    Map<number, DalleSceneStatus>
+    Map<number, SceneGenerationStatus>
   >(new Map())
 
   // Website global styles (populated from AI [GLOBAL_STYLES] marker)
@@ -542,17 +542,18 @@ export function useStoryboard({
     handleSendOption('Regenerate the story narrative with a fresh approach')
   }, [handleSendOption])
 
-  // ─── DALL-E Image Generation ──────────────────────────────────
+  // ─── Scene Image Generation ──────────────────────────────────
 
   /**
-   * Generate DALL-E images for all scenes in batch.
+   * Generate images for all scenes in batch via Imagen 3 / Gemini.
    * Called after INSPIRATION stage completes for video projects.
    */
-  const generateDalleImages = useCallback(
+  const generateSceneImages = useCallback(
     async (
       scenes: import('@/lib/ai/briefing-state-machine').StoryboardScene[],
       styleContext: string,
-      briefId: string
+      briefId: string,
+      styleIds?: string[]
     ) => {
       if (!csrfFetch) return
       // Guard: skip if scenes already have images
@@ -561,7 +562,7 @@ export function useStoryboard({
 
       setIsGeneratingImages(true)
       // Initialize progress for all scenes as generating
-      const initialProgress = new Map<number, DalleSceneStatus>()
+      const initialProgress = new Map<number, SceneGenerationStatus>()
       for (const scene of scenesNeedingImages) {
         initialProgress.set(scene.sceneNumber, 'generating')
       }
@@ -584,6 +585,7 @@ export function useStoryboard({
             })),
             styleContext,
             briefId,
+            styleIds,
           }),
         })
 
@@ -595,14 +597,14 @@ export function useStoryboard({
 
         // Update progress and scene image data
         const dataMap = new Map<number, SceneImageData>()
-        const progressUpdate = new Map<number, DalleSceneStatus>()
+        const progressUpdate = new Map<number, SceneGenerationStatus>()
 
         for (const result of results) {
           if (result.status === 'success' && result.imageUrl) {
             progressUpdate.set(result.sceneNumber, 'done')
             dataMap.set(result.sceneNumber, {
               primaryUrl: result.imageUrl,
-              primarySource: 'dalle',
+              primarySource: 'ai-generated',
               primaryMediaType: 'still',
               attribution: {
                 sourceName: 'AI Generated',
@@ -641,7 +643,7 @@ export function useStoryboard({
                 return {
                   ...scene,
                   resolvedImageUrl: img.primaryUrl,
-                  resolvedImageSource: 'dalle' as const,
+                  resolvedImageSource: 'ai-generated' as const,
                   resolvedImageAttribution: img.attribution,
                 }
               }),
@@ -669,14 +671,15 @@ export function useStoryboard({
   )
 
   /**
-   * Regenerate a single scene's image via DALL-E.
+   * Regenerate a single scene's image via Imagen 3 / Gemini.
    */
   const regenerateSceneImage = useCallback(
     async (
       scene: import('@/lib/ai/briefing-state-machine').StoryboardScene,
       styleContext: string,
       briefId: string,
-      customPrompt?: string
+      customPrompt?: string,
+      styleIds?: string[]
     ) => {
       if (!csrfFetch) return
 
@@ -704,6 +707,7 @@ export function useStoryboard({
             styleContext,
             briefId,
             customPrompt,
+            styleIds,
           }),
         })
 
@@ -720,7 +724,7 @@ export function useStoryboard({
           })
 
           // Update scene image data
-          handleSceneImageReplace(scene.sceneNumber, imageUrl, 'dalle')
+          handleSceneImageReplace(scene.sceneNumber, imageUrl, 'ai-generated')
         }
       } catch {
         setImageGenerationProgress((prev) => {
@@ -764,10 +768,10 @@ export function useStoryboard({
     redo,
     canUndo,
     canRedo,
-    // DALL-E image generation
+    // Scene image generation
     isGeneratingImages,
     imageGenerationProgress,
-    generateDalleImages,
+    generateSceneImages,
     regenerateSceneImage,
     // Video narrative
     videoNarrative,

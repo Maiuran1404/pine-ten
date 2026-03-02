@@ -79,11 +79,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const tasks = body.scenes.map((scene) => async () => {
-      const prompt = buildScenePrompt(scene, body.styleContext)
+    const totalScenes = body.scenes.length
+    const tasks = body.scenes.map((scene, sceneIndex) => async () => {
+      const prompt = buildScenePrompt(scene, body.styleContext, { totalScenes, sceneIndex })
       const result = await generateSceneImage(prompt, {
         size: '1536x1024',
-        quality: 'low',
         referenceImages,
       })
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         briefId: body.briefId,
         hasRefImages: !!referenceImages?.length,
       },
-      'Starting batch Gemini generation'
+      'Starting batch scene image generation'
     )
 
     // Run with concurrency limit of 3
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       }
       logger.error(
         { sceneNumber: body.scenes[i].sceneNumber, err: result.reason },
-        'Gemini generation failed for scene'
+        'Image generation failed for scene'
       )
       return {
         sceneNumber: body.scenes[i].sceneNumber,
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     const successCount = results.filter((r) => r.status === 'success').length
     logger.info(
       { successCount, totalCount: results.length, briefId: body.briefId },
-      'Batch Gemini generation complete'
+      'Batch scene image generation complete'
     )
 
     if (successCount === 0) {
