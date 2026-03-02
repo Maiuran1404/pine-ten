@@ -1,0 +1,2 @@
+ALTER TABLE "deliverable_style_references" ADD COLUMN "image_gen_directive" text;--> statement-breakpoint
+ALTER TABLE "deliverable_style_references" ADD COLUMN "cached_reference_image_urls" jsonb DEFAULT '[]'::jsonb;

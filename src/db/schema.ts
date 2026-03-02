@@ -905,8 +905,16 @@ export const deliverableStyleReferences = pgTable(
     visualElements: jsonb('visual_elements').$type<string[]>().default([]), // typography-heavy, photo-centric, etc.
     moodKeywords: jsonb('mood_keywords').$type<string[]>().default([]), // professional, playful, elegant, etc.
 
-    // Style reference images (for Gemini multimodal generation)
+    // Style reference images (for multimodal generation)
     styleReferenceImages: jsonb('style_reference_images').$type<string[]>().default([]),
+
+    // Pre-computed cinematic prompt directive (built from promptGuide + colorSamples + moodKeywords + etc.)
+    // Computed once when style is created/updated via admin, used directly at generation time
+    imageGenDirective: text('image_gen_directive'),
+
+    // Cached style reference images stored in our Supabase storage (not external URLs)
+    // When styleReferenceImages has external URLs, we re-upload to our bucket for reliability
+    cachedReferenceImageUrls: jsonb('cached_reference_image_urls').$type<string[]>().default([]),
 
     // Duplicate detection
     imageHash: text('image_hash'), // Perceptual hash for content-based deduplication
@@ -981,6 +989,7 @@ export const creditTransactions = pgTable(
     index('credit_transactions_user_id_idx').on(table.userId),
     index('credit_transactions_related_task_id_idx').on(table.relatedTaskId),
     index('credit_transactions_created_at_idx').on(table.createdAt),
+    index('credit_transactions_type_user_id_idx').on(table.type, table.userId),
   ]
 )
 

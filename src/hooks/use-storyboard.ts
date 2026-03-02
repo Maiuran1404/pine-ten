@@ -6,6 +6,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useMemo } from 'react'
+import { useCsrfContext } from '@/providers/csrf-provider'
 import {
   type SceneReference,
   type StructureData,
@@ -41,19 +42,34 @@ interface UseStoryboardOptions {
   inputRef: React.RefObject<HTMLTextAreaElement | null>
   handleSendOption: (text: string, stateOverrides?: Partial<SerializedBriefingState>) => void
   briefingState?: BriefingState | null
-  csrfFetch?: (url: string, options?: RequestInit) => Promise<Response>
 }
 
-export function useStoryboard({
-  inputRef,
-  handleSendOption,
-  briefingState,
-  csrfFetch,
-}: UseStoryboardOptions) {
+export function useStoryboard({ inputRef, handleSendOption, briefingState }: UseStoryboardOptions) {
+  const { csrfFetch } = useCsrfContext()
   const [storyboardScenes, setStoryboardScenes] = useState<StructureData | null>(null)
   const [sceneReferences, setSceneReferences] = useState<SceneReference[]>([])
-  const [_sceneImageData, setSceneImageData] = useState<Map<number, SceneImageData>>(new Map())
   const latestStoryboardRef = useRef<StructureData | null>(null)
+
+  // Derive scene image data from storyboard scenes — eliminates dual-state sync bugs
+  const sceneImageData = useMemo(() => {
+    if (!storyboardScenes || storyboardScenes.type !== 'storyboard')
+      return new Map<number, SceneImageData>()
+    const dataMap = new Map<number, SceneImageData>()
+    for (const scene of storyboardScenes.scenes) {
+      if (scene.resolvedImageUrl) {
+        dataMap.set(scene.sceneNumber, {
+          primaryUrl: scene.resolvedImageUrl,
+          primarySource: (scene.resolvedImageSource as ImageSource) || 'pexels',
+          primaryMediaType: 'still',
+          attribution: scene.resolvedImageAttribution || {
+            sourceName: scene.resolvedImageSource || 'Pexels',
+            sourceUrl: '',
+          },
+        })
+      }
+    }
+    return dataMap
+  }, [storyboardScenes])
 
   // Scene image generation state
   const [isGeneratingImages, setIsGeneratingImages] = useState(false)
@@ -161,8 +177,7 @@ export function useStoryboard({
         })
       }
       if (dataMap.size > 0) {
-        setSceneImageData(dataMap)
-        // Also embed image URLs on the scene objects so they persist with structureData
+        // Embed image URLs on the scene objects — sceneImageData derives from these
         setStoryboardScenes((prev) => {
           if (!prev || prev.type !== 'storyboard') return prev
           const updated = {
@@ -332,15 +347,10 @@ export function useStoryboard({
   const canRedo = history.index < history.stack.length - 1
 
   // Reorder scenes via drag-and-drop (reassigns sceneNumber values)
+  // Scene image data remaps automatically since it derives from storyboardScenes
   const handleSceneReorder = useCallback(
     (reorderedScenes: import('@/lib/ai/briefing-state-machine').StoryboardScene[]) => {
       pushHistory(storyboardScenes)
-
-      // Build old→new scene number mapping for image data remap
-      const renumbered = reorderedScenes.map((scene, i) => ({
-        oldNumber: scene.sceneNumber,
-        newNumber: i + 1,
-      }))
 
       setStoryboardScenes((prev) => {
         if (!prev || prev.type !== 'storyboard') return prev
@@ -353,17 +363,6 @@ export function useStoryboard({
         }
         latestStoryboardRef.current = updated
         return updated
-      })
-
-      // Remap scene image data to match new scene numbers
-      setSceneImageData((prev) => {
-        if (prev.size === 0) return prev
-        const remapped = new Map<number, SceneImageData>()
-        for (const { oldNumber, newNumber } of renumbered) {
-          const data = prev.get(oldNumber)
-          if (data) remapped.set(newNumber, data)
-        }
-        return remapped
       })
     },
     [pushHistory, storyboardScenes]
@@ -412,30 +411,24 @@ export function useStoryboard({
   )
 
   // Replace a scene's image with a new URL (#11)
+  // sceneImageData derives automatically from the updated scene objects
   const handleSceneImageReplace = useCallback(
     (sceneNumber: number, newUrl: string, source: ImageSource = 'pexels') => {
-      // Update the scene image data map
-      setSceneImageData((prev) => {
-        const updated = new Map(prev)
-        updated.set(sceneNumber, {
-          primaryUrl: newUrl,
-          primarySource: source,
-          primaryMediaType: 'still',
-          attribution: {
-            sourceName: source.charAt(0).toUpperCase() + source.slice(1),
-            sourceUrl: '',
-          },
-        })
-        return updated
-      })
-      // Also persist the URL on the scene object
       setStoryboardScenes((prev) => {
         if (!prev || prev.type !== 'storyboard') return prev
         const updated = {
           ...prev,
           scenes: prev.scenes.map((s) =>
             s.sceneNumber === sceneNumber
-              ? { ...s, resolvedImageUrl: newUrl, resolvedImageSource: source }
+              ? {
+                  ...s,
+                  resolvedImageUrl: newUrl,
+                  resolvedImageSource: source,
+                  resolvedImageAttribution: {
+                    sourceName: source.charAt(0).toUpperCase() + source.slice(1),
+                    sourceUrl: '',
+                  },
+                }
               : s
           ),
         }
@@ -491,24 +484,7 @@ export function useStoryboard({
     setStoryboardScenes(data)
     if (data.type === 'storyboard') {
       latestStoryboardRef.current = data
-      // Hydrate sceneImageData from persisted image URLs on scenes (survives draft restore)
-      const hydrated = new Map<number, SceneImageData>()
-      for (const scene of data.scenes) {
-        if (scene.resolvedImageUrl) {
-          hydrated.set(scene.sceneNumber, {
-            primaryUrl: scene.resolvedImageUrl,
-            primarySource: (scene.resolvedImageSource as ImageSource) || 'pexels',
-            primaryMediaType: 'still',
-            attribution: scene.resolvedImageAttribution || {
-              sourceName: scene.resolvedImageSource || 'Pexels',
-              sourceUrl: '',
-            },
-          })
-        }
-      }
-      if (hydrated.size > 0) {
-        setSceneImageData((prev) => (prev.size > 0 ? prev : hydrated))
-      }
+      // sceneImageData is now derived via useMemo from storyboardScenes — no hydration needed
     }
   }, [])
 
@@ -545,7 +521,7 @@ export function useStoryboard({
   // ─── Scene Image Generation ──────────────────────────────────
 
   /**
-   * Generate images for all scenes in batch via Imagen 3 / Gemini.
+   * Generate images for all scenes in batch via hero-first-then-parallel strategy.
    * Called after INSPIRATION stage completes for video projects.
    */
   const generateSceneImages = useCallback(
@@ -553,7 +529,13 @@ export function useStoryboard({
       scenes: import('@/lib/ai/briefing-state-machine').StoryboardScene[],
       styleContext: string,
       briefId: string,
-      styleIds?: string[]
+      styleIds?: string[],
+      brandContext?: {
+        colors?: { primary?: string; secondary?: string; accent?: string }
+        industry?: string
+        toneOfVoice?: string
+        brandDescription?: string
+      }
     ) => {
       if (!csrfFetch) return
       // Guard: skip if scenes already have images
@@ -586,6 +568,7 @@ export function useStoryboard({
             styleContext,
             briefId,
             styleIds,
+            brandContext,
           }),
         })
 
@@ -625,14 +608,7 @@ export function useStoryboard({
         })
 
         if (dataMap.size > 0) {
-          setSceneImageData((prev) => {
-            const updated = new Map(prev)
-            for (const [key, value] of dataMap) {
-              updated.set(key, value)
-            }
-            return updated
-          })
-          // Persist image URLs on scene objects
+          // Persist image URLs on scene objects — sceneImageData is derived via useMemo
           setStoryboardScenes((prev) => {
             if (!prev || prev.type !== 'storyboard') return prev
             const updated = {
@@ -671,7 +647,7 @@ export function useStoryboard({
   )
 
   /**
-   * Regenerate a single scene's image via Imagen 3 / Gemini.
+   * Regenerate a single scene's image with consistency anchoring.
    */
   const regenerateSceneImage = useCallback(
     async (
@@ -679,7 +655,14 @@ export function useStoryboard({
       styleContext: string,
       briefId: string,
       customPrompt?: string,
-      styleIds?: string[]
+      styleIds?: string[],
+      heroImageUrl?: string,
+      brandContext?: {
+        colors?: { primary?: string; secondary?: string; accent?: string }
+        industry?: string
+        toneOfVoice?: string
+        brandDescription?: string
+      }
     ) => {
       if (!csrfFetch) return
 
@@ -708,6 +691,8 @@ export function useStoryboard({
             briefId,
             customPrompt,
             styleIds,
+            heroImageUrl,
+            brandContext,
           }),
         })
 
@@ -742,7 +727,7 @@ export function useStoryboard({
     setStoryboardScenes,
     sceneReferences,
     setSceneReferences,
-    sceneImageData: _sceneImageData,
+    sceneImageData,
     latestStoryboardRef,
     structureType,
     structurePanelVisible,

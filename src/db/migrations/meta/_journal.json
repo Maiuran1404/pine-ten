@@ -267,6 +267,27 @@
       "when": 1772346891914,
       "tag": "0037_bizarre_doctor_faustus",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1772487281633,
+      "tag": "0038_great_hardball",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1772490125669,
+      "tag": "0039_chemical_black_crow",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1772490471207,
+      "tag": "0040_lonely_inhumans",
+      "breakpoints": true
     }
   ]
 }

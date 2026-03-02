@@ -138,7 +138,7 @@ export function useChatInterfaceData({
   const isBriefReady = useMemo(() => isBriefReadyForDesigner(brief), [brief])
 
   // Auto-save brief to server
-  useBriefAutoSave(brief, draftId, csrfFetch)
+  useBriefAutoSave(brief, draftId)
 
   // Apply brand data to brief when brand data becomes available
   const brandDataAppliedRef = useRef(false)
@@ -356,7 +356,6 @@ export function useChatInterfaceData({
       []
     ),
     briefingState: _briefingState,
-    csrfFetch,
   })
 
   // ─── Website inspiration (only active for website projects) ──
@@ -377,14 +376,13 @@ export function useChatInterfaceData({
     onVideoNarrative: storyboard.updateVideoNarrative,
     onRegenerateSceneImages: stableOnRegenerateSceneImages,
     latestStoryboardRef: storyboard.latestStoryboardRef,
-    csrfFetch,
   })
 
   // Wire up the forward ref so storyboard regeneration can call handleSendOption
   sendOptionRef.current = chatMessages.handleSendOption
 
   // ─── File upload ─────────────────────────────────────────────
-  const fileUpload = useFileUpload({ addFromUpload, csrfFetch })
+  const fileUpload = useFileUpload({ addFromUpload })
 
   // ─── Scroll management ──────────────────────────────────────
   const { scrollAreaRef, scrollToBottom } = useChatScroll({
@@ -425,7 +423,6 @@ export function useChatInterfaceData({
     setMessages: chatMessages.setMessages,
     setAnimatingMessageId: chatMessages.setAnimatingMessageId,
     selectedStyles: [], // self-reference resolved below
-    csrfFetch,
   })
 
   // ─── Task submission ─────────────────────────────────────────
@@ -446,7 +443,6 @@ export function useChatInterfaceData({
     initialTaskData: initialTaskData || undefined,
     briefingState: _briefingState,
     scrollAreaRef,
-    csrfFetch,
   })
 
   // Wire up task forward-reference ref
@@ -768,8 +764,29 @@ export function useChatInterfaceData({
 
     const briefId = _briefingState?.brief?.id || draftId
     const styleIds = selectedStyles.map((s) => s.id).filter((id) => id && id !== 'moodboard-synced')
+
+    // Build brand context for color/tone integration in image generation
+    const imgBrandContext = brandData
+      ? {
+          colors: {
+            primary: brandData.primaryColor ?? undefined,
+            secondary: brandData.secondaryColor ?? undefined,
+            accent: brandData.accentColor ?? undefined,
+          },
+          industry: brandData.industry ?? undefined,
+          toneOfVoice: toneOfVoice ?? undefined,
+          brandDescription: brandData.description ?? undefined,
+        }
+      : undefined
+
     imageGenTriggeredRef.current = true
-    storyboard.generateSceneImages(structure.scenes, styleContext, briefId, styleIds)
+    storyboard.generateSceneImages(
+      structure.scenes,
+      styleContext,
+      briefId,
+      styleIds,
+      imgBrandContext
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     _briefingState?.deliverableCategory,
@@ -778,7 +795,7 @@ export function useChatInterfaceData({
     storyboard.isGeneratingImages,
   ])
 
-  // Wrapped callback for single-scene image regeneration (auto-supplies style context, briefId, styleIds)
+  // Wrapped callback for single-scene image regeneration (auto-supplies style context, briefId, styleIds, heroImageUrl, brandContext)
   const handleRegenerateImage = useCallback(
     (scene: import('@/lib/ai/briefing-state-machine').StoryboardScene) => {
       const selectedStylesList = _briefingState?.brief?.visualDirection?.selectedStyles?.filter(
@@ -794,9 +811,40 @@ export function useChatInterfaceData({
       const sIds = selectedStylesList
         ?.map((s) => s.id)
         .filter((id) => id && id !== 'moodboard-synced')
-      storyboard.regenerateSceneImage(scene, styleCtx, bId, undefined, sIds)
+
+      // Get hero image URL (scene 1's resolved image) for consistency anchoring
+      const currentStoryboard = storyboard.latestStoryboardRef.current
+      let heroUrl: string | undefined
+      if (currentStoryboard?.type === 'storyboard' && scene.sceneNumber !== 1) {
+        const heroScene = currentStoryboard.scenes.find((s) => s.sceneNumber === 1)
+        heroUrl = heroScene?.resolvedImageUrl ?? undefined
+      }
+
+      // Build brand context
+      const regenBrandContext = brandData
+        ? {
+            colors: {
+              primary: brandData.primaryColor ?? undefined,
+              secondary: brandData.secondaryColor ?? undefined,
+              accent: brandData.accentColor ?? undefined,
+            },
+            industry: brandData.industry ?? undefined,
+            toneOfVoice: toneOfVoice ?? undefined,
+            brandDescription: brandData.description ?? undefined,
+          }
+        : undefined
+
+      storyboard.regenerateSceneImage(
+        scene,
+        styleCtx,
+        bId,
+        undefined,
+        sIds,
+        heroUrl,
+        regenBrandContext
+      )
     },
-    [_briefingState, draftId, storyboard]
+    [_briefingState, draftId, storyboard, brandData, toneOfVoice]
   )
 
   // Wire up forward ref for AI-triggered image regeneration (via [REGENERATE_IMAGES] marker)
