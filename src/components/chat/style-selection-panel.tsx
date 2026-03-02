@@ -44,12 +44,14 @@ function StyleCard({
   index,
   isSelected,
   isBestMatch,
+  disabled,
   onClick,
 }: {
   style: DeliverableStyle
   index: number
   isSelected: boolean
   isBestMatch: boolean
+  disabled?: boolean
   onClick: () => void
 }) {
   return (
@@ -64,16 +66,20 @@ function StyleCard({
       className="min-w-0"
     >
       <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onClick}
+        whileHover={disabled ? undefined : { scale: 1.02 }}
+        whileTap={disabled ? undefined : { scale: 0.98 }}
+        onClick={disabled ? undefined : onClick}
+        disabled={disabled}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          'relative w-full overflow-hidden rounded-xl cursor-pointer group text-left',
+          'relative w-full overflow-hidden rounded-xl group text-left',
           'transition-all duration-300',
+          disabled && 'pointer-events-none opacity-60',
           isSelected
             ? 'ring-2 ring-crafted-green shadow-lg shadow-crafted-green/15'
-            : 'ring-1 ring-border/40 hover:ring-border/70 hover:shadow-md'
+            : !disabled &&
+                'ring-1 ring-border/40 hover:ring-border/70 hover:shadow-md cursor-pointer',
+          !isSelected && disabled && 'ring-1 ring-border/40'
         )}
       >
         {/* Image */}
@@ -191,9 +197,13 @@ export function StyleSelectionPanel({
   const [page, setPage] = useState(0)
   const [direction, setDirection] = useState(1)
 
-  const handleCardClick = useCallback((style: DeliverableStyle) => {
-    setSelectedStyle((prev) => (prev?.id === style.id ? null : style))
-  }, [])
+  const handleCardClick = useCallback(
+    (style: DeliverableStyle) => {
+      if (isLoading) return
+      setSelectedStyle((prev) => (prev?.id === style.id ? null : style))
+    },
+    [isLoading]
+  )
 
   const handleConfirm = useCallback(() => {
     if (selectedStyle && onConfirmSelection) {
@@ -273,6 +283,10 @@ export function StyleSelectionPanel({
             </div>
             <p className="text-sm text-muted-foreground">Preparing style options...</p>
           </div>
+        ) : hasStyles && isLoading ? (
+          <div className="py-6">
+            <SkeletonCards />
+          </div>
         ) : (
           <div className="px-5 py-5 space-y-4">
             {/* Card row — slides on page change */}
@@ -298,6 +312,7 @@ export function StyleSelectionPanel({
                       index={index}
                       isSelected={selectedStyle?.id === style.id}
                       isBestMatch={style.id === bestMatchId}
+                      disabled={isLoading}
                       onClick={() => handleCardClick(style)}
                     />
                   ))}
@@ -312,10 +327,12 @@ export function StyleSelectionPanel({
                 {page > 0 ? (
                   <button
                     onClick={goBack}
+                    disabled={isLoading}
                     className={cn(
                       'flex items-center gap-1.5 py-2 px-3 rounded-lg',
                       'text-xs font-medium transition-colors duration-200',
-                      'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                      'text-muted-foreground hover:text-foreground hover:bg-muted/30',
+                      isLoading && 'pointer-events-none opacity-50'
                     )}
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
@@ -329,12 +346,14 @@ export function StyleSelectionPanel({
                 {remainingCount > 0 && (
                   <button
                     onClick={goForward}
+                    disabled={isLoading}
                     className={cn(
                       'flex items-center gap-1.5 py-2 px-3 rounded-lg',
                       'text-xs font-medium transition-colors duration-200',
                       'text-muted-foreground hover:text-foreground',
                       'border border-dashed border-border/60 hover:border-border',
-                      'hover:bg-muted/30'
+                      'hover:bg-muted/30',
+                      isLoading && 'pointer-events-none opacity-50'
                     )}
                   >
                     {remainingCount} more style{remainingCount !== 1 ? 's' : ''}

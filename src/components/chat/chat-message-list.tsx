@@ -9,7 +9,6 @@ import {
   Image as ImageIcon,
   ArrowRight,
   Palette,
-  Sparkles,
   Lightbulb,
   Film,
   AlertCircle,
@@ -245,7 +244,7 @@ function LoadingIndicator({
     >
       {/* Avatar — pulled into gutter on lg+ to align with input */}
       <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green dark:from-crafted-forest dark:to-crafted-green shadow-md flex items-center justify-center shrink-0">
-        <Sparkles className="h-4 w-4 text-crafted-mint animate-pulse" />
+        <img src="/craftedfigurewhite.png" alt="Crafted" className="h-4 w-4 animate-pulse" />
       </div>
       <div className="bg-white/60 dark:bg-card/80 backdrop-blur-sm rounded-2xl px-4 py-3 border border-border/30">
         <div className="flex items-center gap-2">
@@ -545,7 +544,7 @@ export function ChatMessageList({
                     <div className="group max-w-[85%] flex items-start gap-3">
                       {/* Sparkle avatar — pulled into gutter on lg+ to align content with input */}
                       <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green dark:from-crafted-forest dark:to-crafted-green shadow-md flex items-center justify-center shrink-0">
-                        <Sparkles className="h-4 w-4 text-crafted-mint" />
+                        <img src="/craftedfigurewhite.png" alt="Crafted" className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         {/* Thinking time indicator */}

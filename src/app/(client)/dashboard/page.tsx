@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { formatDistanceToNow } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ImageWithSkeleton, MasonryGridSkeleton } from '@/components/ui/skeletons'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
@@ -19,6 +20,8 @@ import {
   Eye,
   Check,
   Zap,
+  ArrowRight,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
@@ -54,6 +57,7 @@ function DashboardContent() {
   )
   const [quickMode, setQuickMode] = useState(false)
   const [dismissedError, setDismissedError] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
@@ -87,6 +91,23 @@ function DashboardContent() {
     !dismissedError && tasksError ? tasksError.message || 'Failed to load tasks' : null
 
   const userName = session?.user?.name?.split(' ')[0] || 'there'
+
+  // Status color map for recent activity cards
+  const statusConfig: Record<string, { label: string; colorClass: string }> = {
+    PENDING: { label: 'Pending', colorClass: 'bg-ds-status-pending' },
+    OFFERED: { label: 'Offered', colorClass: 'bg-ds-status-assigned' },
+    ASSIGNED: { label: 'Assigned', colorClass: 'bg-ds-status-assigned' },
+    IN_PROGRESS: { label: 'In Progress', colorClass: 'bg-ds-status-in-progress' },
+    PENDING_ADMIN_REVIEW: { label: 'Under Review', colorClass: 'bg-ds-status-review' },
+    IN_REVIEW: { label: 'Ready for Review', colorClass: 'bg-ds-status-review' },
+    REVISION_REQUESTED: { label: 'Revision', colorClass: 'bg-ds-status-revision' },
+  }
+
+  // Recent active tasks (exclude completed/cancelled)
+  const recentActiveTasks = useMemo(() => {
+    const allTasks = tasksData?.tasks || []
+    return allTasks.filter((t) => t.status !== 'COMPLETED' && t.status !== 'CANCELLED').slice(0, 4)
+  }, [tasksData])
 
   // Handle payment redirect toasts
   useEffect(() => {
@@ -434,18 +455,18 @@ function DashboardContent() {
             transition={{ duration: prefersReduced ? 0 : 0.4, ease: [0.25, 0.1, 0.25, 1] }}
             className="text-center mb-6"
           >
-            <h1 className="text-[1.7rem] sm:text-[2rem] font-medium text-foreground tracking-[-0.01em] leading-snug">
+            <h1 className="text-[1.7rem] sm:text-[2rem] font-normal text-foreground tracking-[-0.02em] leading-snug">
               What are we creating today, {userName}?
             </h1>
-            <p className="text-[0.95rem] text-muted-foreground mt-2">
+            <p className="text-[0.95rem] text-muted-foreground mt-2 font-light">
               Bring in your ideas and let&apos;s get started.
             </p>
           </motion.div>
 
           {/* Main Input Card */}
           <motion.div
-            initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={prefersReduced ? false : { opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
               duration: prefersReduced ? 0 : 0.4,
               delay: prefersReduced ? 0 : 0.08,
@@ -453,141 +474,167 @@ function DashboardContent() {
             }}
             className="w-full max-w-[780px] mb-3"
           >
-            <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-lg shadow-black/[0.03] overflow-hidden">
-              {/* Uploaded files preview */}
-              {uploadedFiles.length > 0 && (
-                <div className="px-4 py-3 border-b border-border/30">
-                  <div className="flex flex-wrap gap-2">
-                    {uploadedFiles.filter(Boolean).map((file) => (
-                      <div
-                        key={file.fileUrl}
-                        className="relative group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50"
-                      >
-                        {file.fileType?.startsWith('image/') ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={file.fileUrl}
-                            alt={file.fileName}
-                            className="h-5 w-5 rounded object-cover"
-                          />
-                        ) : (
-                          <span className="[&>svg]:h-4 [&>svg]:w-4">
-                            {getFileIcon(file.fileType)}
-                          </span>
-                        )}
-                        <span className="text-sm max-w-[150px] truncate text-foreground">
-                          {file.fileName}
-                        </span>
-                        <button
-                          onClick={() => removeFile(file.fileUrl)}
-                          className="p-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                          aria-label="Remove file"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            {/* Animated gradient border wrapper */}
+            <div
+              className={cn(
+                'rounded-[18px] p-[1.5px] transition-all duration-300',
+                isFocused
+                  ? 'gradient-border-animation'
+                  : chatInput.trim()
+                    ? 'bg-border/40'
+                    : 'breathing-glow-animation'
               )}
-
-              {/* Text Input Area */}
-              <div className="px-4 sm:px-5 pt-4 pb-2">
-                <textarea
-                  ref={inputRef}
-                  value={chatInput}
-                  onChange={(e) => {
-                    setChatInput(e.target.value)
-                    e.target.style.height = 'auto'
-                    e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px'
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      handleSubmit()
+              style={
+                isFocused
+                  ? {
+                      background: `conic-gradient(from var(--border-angle), var(--crafted-mint), var(--crafted-green), var(--crafted-sage), var(--crafted-forest), var(--crafted-mint))`,
+                      animation: 'gradient-border-spin 3s linear infinite',
                     }
-                  }}
-                  placeholder={
-                    uploadedFiles.length > 0
-                      ? 'Add a message or just send...'
-                      : 'Describe what you want to create...'
-                  }
-                  className="w-full bg-transparent text-foreground placeholder:text-muted-foreground/60 focus:outline-none text-[0.95rem] leading-relaxed resize-none min-h-[40px] max-h-[150px]"
-                  rows={1}
-                />
-              </div>
-
-              {/* Toolbar Row */}
-              <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pb-3 pt-1">
-                {/* Left side - attachment icons and credits */}
-                <div className="flex items-center gap-0.5">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
-                    title="Attach file"
-                  >
-                    {isUploading ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <Paperclip className="h-[18px] w-[18px]" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
-                    title="Add image"
-                  >
-                    <ImageIcon className="h-[18px] w-[18px]" />
-                  </button>
-
-                  <div className="w-px h-4 bg-border/50 mx-2" />
-
-                  {/* Credits indicator */}
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {isLoadingCredits ? (
-                      <Skeleton className="h-3.5 w-24" />
-                    ) : (
-                      <>
-                        <span
-                          className={cn(
-                            'w-1.5 h-1.5 rounded-full',
-                            credits === 0
-                              ? 'bg-[var(--ds-error)]'
-                              : credits <= 2
-                                ? 'bg-[var(--ds-warning)]'
-                                : 'bg-[var(--ds-success)]'
+                  : !chatInput.trim()
+                    ? {
+                        animation: 'breathing-glow 3s ease-in-out infinite',
+                      }
+                    : undefined
+              }
+            >
+              <div className="bg-card/80 backdrop-blur-xl rounded-[17px] border-0 shadow-lg shadow-black/[0.03] overflow-hidden">
+                {/* Uploaded files preview */}
+                {uploadedFiles.length > 0 && (
+                  <div className="px-4 py-3 border-b border-border/30">
+                    <div className="flex flex-wrap gap-2">
+                      {uploadedFiles.filter(Boolean).map((file) => (
+                        <div
+                          key={file.fileUrl}
+                          className="relative group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50"
+                        >
+                          {file.fileType?.startsWith('image/') ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={file.fileUrl}
+                              alt={file.fileName}
+                              className="h-5 w-5 rounded object-cover"
+                            />
+                          ) : (
+                            <span className="[&>svg]:h-4 [&>svg]:w-4">
+                              {getFileIcon(file.fileType)}
+                            </span>
                           )}
-                        />
-                        <span>{credits} credits</span>
-                      </>
-                    )}
+                          <span className="text-sm max-w-[150px] truncate text-foreground">
+                            {file.fileName}
+                          </span>
+                          <button
+                            onClick={() => removeFile(file.fileUrl)}
+                            className="p-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            aria-label="Remove file"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                )}
+
+                {/* Text Input Area */}
+                <div className="px-5 sm:px-6 pt-5 pb-2.5">
+                  <textarea
+                    ref={inputRef}
+                    value={chatInput}
+                    onChange={(e) => {
+                      setChatInput(e.target.value)
+                      e.target.style.height = 'auto'
+                      e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px'
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSubmit()
+                      }
+                    }}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder={
+                      uploadedFiles.length > 0
+                        ? 'Add a message or just send...'
+                        : 'Describe what you want to create...'
+                    }
+                    className="w-full bg-transparent text-foreground placeholder:text-muted-foreground/60 focus:outline-none text-[0.95rem] leading-relaxed resize-none min-h-[40px] max-h-[150px]"
+                    rows={1}
+                  />
                 </div>
 
-                {/* Right side - Submit arrow */}
-                <button
-                  onClick={() => handleSubmit()}
-                  disabled={
-                    isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)
-                  }
-                  aria-label="Send message"
-                  className="flex items-center justify-center w-8 h-8 bg-foreground hover:bg-foreground/80 text-background rounded-lg transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                {/* Toolbar Row */}
+                <div className="flex items-center justify-between gap-3 px-5 sm:px-6 pb-3.5 pt-1">
+                  {/* Left side - attachment icons and credits */}
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Attach file"
+                    >
+                      {isUploading ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <Paperclip className="h-[18px] w-[18px]" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Add image"
+                    >
+                      <ImageIcon className="h-[18px] w-[18px]" />
+                    </button>
+
+                    <div className="w-px h-4 bg-border/50 mx-2" />
+
+                    {/* Credits indicator */}
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      {isLoadingCredits ? (
+                        <Skeleton className="h-3.5 w-24" />
+                      ) : (
+                        <>
+                          <span
+                            className={cn(
+                              'w-1.5 h-1.5 rounded-full',
+                              credits === 0
+                                ? 'bg-[var(--ds-error)]'
+                                : credits <= 2
+                                  ? 'bg-[var(--ds-warning)]'
+                                  : 'bg-[var(--ds-success)]'
+                            )}
+                          />
+                          <span>{credits} credits</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right side - Submit arrow */}
+                  <button
+                    onClick={() => handleSubmit()}
+                    disabled={
+                      isSending || isUploading || (!chatInput.trim() && uploadedFiles.length === 0)
+                    }
+                    aria-label="Send message"
+                    className="flex items-center justify-center w-8 h-8 bg-foreground hover:bg-foreground/80 text-background rounded-lg transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <path d="M12 19V5M5 12l7-7 7 7" />
-                  </svg>
-                </button>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -613,14 +660,14 @@ function DashboardContent() {
               delay: prefersReduced ? 0 : 0.2,
               ease: [0.25, 0.1, 0.25, 1],
             }}
-            className="w-full max-w-[780px] mt-5"
+            className="w-full max-w-[510px] mt-5"
           >
             <p className="text-center text-xs text-muted-foreground/60 mb-4">
               or start from a template
             </p>
-            <div className="flex items-center justify-center gap-3 flex-wrap">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {Object.entries(TEMPLATE_CATEGORIES).map(
-                ([category, { icon: Icon, categoryKey }]) => {
+                ([category, { icon: Icon, categoryKey, options }], index) => {
                   const categoryImage = templateImageMap.get(categoryKey)
                   const gradients: Record<string, string> = {
                     'Launch Videos': 'from-[var(--crafted-green)] to-[var(--crafted-forest)]',
@@ -633,54 +680,206 @@ function DashboardContent() {
                   const gradient =
                     gradients[category] || 'from-muted-foreground to-muted-foreground/80'
                   return (
-                    <button
+                    <motion.div
                       key={category}
-                      onClick={() => {
-                        setSelectedCategory(category)
-                        setSelectedOption(null)
-                        setModalNotes('')
-                        setPlatformSelections({})
+                      initial={prefersReduced ? false : { opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: prefersReduced ? 0 : 0.35,
+                        delay: prefersReduced ? 0 : 0.3 + index * 0.05,
+                        ease: [0.25, 0.1, 0.25, 1],
                       }}
-                      className="group relative flex flex-col items-center justify-center gap-1.5 w-[120px] h-[72px] rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.05] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer shrink-0"
                     >
-                      {categoryImage ? (
-                        <>
-                          <Image
-                            src={categoryImage}
-                            alt={category}
-                            fill
-                            className="object-cover"
-                            sizes="120px"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10 group-hover:from-black/70 transition-colors" />
-                        </>
-                      ) : (
-                        <>
-                          <div
-                            className={cn(
-                              'absolute inset-0 bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity',
-                              gradient
-                            )}
-                          />
-                          <div
-                            className="absolute inset-0 opacity-[0.15]"
-                            style={{
-                              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                              backgroundSize: '128px 128px',
-                            }}
-                          />
-                          <Icon className="relative z-10 h-5 w-5 text-white/90 drop-shadow-sm" />
-                        </>
-                      )}
-                      <span className="relative z-10 text-white text-xs font-semibold leading-tight drop-shadow-md">
-                        {category}
-                      </span>
-                    </button>
+                      <button
+                        onClick={() => {
+                          setSelectedCategory(category)
+                          setSelectedOption(null)
+                          setModalNotes('')
+                          setPlatformSelections({})
+                        }}
+                        className="group relative flex flex-col items-center justify-center gap-2 w-full h-[100px] rounded-xl overflow-hidden shadow-md ring-1 ring-transparent hover:ring-crafted-sage/40 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer"
+                      >
+                        {categoryImage ? (
+                          <>
+                            <Image
+                              src={categoryImage}
+                              alt={category}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 640px) 50vw, 170px"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10 group-hover:from-black/70 transition-colors" />
+                          </>
+                        ) : (
+                          <>
+                            <div
+                              className={cn(
+                                'absolute inset-0 bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity',
+                                gradient
+                              )}
+                            />
+                            <div
+                              className="absolute inset-0 opacity-[0.15]"
+                              style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                                backgroundSize: '128px 128px',
+                              }}
+                            />
+                            <Icon className="relative z-10 h-6 w-6 text-white/90 drop-shadow-sm" />
+                          </>
+                        )}
+                        <div className="relative z-10 flex flex-col items-center">
+                          <span className="text-white text-[13px] font-semibold leading-tight drop-shadow-md">
+                            {category}
+                          </span>
+                          <span className="text-white/70 text-[10px] mt-0.5 drop-shadow-sm">
+                            {options.length} templates
+                          </span>
+                        </div>
+                      </button>
+                    </motion.div>
                   )
                 }
               )}
             </div>
           </motion.div>
+
+          {/* Recent Activity Row */}
+          {recentActiveTasks.length > 0 && (
+            <motion.div
+              initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: prefersReduced ? 0 : 0.4,
+                delay: prefersReduced ? 0 : 0.4,
+                ease: [0.25, 0.1, 0.25, 1],
+              }}
+              className="w-full max-w-[780px] mt-8"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Recent activity
+                </span>
+                <Link
+                  href="/dashboard/tasks"
+                  className="text-xs text-crafted-sage hover:text-crafted-green transition-colors flex items-center gap-1"
+                >
+                  View all <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+                {recentActiveTasks.map((task) => {
+                  const config = statusConfig[task.status] || {
+                    label: task.status,
+                    colorClass: 'bg-muted-foreground',
+                  }
+                  return (
+                    <Link
+                      key={task.id}
+                      href={`/dashboard/tasks/${task.id}`}
+                      className="group flex-shrink-0 w-[200px] rounded-xl border border-border/50 bg-card/60 backdrop-blur-sm p-3.5 hover:border-crafted-sage/30 hover:bg-card/80 transition-all duration-200"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={cn('w-2 h-2 rounded-full shrink-0', config.colorClass)} />
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                          {config.label}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-foreground line-clamp-1 mb-1.5">
+                        {task.title}
+                      </p>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+                        <Clock className="h-2.5 w-2.5" />
+                        <span>
+                          {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Inspiration Peek — Horizontal Scroll */}
+          {styleReferences.length > 0 && (
+            <motion.div
+              initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: prefersReduced ? 0 : 0.4,
+                delay: prefersReduced ? 0 : 0.5,
+                ease: [0.25, 0.1, 0.25, 1],
+              }}
+              className="w-full max-w-[780px] mt-8"
+            >
+              {/* Explore divider */}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border/60 to-border/60" />
+                <span className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                  Explore styles
+                </span>
+                <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border/60 to-border/60" />
+              </div>
+
+              <div
+                className="flex gap-3 overflow-x-auto scrollbar-hide pb-2"
+                style={{ scrollSnapType: 'x mandatory' }}
+              >
+                {(() => {
+                  // Sample 2 images from each of the top 6 content categories
+                  const groups = styleReferences.reduce(
+                    (acc, ref) => {
+                      const group = ref.contentCategory || 'other'
+                      if (!acc[group]) acc[group] = []
+                      acc[group].push(ref)
+                      return acc
+                    },
+                    {} as Record<string, StyleReference[]>
+                  )
+
+                  const topCategories = Object.keys(groups).slice(0, 6)
+                  const sampledRefs = topCategories.flatMap((cat) =>
+                    (groups[cat] || []).slice(0, 2)
+                  )
+
+                  return (
+                    <>
+                      {sampledRefs.map((ref) => {
+                        const variantUrls = getImageVariantUrls(ref.imageUrl)
+                        return (
+                          <div
+                            key={ref.id}
+                            className="flex-shrink-0 w-[140px] h-[140px] rounded-xl overflow-hidden ring-1 ring-black/[0.04] hover:ring-crafted-sage/30 hover:scale-[1.03] transition-all duration-200 cursor-pointer"
+                            style={{ scrollSnapAlign: 'start' }}
+                          >
+                            <ImageWithSkeleton
+                              src={variantUrls.preview}
+                              alt={ref.name}
+                              className="w-full h-full object-cover"
+                              skeletonClassName="bg-muted/30 w-[140px] h-[140px]"
+                              loading="lazy"
+                            />
+                          </div>
+                        )
+                      })}
+                      {/* End card — "Explore all" */}
+                      <Link
+                        href="/dashboard/explore"
+                        className="flex-shrink-0 w-[140px] h-[140px] rounded-xl border border-border/50 bg-card/40 backdrop-blur-sm flex flex-col items-center justify-center gap-2 hover:border-crafted-sage/30 hover:bg-card/60 transition-all duration-200 cursor-pointer"
+                        style={{ scrollSnapAlign: 'start' }}
+                      >
+                        <ArrowRight className="h-5 w-5 text-crafted-sage" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Explore all styles
+                        </span>
+                      </Link>
+                    </>
+                  )
+                })()}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 

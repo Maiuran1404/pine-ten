@@ -29,29 +29,26 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
     categoryKey: 'launch-videos',
     description: 'Product videos that convert',
     modalDescription:
-      "Select the video type that fits my launch goals. Add details about my product and we'll craft the perfect brief.",
+      'Pick a video format below, then tell us about your product so we can build the perfect brief.',
     options: [
       {
         title: 'Product Launch Video',
         optionKey: 'product-launch-video',
-        description:
-          'A polished 30-60 second cinematic video that introduces my product to the world. Perfect for social media announcements, landing pages, and investor presentations.',
+        description: 'Build hype around your launch with a cinematic 30-60s product reveal.',
         prompt: 'Create a product launch video',
         icon: Rocket,
       },
       {
-        title: 'Feature Highlight',
+        title: 'Feature Explainer',
         optionKey: 'feature-highlight',
-        description:
-          'A focused video that showcases a specific feature or capability of my product. Great for explaining complex functionality in a digestible way.',
-        prompt: 'Create a feature highlight video',
+        description: 'Show users exactly why one feature matters with a focused deep-dive.',
+        prompt: 'Create a feature explainer video',
         icon: Sparkles,
       },
       {
         title: 'App Walkthrough',
         optionKey: 'app-walkthrough',
-        description:
-          'A clear, guided tour of my app or software showing the user journey from start to finish. Ideal for onboarding and tutorials.',
+        description: 'Onboard new users faster with a guided screen-by-screen tour.',
         prompt: 'Create an app walkthrough video',
         icon: Smartphone,
       },
@@ -62,29 +59,26 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
     categoryKey: 'pitch-deck',
     description: 'Investor-ready presentations',
     modalDescription:
-      "Choose the presentation style that matches my audience. Share my existing deck or key points and we'll design something compelling.",
+      'Choose a deck type, then share your key talking points or an existing deck to redesign.',
     options: [
       {
         title: 'Investor Pitch Deck',
         optionKey: 'investor-pitch-deck',
-        description:
-          'A visually striking presentation designed to capture investor attention and communicate my vision clearly. Typically 10-15 slides.',
+        description: 'Tell your story in 10-15 slides that make investors want to write a check.',
         prompt: 'Redesign my investor pitch deck',
         icon: TrendingUp,
       },
       {
         title: 'Sales Deck',
         optionKey: 'sales-deck',
-        description:
-          'A persuasive presentation built for closing deals. Features benefit-focused messaging and clear calls to action.',
+        description: 'Close deals faster with slides that lead prospects straight to yes.',
         prompt: 'Create a sales presentation deck',
         icon: Handshake,
       },
       {
         title: 'Company Overview',
         optionKey: 'company-overview',
-        description:
-          'A versatile introduction to my company that works for partners, clients, and new team members.',
+        description: 'Give anyone a clear picture of who you are and what you do in minutes.',
         prompt: 'Design a company overview presentation',
         icon: Building2,
       },
@@ -95,29 +89,26 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
     categoryKey: 'branding',
     description: 'Complete visual identity',
     modalDescription:
-      "Tell us about my brand personality and goals. We'll create a visual identity that sets me apart.",
+      "Tell us about your brand personality and audience and we'll shape a visual identity to match.",
     options: [
       {
         title: 'Full Brand Package',
         optionKey: 'full-brand-package',
-        description:
-          'A complete visual identity system including logo design, color palette, typography, and brand guidelines.',
+        description: 'Launch with a complete identity — logo, colors, type, and brand guidelines.',
         prompt: 'Create a full brand package with logo and visual identity',
         icon: PackageOpen,
       },
       {
         title: 'Logo Design',
         optionKey: 'logo-design',
-        description:
-          'A custom logo crafted for my brand, including primary logo, wordmark, and icon variations.',
+        description: 'Get a versatile logo system — primary mark, wordmark, and icon variations.',
         prompt: 'Design a logo for my brand',
         icon: PenTool,
       },
       {
         title: 'Brand Refresh',
         optionKey: 'brand-refresh',
-        description:
-          'Modernize and elevate my existing brand while maintaining recognition with updated visual elements.',
+        description: "Update your visual identity without losing the brand equity you've built.",
         prompt: 'Refresh and modernize my existing brand',
         icon: RefreshCw,
       },
@@ -127,53 +118,48 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
     icon: Share2,
     categoryKey: 'social-media',
     description: 'Ads, content & video edits',
-    modalDescription: 'Plan your content calendar, choose platforms, and set posting frequency.',
+    modalDescription:
+      "Pick a content type and platform — we'll handle the sizing, format, and creative direction.",
     options: [
       {
         title: 'Instagram Post',
         optionKey: 'instagram-post',
-        description:
-          'Eye-catching static posts designed for maximum engagement in the 4:5 feed format.',
+        description: 'Stop the scroll with eye-catching static posts optimized for the feed.',
         prompt: 'Create Instagram post designs',
         icon: Instagram,
       },
       {
         title: 'Instagram Story',
         optionKey: 'instagram-story',
-        description:
-          'Vertical 9:16 content optimized for Stories with interactive elements and dynamic layouts.',
+        description: 'Drive taps and replies with vertical Stories that feel native to the format.',
         prompt: 'Create Instagram story designs',
         icon: Instagram,
       },
       {
         title: 'Instagram Reels',
         optionKey: 'instagram-reels',
-        description:
-          'Short-form vertical video content designed to capture attention in the first second.',
+        description: 'Hook viewers in the first second with short-form vertical video.',
         prompt: 'Create an Instagram Reels video',
         icon: FileVideo,
       },
       {
         title: 'LinkedIn Content',
         optionKey: 'linkedin-content',
-        description:
-          'Professional content designed for B2B engagement including carousels and thought leadership.',
+        description: 'Build thought leadership with professional carousels and visual posts.',
         prompt: 'Create LinkedIn content',
         icon: Linkedin,
       },
       {
         title: 'Video Edit',
         optionKey: 'video-edit',
-        description:
-          'Transform raw footage into polished, platform-ready content with professional editing.',
+        description: 'Turn raw footage into polished, ready-to-post content.',
         prompt: 'Edit my video footage for social media',
         icon: FileVideo,
       },
       {
         title: 'Ad Creatives',
         optionKey: 'ad-creatives',
-        description:
-          'Performance-focused ad designs for Meta, TikTok, Google with A/B testing variations.',
+        description: 'Drive conversions with scroll-stopping ad creatives and A/B variants.',
         prompt: 'Create social media ad creatives',
         icon: Megaphone,
       },
@@ -184,13 +170,13 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
     categoryKey: 'content-calendar',
     description: 'Strategic content planning',
     modalDescription:
-      'Plan your content calendar with posting schedules, content pillars, and platform strategy.',
+      "Choose a planning scope and we'll map out your content pillars, cadence, and platform mix.",
     options: [
       {
         title: 'Social Media Calendar',
         optionKey: 'social-media-calendar',
         description:
-          'A strategic posting schedule across your social platforms with content pillars, weekly themes, and engagement tactics.',
+          'Never run out of ideas — get a structured weekly posting plan you can stick to.',
         prompt: 'Create a social media content calendar',
         icon: Share2,
       },
@@ -198,7 +184,7 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
         title: 'Multi-Platform Campaign',
         optionKey: 'multi-platform-campaign',
         description:
-          'A coordinated content plan spanning multiple platforms with consistent messaging and CTA escalation.',
+          'Coordinated messaging across channels with a consistent narrative and CTA flow.',
         prompt: 'Plan a multi-platform content campaign',
         icon: Megaphone,
       },
@@ -206,7 +192,7 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
         title: 'Launch Content Plan',
         optionKey: 'launch-content-plan',
         description:
-          'A pre-launch to post-launch content timeline with teasers, announcements, and follow-up content.',
+          'A pre-launch to post-launch timeline with teasers, announcements, and follow-ups.',
         prompt: 'Create a product launch content plan',
         icon: Rocket,
       },
@@ -217,13 +203,12 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
     categoryKey: 'landing-page',
     description: 'High-converting web pages',
     modalDescription:
-      "Pick a landing page style and tell us about my product or campaign. We'll design a page that drives action.",
+      "Pick a page type, then describe your product or campaign and we'll design a page that converts.",
     options: [
       {
         title: 'Product Landing Page',
         optionKey: 'product-landing-page',
-        description:
-          'A conversion-focused page that showcases my product with compelling visuals, benefits, and a clear call to action.',
+        description: 'A conversion-focused page with hero visuals, benefits, and a clear CTA.',
         prompt: 'Design a product landing page',
         icon: ShoppingBag,
       },
@@ -231,15 +216,14 @@ export const TEMPLATE_CATEGORIES: Record<string, TemplateCategory> = {
         title: 'SaaS Landing Page',
         optionKey: 'saas-landing-page',
         description:
-          'A modern page built for software products with feature highlights, pricing, social proof, and sign-up flows.',
+          'Feature highlights, pricing tiers, social proof, and sign-up flows for software.',
         prompt: 'Design a SaaS landing page',
         icon: Monitor,
       },
       {
         title: 'Event Landing Page',
         optionKey: 'event-landing-page',
-        description:
-          'A dynamic page for events, launches, or campaigns with countdown timers, speaker bios, and registration.',
+        description: 'Countdowns, speaker bios, agenda, and registration for launches or events.',
         prompt: 'Design an event landing page',
         icon: CalendarDays,
       },

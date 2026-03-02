@@ -31,6 +31,7 @@ export interface ChatRequestBody {
     baseStyleId?: string
     refinementQuery?: string
   }
+  selectedDeliverableStyles?: string[]
   moodboardHasStyles?: boolean
   brief?: {
     platform?: { source?: string; value?: string }

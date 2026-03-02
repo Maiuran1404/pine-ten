@@ -9,6 +9,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
     if (!key) return
 
+    // Guard against double-init in React StrictMode (dev mode double-mount).
+    // Without this, the first init's fetch requests get aborted on remount,
+    // causing "[PostHog.js] AbortError: signal is aborted without reason".
+    if (posthog.__loaded) return
+
     posthog.init(key, {
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || '/ingest',
       ui_host: 'https://eu.posthog.com',

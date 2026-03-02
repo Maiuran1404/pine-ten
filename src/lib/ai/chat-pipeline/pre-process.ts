@@ -6,8 +6,8 @@ import 'server-only'
 
 import { logger } from '@/lib/logger'
 import { db } from '@/db'
-import { users, audiences as audiencesTable } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { users, audiences as audiencesTable, deliverableStyleReferences } from '@/db/schema'
+import { eq, inArray } from 'drizzle-orm'
 import type { ChatContext } from '@/lib/ai/chat'
 import {
   inferFromMessage,
@@ -324,6 +324,61 @@ export async function buildPipelineContext(
   const { brandContext, brandAudiences, company } = await buildBrandContext(userId)
   const chatContext = buildChatContext(body, company)
   const styleContext = extractStyleContext(body.messages || [])
+
+  // Apply confirmed style selections to briefing state before running the pipeline.
+  // When the user confirms a style in the UI, the client sends selectedDeliverableStyles
+  // (style IDs) but hasn't updated brief.visualDirection.selectedStyles yet (it does so
+  // after the API response). Without this injection, deriveStage() can't advance past
+  // INSPIRATION and the AI keeps asking style questions instead of generating the storyboard.
+  if (body.selectedDeliverableStyles?.length && body.briefingState) {
+    const existingStyles = body.briefingState.brief?.visualDirection?.selectedStyles ?? []
+    const newIds = body.selectedDeliverableStyles.filter(
+      (id) => !existingStyles.some((s) => s.id === id)
+    )
+    if (newIds.length > 0) {
+      try {
+        const styles = await db
+          .select()
+          .from(deliverableStyleReferences)
+          .where(inArray(deliverableStyleReferences.id, newIds))
+        if (styles.length > 0) {
+          const mapped = styles.map((s) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            imageUrl: s.imageUrl,
+            deliverableType: s.deliverableType,
+            styleAxis: s.styleAxis,
+            subStyle: s.subStyle,
+            semanticTags: s.semanticTags || [],
+            promptGuide: s.promptGuide ?? undefined,
+          }))
+          body.briefingState = {
+            ...body.briefingState,
+            brief: {
+              ...body.briefingState.brief,
+              visualDirection: {
+                selectedStyles: [...existingStyles, ...mapped],
+                moodKeywords: body.briefingState.brief?.visualDirection?.moodKeywords ?? [],
+                colorPalette: body.briefingState.brief?.visualDirection?.colorPalette ?? [],
+                typography: body.briefingState.brief?.visualDirection?.typography ?? {
+                  primary: '',
+                  secondary: '',
+                },
+                avoidElements: body.briefingState.brief?.visualDirection?.avoidElements ?? [],
+              },
+            },
+          }
+          logger.debug(
+            { count: mapped.length, ids: newIds },
+            'Injected confirmed styles into briefing state before pipeline'
+          )
+        }
+      } catch (err) {
+        logger.error({ err }, 'Failed to look up confirmed styles')
+      }
+    }
+  }
 
   const { updatedBriefingState, stateMachineOverride, styleHint } = runPreAiPipeline(
     body,
