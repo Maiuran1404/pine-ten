@@ -6,7 +6,11 @@ import 'server-only'
 
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
-import { getBrandAwareStyles, getBrandAwareStylesOfAxis } from '@/lib/ai/brand-style-scoring'
+import {
+  getBrandAwareStyles,
+  getBrandAwareStylesOfAxis,
+  calculateContextScore,
+} from '@/lib/ai/brand-style-scoring'
 import {
   searchStylesByQuery,
   aiEnhancedStyleSearch,
@@ -62,7 +66,7 @@ export async function handleStyleShortcut(
   try {
     if (type === 'initial') {
       // For ALL initial requests, try curated DB presets first
-      deliverableStyles = await getStylePresets(normalizedType)
+      deliverableStyles = await getStylePresets(normalizedType, styleContext)
       if (!deliverableStyles?.length) {
         // No curated presets — fall through to type-specific pipeline
         if (isVideoType) {
@@ -260,7 +264,7 @@ export async function processStylesAndVideo(
           }
           // For ALL types at INSPIRATION, try curated DB presets first
           if (isInspirationStage) {
-            deliverableStyles = await getStylePresets(normalizedType)
+            deliverableStyles = await getStylePresets(normalizedType, styleContext)
             logger.debug(
               { count: deliverableStyles?.length, deliverableType: normalizedType },
               'Loaded curated style presets from DB'
@@ -536,7 +540,8 @@ export async function processStylesAndVideo(
 // ── Helper: Load curated style presets from DB (all deliverable types) ──
 
 async function getStylePresets(
-  deliverableType: string
+  deliverableType: string,
+  styleContext?: StyleContext
 ): Promise<SearchedDeliverableStyle[] | undefined> {
   try {
     // Only return curated presets (those with a promptGuide) for reliable visual direction
@@ -554,23 +559,64 @@ async function getStylePresets(
 
     if (presets.length === 0) return undefined
 
-    return presets.map((preset) => ({
-      id: preset.id,
-      name: preset.name,
-      description: preset.description,
-      imageUrl: preset.imageUrl,
-      deliverableType: preset.deliverableType,
-      styleAxis: preset.styleAxis,
-      subStyle: preset.subStyle,
-      semanticTags: preset.semanticTags || [],
-      colorSamples: preset.colorSamples || [],
-      promptGuide: preset.promptGuide ?? undefined,
-      attribution: {
-        source: 'db' as const,
-        domain: 'crafted',
-        sourceUrl: '',
-      },
-    }))
+    const mapped = presets.map((preset, index) => {
+      // Score against conversation context when available
+      let brandMatchScore: number | undefined
+      let matchReason: string | undefined
+
+      if (styleContext) {
+        brandMatchScore = calculateContextScore(
+          {
+            semanticTags: preset.semanticTags,
+            industries: preset.industries,
+            moodKeywords: preset.moodKeywords,
+            targetAudience: preset.targetAudience,
+            styleAxis: preset.styleAxis,
+          },
+          styleContext
+        )
+        matchReason =
+          brandMatchScore >= 70
+            ? 'Matches your topic'
+            : brandMatchScore >= 40
+              ? 'Related style'
+              : undefined
+      }
+
+      return {
+        id: preset.id,
+        name: preset.name,
+        description: preset.description,
+        imageUrl: preset.imageUrl,
+        deliverableType: preset.deliverableType,
+        styleAxis: preset.styleAxis,
+        subStyle: preset.subStyle,
+        semanticTags: preset.semanticTags || [],
+        colorSamples: preset.colorSamples || [],
+        promptGuide: preset.promptGuide ?? undefined,
+        brandMatchScore,
+        matchReason,
+        attribution: {
+          source: 'db' as const,
+          domain: 'crafted',
+          sourceUrl: '',
+        },
+        _displayOrder: index, // preserve original DB order as tiebreaker
+      }
+    })
+
+    // Sort by context score when available; fall back to DB displayOrder
+    if (styleContext) {
+      mapped.sort((a, b) => {
+        const scoreA = a.brandMatchScore ?? 0
+        const scoreB = b.brandMatchScore ?? 0
+        if (scoreB !== scoreA) return scoreB - scoreA
+        return a._displayOrder - b._displayOrder
+      })
+    }
+
+    // Strip internal tiebreaker before returning
+    return mapped.map(({ _displayOrder, ...rest }) => rest)
   } catch (err) {
     logger.error({ err }, 'Error loading style presets from DB')
     return undefined

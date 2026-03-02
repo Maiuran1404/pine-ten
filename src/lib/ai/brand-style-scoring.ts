@@ -391,7 +391,7 @@ const INDUSTRY_STYLE_AFFINITY: Record<string, { preferred: StyleAxis[]; avoided:
 /**
  * Calculate context match score for a style
  */
-function calculateContextScore(
+export function calculateContextScore(
   style: {
     semanticTags: string[] | null
     industries: string[] | null
