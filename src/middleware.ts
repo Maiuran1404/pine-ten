@@ -68,8 +68,6 @@ const PUBLIC_PATHS = [
   '/api/webhooks',
   '/api/health',
   '/api/csrf',
-  '/api/openapi',
-  '/api-docs',
   '/ingest',
   '/_next',
   '/favicon.ico',

@@ -63,7 +63,6 @@
     "@supabase/supabase-js": "^2.87.1",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.90.16",
-    "@types/swagger-ui-react": "^5.18.0",
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^1.3.1",
     "bcryptjs": "^3.0.3",
@@ -77,9 +76,7 @@
     "import-in-the-middle": "^2.0.0",
     "lucide-react": "^0.561.0",
     "next": "16.0.10",
-    "next-swagger-doc": "^0.4.1",
     "next-themes": "^0.4.6",
-    "openapi-types": "^12.1.3",
     "orshot": "^0.1.2",
     "pdf-parse": "^2.4.5",
     "pexels": "^1.4.0",
@@ -103,7 +100,6 @@
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "stripe": "^20.0.0",
-    "swagger-ui-react": "^5.31.0",
     "tailwind-merge": "^3.4.0",
     "twilio": "^5.10.7",
     "zod": "^4.1.13"
@@ -148,6 +144,11 @@
     "*.{json,md,yml}": [
       "prettier --write"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "date-fns-jalali": "npm:date-fns@4.1.0"
+    }
   },
   "packageManager": "pnpm@10.9.0+sha512.0486e394640d3c1fb3c9d43d49cf92879ff74f8516959c235308f5a8f62e2e19528a65cdc2a3058f587cde71eba3d5b56327c8c33a97e4c4051ca48a10ca2d5f"
 }
