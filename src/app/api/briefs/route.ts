@@ -116,68 +116,54 @@ export async function POST(request: NextRequest) {
         columns: { id: true },
       })
       if (!draftExists) {
-        // Draft doesn't exist yet, set to null to avoid FK constraint error
+        logger.warn(
+          { draftId: validDraftId, userId: session.user.id },
+          'chatDraft not found — nullifying draftId (brief will be orphaned until draft is created)'
+        )
         validDraftId = null
       }
     }
 
-    // Check if brief already exists for this draft
-    let existingBrief = null
-    if (validDraftId) {
-      existingBrief = await db.query.briefs.findFirst({
-        where: and(eq(briefs.draftId, validDraftId), eq(briefs.userId, session.user.id)),
-      })
-    }
-
-    // Helper function for safe JSON serialization
-    const safeSerialize = <T>(value: T | undefined | null): T | null => {
-      if (value === undefined || value === null) return null
-      try {
-        return JSON.parse(JSON.stringify(value))
-      } catch (error) {
-        logger.warn({ err: error }, 'Failed to serialize value for brief')
-        return null
-      }
-    }
-
-    // Convert LiveBrief to database format using JSON serialization
     const briefData = {
       userId: session.user.id,
       companyId: user?.companyId || null,
       draftId: validDraftId,
       status: status as 'DRAFT' | 'READY',
       completionPercentage: completion,
-      taskSummary: safeSerialize(liveBrief.taskSummary),
-      topic: safeSerialize(liveBrief.topic),
-      platform: safeSerialize(liveBrief.platform),
+      taskSummary: liveBrief.taskSummary ?? null,
+      topic: liveBrief.topic ?? null,
+      platform: liveBrief.platform ?? null,
       contentType: null,
-      intent: safeSerialize(liveBrief.intent),
-      taskType: safeSerialize(liveBrief.taskType),
-      audience: safeSerialize(liveBrief.audience),
-      dimensions: safeSerialize(liveBrief.dimensions) || [],
-      visualDirection: safeSerialize(liveBrief.visualDirection),
-      contentOutline: safeSerialize(liveBrief.contentOutline),
+      intent: liveBrief.intent ?? null,
+      taskType: liveBrief.taskType ?? null,
+      audience: liveBrief.audience ?? null,
+      dimensions: liveBrief.dimensions ?? [],
+      visualDirection: liveBrief.visualDirection ?? null,
+      contentOutline: liveBrief.contentOutline ?? null,
       clarifyingQuestionsAsked: liveBrief.clarifyingQuestionsAsked || [],
       updatedAt: new Date(),
     }
 
     logger.debug(
-      { briefDataKeys: Object.keys(briefData), existingBriefId: existingBrief?.id || null },
-      'POST /api/briefs - briefData and existingBrief'
+      { briefDataKeys: Object.keys(briefData), draftId: validDraftId },
+      'POST /api/briefs - briefData'
     )
 
     let savedBrief
 
-    if (existingBrief) {
-      // Update existing
-      const [updated] = await db
-        .update(briefs)
-        .set(briefData)
-        .where(eq(briefs.id, existingBrief.id))
+    if (validDraftId) {
+      // Upsert: atomic insert-or-update keyed on (draftId, userId)
+      const [upserted] = await db
+        .insert(briefs)
+        .values(briefData)
+        .onConflictDoUpdate({
+          target: [briefs.draftId, briefs.userId],
+          set: briefData,
+        })
         .returning()
-      savedBrief = updated
+      savedBrief = upserted
     } else {
-      // Create new
+      // No draftId — always insert (no conflict key available)
       const [created] = await db.insert(briefs).values(briefData).returning()
       savedBrief = created
     }

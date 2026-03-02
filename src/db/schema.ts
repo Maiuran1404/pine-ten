@@ -11,7 +11,7 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 
 // Enums
 export const userRoleEnum = pgEnum('user_role', ['CLIENT', 'FREELANCER', 'ADMIN'])
@@ -2202,6 +2202,9 @@ export const briefs = pgTable(
     index('briefs_task_id_idx').on(table.taskId),
     index('briefs_status_idx').on(table.status),
     index('briefs_created_at_idx').on(table.createdAt),
+    uniqueIndex('briefs_draft_id_user_id_unique_idx')
+      .on(table.draftId, table.userId)
+      .where(sql`draft_id IS NOT NULL`),
   ]
 )
 

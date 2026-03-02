@@ -25,7 +25,7 @@ function useDebounce<T>(value: T, delay: number): T {
  * Thin auto-save adapter: persists the brief to the server via /api/briefs.
  * No local state — reads brief from the briefing state machine (single source of truth).
  */
-export function useBriefAutoSave(brief: LiveBrief, draftId: string) {
+export function useBriefAutoSave(brief: LiveBrief, draftId: string, csrfFetch: typeof fetch) {
   const lastSavedRef = useRef<string>('')
   const isSavingRef = useRef(false)
   const debouncedBrief = useDebounce(brief, 500)
@@ -38,7 +38,7 @@ export function useBriefAutoSave(brief: LiveBrief, draftId: string) {
     const saveBrief = async () => {
       isSavingRef.current = true
       try {
-        const response = await fetch('/api/briefs', {
+        const response = await csrfFetch('/api/briefs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -58,5 +58,5 @@ export function useBriefAutoSave(brief: LiveBrief, draftId: string) {
     }
 
     saveBrief()
-  }, [debouncedBrief, draftId])
+  }, [debouncedBrief, draftId, csrfFetch])
 }

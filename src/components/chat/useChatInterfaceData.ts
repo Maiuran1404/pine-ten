@@ -138,7 +138,7 @@ export function useChatInterfaceData({
   const isBriefReady = useMemo(() => isBriefReadyForDesigner(brief), [brief])
 
   // Auto-save brief to server
-  useBriefAutoSave(brief, draftId)
+  useBriefAutoSave(brief, draftId, csrfFetch)
 
   // Apply brand data to brief when brand data becomes available
   const brandDataAppliedRef = useRef(false)
