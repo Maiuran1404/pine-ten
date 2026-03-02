@@ -14,7 +14,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
+import dynamic from 'next/dynamic'
+
+const CreditPurchaseDialog = dynamic(() =>
+  import('@/components/shared/credit-purchase-dialog').then((mod) => ({
+    default: mod.CreditPurchaseDialog,
+  }))
+)
 import { type UploadedFile } from './types'
 import { isBriefReadyForDesigner } from './brief-panel/types'
 import { ChatLayout } from './chat-layout'
@@ -331,6 +337,28 @@ export function ChatInterface({
     return []
   }, [messages])
 
+  // Compute primitives for ChatInputArea to avoid passing full messages array
+  const hasInlineStylePicker = useMemo(() => {
+    const lastAssistant = messages.findLast((m) => m.role === 'assistant')
+    return !!lastAssistant?.videoReferences?.length || !!lastAssistant?.deliverableStyles?.length
+  }, [messages])
+
+  const hasStrategicReviewCTA = useMemo(() => {
+    const last = messages.findLast((m) => m.role === 'assistant')
+    return !!(last?.strategicReviewData && !last.strategicReviewData.userOverride)
+  }, [messages])
+
+  // Stabilize storyboard scenes reference for ChatMessageList memo
+  const latestStoryboardScenesMemo = useMemo(
+    () => (storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes : undefined),
+    [storyboardScenes]
+  )
+
+  // Stabilize onViewStoryboard callback for ChatMessageList memo
+  const handleViewStoryboard = useCallback(() => {
+    viewStructureRef.current?.()
+  }, [])
+
   // Intercept submission-intent quick option chips so they trigger task summary
   // instead of sending as a chat message
   const handleQuickOptionClick = useCallback(
@@ -343,6 +371,100 @@ export function ChatInterface({
       handleSendOption(option)
     },
     [handleSendOption, handleRequestTaskSummary]
+  )
+
+  // Build structure panel props as a single passthrough object
+  const structurePanelProps = useMemo(
+    () => ({
+      structureType: structureType ?? null,
+      structureData: storyboardScenes ?? null,
+      briefingStage: briefingStage ?? undefined,
+      sceneImageData,
+      isChatLoading: isLoading,
+      isRegenerating: isLoading,
+      changedScenes,
+      onUndo: undo,
+      onRedo: redo,
+      canUndo,
+      canRedo,
+      onSceneClick: handleSceneClick,
+      onSelectionChange: handleSceneSelectionChange,
+      onSceneEdit: handleSceneEdit,
+      onSceneReorder: handleSceneReorder,
+      onRegenerateStoryboard: showSubmissionSuccess ? undefined : handleRegenerateStoryboard,
+      onRegenerateScene: showSubmissionSuccess ? undefined : handleRegenerateScene,
+      onRegenerateField: showSubmissionSuccess ? undefined : handleRegenerateField,
+      targetDurationSeconds,
+      onSectionReorder: handleSectionReorder,
+      onSectionEdit: handleSectionEdit,
+      websiteGlobalStyles,
+      websiteInspirations,
+      websiteInspirationIds,
+      inspirationGallery,
+      isGalleryLoading,
+      isCapturingScreenshot,
+      onInspirationSelect: (item: {
+        id: string
+        name: string
+        url: string
+        screenshotUrl: string
+      }) =>
+        addWebsiteInspiration({
+          id: item.id,
+          url: item.url,
+          screenshotUrl: item.screenshotUrl,
+          name: item.name,
+        }),
+      onRemoveInspiration: removeWebsiteInspiration,
+      onCaptureScreenshot: captureWebsiteScreenshot,
+      onFindSimilar: findSimilarWebsites,
+      similarResults: similarWebsiteResults,
+      isFindingSimilar,
+      canFindSimilar,
+      onUpdateInspirationNotes: updateInspirationNotes,
+      videoNarrative,
+      narrativeApproved,
+      onApproveNarrative: handleApproveNarrative,
+      onNarrativeFieldEdit: handleNarrativeFieldEdit,
+      lastSendError,
+      onRetryGeneration: handleRetryGeneration,
+      onEditNarrative: handleEditNarrative,
+      imageGenerationProgress,
+      isGeneratingImages,
+      onRegenerateImage: handleRegenerateImage,
+      styleSelectionStyles: latestDeliverableStyles,
+      onStyleConfirmSelection: handleConfirmStyleSelection,
+      onStyleShowMore: handleShowMoreStyles,
+      onStyleShowDifferent: handleShowDifferentStyles,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable handlers from hooks
+    [
+      structureType,
+      storyboardScenes,
+      briefingStage,
+      sceneImageData,
+      isLoading,
+      changedScenes,
+      canUndo,
+      canRedo,
+      showSubmissionSuccess,
+      targetDurationSeconds,
+      websiteGlobalStyles,
+      websiteInspirations,
+      websiteInspirationIds,
+      inspirationGallery,
+      isGalleryLoading,
+      isCapturingScreenshot,
+      similarWebsiteResults,
+      isFindingSimilar,
+      canFindSimilar,
+      videoNarrative,
+      narrativeApproved,
+      lastSendError,
+      imageGenerationProgress,
+      isGeneratingImages,
+      latestDeliverableStyles,
+    ]
   )
 
   return (
@@ -376,67 +498,14 @@ export function ChatInterface({
         onMultiSceneFeedback={handleMultiSceneFeedback}
         onSceneSelectionChange={handleSceneSelectionChange}
         structurePanelVisible={structurePanelVisible}
-        structureType={structureType}
-        structureData={storyboardScenes}
-        onSceneEdit={handleSceneEdit}
-        onSceneReorder={handleSceneReorder}
-        onRegenerateStoryboard={showSubmissionSuccess ? undefined : handleRegenerateStoryboard}
-        onRegenerateScene={showSubmissionSuccess ? undefined : handleRegenerateScene}
-        onRegenerateField={showSubmissionSuccess ? undefined : handleRegenerateField}
-        targetDurationSeconds={targetDurationSeconds}
-        onSectionReorder={handleSectionReorder}
-        onSectionEdit={handleSectionEdit}
-        sceneImageData={sceneImageData}
+        structurePanelProps={structurePanelProps}
         onApplyMoodboardToScene={(item, sceneNumber) =>
           handleSceneImageReplace(sceneNumber, item.imageUrl)
         }
         storyboardSceneCount={
           storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes.length : 0
         }
-        isChatLoading={isLoading}
-        isRegenerating={isLoading}
-        changedScenes={changedScenes}
-        onUndo={undo}
-        onRedo={redo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        videoNarrative={videoNarrative}
-        narrativeApproved={narrativeApproved}
-        onApproveNarrative={handleApproveNarrative}
-        onNarrativeFieldEdit={handleNarrativeFieldEdit}
-        lastSendError={lastSendError}
-        onRetryGeneration={handleRetryGeneration}
-        onEditNarrative={handleEditNarrative}
-        imageGenerationProgress={imageGenerationProgress}
-        isGeneratingImages={isGeneratingImages}
-        onRegenerateImage={handleRegenerateImage}
         viewStructureRef={viewStructureRef}
-        websiteGlobalStyles={websiteGlobalStyles}
-        websiteInspirations={websiteInspirations}
-        websiteInspirationIds={websiteInspirationIds}
-        inspirationGallery={inspirationGallery}
-        isGalleryLoading={isGalleryLoading}
-        isCapturingScreenshot={isCapturingScreenshot}
-        onInspirationSelect={(item) =>
-          addWebsiteInspiration({
-            id: item.id,
-            url: item.url,
-            screenshotUrl: item.screenshotUrl,
-            name: item.name,
-          })
-        }
-        onRemoveInspiration={removeWebsiteInspiration}
-        onCaptureScreenshot={captureWebsiteScreenshot}
-        onFindSimilar={findSimilarWebsites}
-        similarResults={similarWebsiteResults}
-        isFindingSimilar={isFindingSimilar}
-        canFindSimilar={canFindSimilar}
-        onUpdateInspirationNotes={updateInspirationNotes}
-        briefingStage={briefingStage}
-        styleSelectionStyles={latestDeliverableStyles}
-        onStyleConfirmSelection={handleConfirmStyleSelection}
-        onStyleShowMore={handleShowMoreStyles}
-        onStyleShowDifferent={handleShowDifferentStyles}
         className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
       >
         <div
@@ -570,14 +639,9 @@ export function ChatInterface({
             structureType={structureType}
             onSceneClick={handleSceneClick}
             onMultiSceneFeedback={handleMultiSceneFeedback}
-            onViewStoryboard={() => {
-              // On mobile/tablet, open the structure bottom sheet
-              viewStructureRef.current?.()
-            }}
+            onViewStoryboard={handleViewStoryboard}
             structurePanelVisible={structurePanelVisible}
-            latestStoryboardScenes={
-              storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes : undefined
-            }
+            latestStoryboardScenes={latestStoryboardScenesMemo}
             onInlineUpload={uploadFiles}
             isUploading={isUploading}
             uploadedFiles={uploadedFiles}
@@ -590,7 +654,8 @@ export function ChatInterface({
           {/* Input area / Submit action bar — hidden after successful submission */}
           {!showSubmissionSuccess && (
             <ChatInputArea
-              messages={messages}
+              messageCount={messages.length}
+              hasInlineStylePicker={hasInlineStylePicker}
               input={input}
               setInput={setInput}
               isLoading={isLoading}
@@ -614,10 +679,7 @@ export function ChatInterface({
               brief={brief}
               stateMachineQuickOptions={resolvedQuickOptions}
               onQuickOptionClick={handleQuickOptionClick}
-              hasStrategicReviewCTA={(() => {
-                const last = [...messages].reverse().find((m) => m.role === 'assistant')
-                return !!(last?.strategicReviewData && !last.strategicReviewData.userOverride)
-              })()}
+              hasStrategicReviewCTA={hasStrategicReviewCTA}
               animatingMessageId={animatingMessageId}
               handleSend={handleSend}
               handleFileUpload={handleFileUpload}

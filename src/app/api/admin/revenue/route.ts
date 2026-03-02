@@ -42,132 +42,187 @@ export async function GET(request: Request) {
         }
       }
 
-      // Get total revenue from purchases
+      // Build conditions
       const purchaseCondition = startDate
         ? and(eq(creditTransactions.type, 'PURCHASE'), gte(creditTransactions.createdAt, startDate))
         : eq(creditTransactions.type, 'PURCHASE')
 
-      const totalCreditsResult = await safeQuery(
-        'totalCredits',
-        db
-          .select({ total: sum(creditTransactions.amount) })
-          .from(creditTransactions)
-          .where(purchaseCondition),
-        [{ total: '0' }]
-      )
-      const totalCreditsPurchased = Number(totalCreditsResult[0]?.total) || 0
-      const totalRevenue = totalCreditsPurchased * pricePerCredit
-
-      // Get transaction counts by type
-      const transactionsByType = await safeQuery(
-        'transactionsByType',
-        db
-          .select({
-            type: creditTransactions.type,
-            count: count(),
-            totalAmount: sum(creditTransactions.amount),
-          })
-          .from(creditTransactions)
-          .groupBy(creditTransactions.type),
-        []
-      )
-
-      // Get recent transactions with user info
       const recentTransactionsQuery = startDate
         ? and(eq(creditTransactions.type, 'PURCHASE'), gte(creditTransactions.createdAt, startDate))
         : eq(creditTransactions.type, 'PURCHASE')
 
-      const recentTransactions = await safeQuery(
-        'recentTransactions',
-        db
-          .select({
-            id: creditTransactions.id,
-            userId: creditTransactions.userId,
-            amount: creditTransactions.amount,
-            type: creditTransactions.type,
-            description: creditTransactions.description,
-            stripePaymentId: creditTransactions.stripePaymentId,
-            createdAt: creditTransactions.createdAt,
-            userName: users.name,
-            userEmail: users.email,
-          })
-          .from(creditTransactions)
-          .leftJoin(users, eq(creditTransactions.userId, users.id))
-          .where(recentTransactionsQuery)
-          .orderBy(desc(creditTransactions.createdAt))
-          .limit(50),
-        []
-      )
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-      // Get monthly revenue breakdown (last 12 months)
-      const monthlyRevenue = await safeQuery(
-        'monthlyRevenue',
-        db
-          .select({
-            month: sql<string>`TO_CHAR(${creditTransactions.createdAt}, 'YYYY-MM')`,
-            credits: sum(creditTransactions.amount),
-            transactionCount: count(),
-          })
-          .from(creditTransactions)
-          .where(eq(creditTransactions.type, 'PURCHASE'))
-          .groupBy(sql`TO_CHAR(${creditTransactions.createdAt}, 'YYYY-MM')`)
-          .orderBy(desc(sql`TO_CHAR(${creditTransactions.createdAt}, 'YYYY-MM')`))
-          .limit(12),
-        []
-      )
+      // Run all 11 DB queries in parallel — they're all independent reads
+      const [
+        totalCreditsResult,
+        transactionsByType,
+        recentTransactions,
+        monthlyRevenue,
+        topCustomers,
+        packageDistribution,
+        webhookEventsData,
+        uniqueCustomersResult,
+        todayRevenueResult,
+        weekRevenueResult,
+        monthRevenueResult,
+      ] = await Promise.all([
+        safeQuery(
+          'totalCredits',
+          db
+            .select({ total: sum(creditTransactions.amount) })
+            .from(creditTransactions)
+            .where(purchaseCondition),
+          [{ total: '0' }]
+        ),
+        safeQuery(
+          'transactionsByType',
+          db
+            .select({
+              type: creditTransactions.type,
+              count: count(),
+              totalAmount: sum(creditTransactions.amount),
+            })
+            .from(creditTransactions)
+            .groupBy(creditTransactions.type),
+          []
+        ),
+        safeQuery(
+          'recentTransactions',
+          db
+            .select({
+              id: creditTransactions.id,
+              userId: creditTransactions.userId,
+              amount: creditTransactions.amount,
+              type: creditTransactions.type,
+              description: creditTransactions.description,
+              stripePaymentId: creditTransactions.stripePaymentId,
+              createdAt: creditTransactions.createdAt,
+              userName: users.name,
+              userEmail: users.email,
+            })
+            .from(creditTransactions)
+            .leftJoin(users, eq(creditTransactions.userId, users.id))
+            .where(recentTransactionsQuery)
+            .orderBy(desc(creditTransactions.createdAt))
+            .limit(50),
+          []
+        ),
+        safeQuery(
+          'monthlyRevenue',
+          db
+            .select({
+              month: sql<string>`TO_CHAR(${creditTransactions.createdAt}, 'YYYY-MM')`,
+              credits: sum(creditTransactions.amount),
+              transactionCount: count(),
+            })
+            .from(creditTransactions)
+            .where(eq(creditTransactions.type, 'PURCHASE'))
+            .groupBy(sql`TO_CHAR(${creditTransactions.createdAt}, 'YYYY-MM')`)
+            .orderBy(desc(sql`TO_CHAR(${creditTransactions.createdAt}, 'YYYY-MM')`))
+            .limit(12),
+          []
+        ),
+        safeQuery(
+          'topCustomers',
+          db
+            .select({
+              userId: creditTransactions.userId,
+              userName: users.name,
+              userEmail: users.email,
+              totalCredits: sum(creditTransactions.amount),
+              transactionCount: count(),
+            })
+            .from(creditTransactions)
+            .leftJoin(users, eq(creditTransactions.userId, users.id))
+            .where(eq(creditTransactions.type, 'PURCHASE'))
+            .groupBy(creditTransactions.userId, users.name, users.email)
+            .orderBy(desc(sum(creditTransactions.amount)))
+            .limit(10),
+          []
+        ),
+        safeQuery(
+          'packageDistribution',
+          db
+            .select({
+              amount: creditTransactions.amount,
+              count: count(),
+            })
+            .from(creditTransactions)
+            .where(eq(creditTransactions.type, 'PURCHASE'))
+            .groupBy(creditTransactions.amount)
+            .orderBy(desc(count())),
+          []
+        ),
+        safeQuery(
+          'webhookEvents',
+          db
+            .select({
+              id: webhookEvents.id,
+              eventId: webhookEvents.eventId,
+              eventType: webhookEvents.eventType,
+              status: webhookEvents.status,
+              processedAt: webhookEvents.processedAt,
+              errorMessage: webhookEvents.errorMessage,
+            })
+            .from(webhookEvents)
+            .orderBy(desc(webhookEvents.processedAt))
+            .limit(20),
+          []
+        ),
+        safeQuery(
+          'uniqueCustomers',
+          db
+            .selectDistinct({ userId: creditTransactions.userId })
+            .from(creditTransactions)
+            .where(eq(creditTransactions.type, 'PURCHASE')),
+          []
+        ),
+        safeQuery(
+          'todayRevenue',
+          db
+            .select({ total: sum(creditTransactions.amount) })
+            .from(creditTransactions)
+            .where(
+              and(
+                eq(creditTransactions.type, 'PURCHASE'),
+                gte(creditTransactions.createdAt, todayStart)
+              )
+            ),
+          [{ total: '0' }]
+        ),
+        safeQuery(
+          'weekRevenue',
+          db
+            .select({ total: sum(creditTransactions.amount) })
+            .from(creditTransactions)
+            .where(
+              and(
+                eq(creditTransactions.type, 'PURCHASE'),
+                gte(creditTransactions.createdAt, weekStart)
+              )
+            ),
+          [{ total: '0' }]
+        ),
+        safeQuery(
+          'monthRevenue',
+          db
+            .select({ total: sum(creditTransactions.amount) })
+            .from(creditTransactions)
+            .where(
+              and(
+                eq(creditTransactions.type, 'PURCHASE'),
+                gte(creditTransactions.createdAt, monthStart)
+              )
+            ),
+          [{ total: '0' }]
+        ),
+      ])
 
-      // Get top customers by revenue
-      const topCustomers = await safeQuery(
-        'topCustomers',
-        db
-          .select({
-            userId: creditTransactions.userId,
-            userName: users.name,
-            userEmail: users.email,
-            totalCredits: sum(creditTransactions.amount),
-            transactionCount: count(),
-          })
-          .from(creditTransactions)
-          .leftJoin(users, eq(creditTransactions.userId, users.id))
-          .where(eq(creditTransactions.type, 'PURCHASE'))
-          .groupBy(creditTransactions.userId, users.name, users.email)
-          .orderBy(desc(sum(creditTransactions.amount)))
-          .limit(10),
-        []
-      )
-
-      // Get credit package distribution (analyze from descriptions/amounts)
-      const packageDistribution = await safeQuery(
-        'packageDistribution',
-        db
-          .select({
-            amount: creditTransactions.amount,
-            count: count(),
-          })
-          .from(creditTransactions)
-          .where(eq(creditTransactions.type, 'PURCHASE'))
-          .groupBy(creditTransactions.amount)
-          .orderBy(desc(count())),
-        []
-      )
-
-      // Get webhook events (Stripe events) for debugging
-      const webhookEventsData = await safeQuery(
-        'webhookEvents',
-        db
-          .select({
-            id: webhookEvents.id,
-            eventId: webhookEvents.eventId,
-            eventType: webhookEvents.eventType,
-            status: webhookEvents.status,
-            processedAt: webhookEvents.processedAt,
-            errorMessage: webhookEvents.errorMessage,
-          })
-          .from(webhookEvents)
-          .orderBy(desc(webhookEvents.processedAt))
-          .limit(20),
-        []
-      )
+      const totalCreditsPurchased = Number(totalCreditsResult[0]?.total) || 0
+      const totalRevenue = totalCreditsPurchased * pricePerCredit
 
       // Calculate additional metrics
       const purchaseTransactions = transactionsByType.find((t) => t.type === 'PURCHASE')
@@ -175,138 +230,59 @@ export async function GET(request: Request) {
       const bonusTransactions = transactionsByType.find((t) => t.type === 'BONUS')
       const refundTransactions = transactionsByType.find((t) => t.type === 'REFUND')
 
-      // Get unique paying customers count
-      const uniqueCustomersResult = await safeQuery(
-        'uniqueCustomers',
-        db
-          .selectDistinct({ userId: creditTransactions.userId })
-          .from(creditTransactions)
-          .where(eq(creditTransactions.type, 'PURCHASE')),
-        []
-      )
+      // Run all 3 Stripe API calls in parallel
+      const stripe = getStripe()
+      const [stripeBalanceResult, stripeChargesResult, stripePayoutsResult] = await Promise.all([
+        stripe.balance.retrieve().catch((err) => {
+          logger.warn({ err }, 'Failed to fetch Stripe balance')
+          return null
+        }),
+        stripe.charges.list({ limit: 20 }).catch((err) => {
+          logger.warn({ err }, 'Failed to fetch Stripe charges')
+          return null
+        }),
+        stripe.payouts.list({ limit: 10 }).catch((err) => {
+          logger.warn({ err }, 'Failed to fetch Stripe payouts')
+          return null
+        }),
+      ])
 
-      // Get today's revenue
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const todayRevenueResult = await safeQuery(
-        'todayRevenue',
-        db
-          .select({ total: sum(creditTransactions.amount) })
-          .from(creditTransactions)
-          .where(
-            and(
-              eq(creditTransactions.type, 'PURCHASE'),
-              gte(creditTransactions.createdAt, todayStart)
-            )
-          ),
-        [{ total: '0' }]
-      )
+      const stripeBalance = stripeBalanceResult
+        ? {
+            available: stripeBalanceResult.available.map((b) => ({
+              amount: b.amount,
+              currency: b.currency,
+            })),
+            pending: stripeBalanceResult.pending.map((b) => ({
+              amount: b.amount,
+              currency: b.currency,
+            })),
+          }
+        : null
 
-      // Get this week's revenue
-      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      const weekRevenueResult = await safeQuery(
-        'weekRevenue',
-        db
-          .select({ total: sum(creditTransactions.amount) })
-          .from(creditTransactions)
-          .where(
-            and(
-              eq(creditTransactions.type, 'PURCHASE'),
-              gte(creditTransactions.createdAt, weekStart)
-            )
-          ),
-        [{ total: '0' }]
-      )
+      const recentCharges = stripeChargesResult
+        ? stripeChargesResult.data.map((charge) => ({
+            id: charge.id,
+            amount: charge.amount,
+            currency: charge.currency,
+            status: charge.status,
+            created: charge.created,
+            customerEmail: charge.billing_details?.email || null,
+            description: charge.description,
+            receiptUrl: charge.receipt_url,
+          }))
+        : []
 
-      // Get this month's revenue
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-      const monthRevenueResult = await safeQuery(
-        'monthRevenue',
-        db
-          .select({ total: sum(creditTransactions.amount) })
-          .from(creditTransactions)
-          .where(
-            and(
-              eq(creditTransactions.type, 'PURCHASE'),
-              gte(creditTransactions.createdAt, monthStart)
-            )
-          ),
-        [{ total: '0' }]
-      )
-
-      // Try to get Stripe balance (with error handling)
-      let stripeBalance = null
-      try {
-        const stripe = getStripe()
-        const balance = await stripe.balance.retrieve()
-        stripeBalance = {
-          available: balance.available.map((b) => ({
-            amount: b.amount,
-            currency: b.currency,
-          })),
-          pending: balance.pending.map((b) => ({
-            amount: b.amount,
-            currency: b.currency,
-          })),
-        }
-      } catch (err) {
-        logger.warn({ err }, 'Failed to fetch Stripe balance')
-      }
-
-      // Try to get recent Stripe charges
-      let recentCharges: Array<{
-        id: string
-        amount: number
-        currency: string
-        status: string
-        created: number
-        customerEmail: string | null
-        description: string | null
-        receiptUrl: string | null
-      }> = []
-      try {
-        const stripe = getStripe()
-        const charges = await stripe.charges.list({
-          limit: 20,
-        })
-        recentCharges = charges.data.map((charge) => ({
-          id: charge.id,
-          amount: charge.amount,
-          currency: charge.currency,
-          status: charge.status,
-          created: charge.created,
-          customerEmail: charge.billing_details?.email || null,
-          description: charge.description,
-          receiptUrl: charge.receipt_url,
-        }))
-      } catch (err) {
-        logger.warn({ err }, 'Failed to fetch Stripe charges')
-      }
-
-      // Try to get recent Stripe payouts
-      let recentPayouts: Array<{
-        id: string
-        amount: number
-        currency: string
-        status: string
-        created: number
-        arrivalDate: number
-      }> = []
-      try {
-        const stripe = getStripe()
-        const payouts = await stripe.payouts.list({
-          limit: 10,
-        })
-        recentPayouts = payouts.data.map((payout) => ({
-          id: payout.id,
-          amount: payout.amount,
-          currency: payout.currency,
-          status: payout.status,
-          created: payout.created,
-          arrivalDate: payout.arrival_date,
-        }))
-      } catch (err) {
-        logger.warn({ err }, 'Failed to fetch Stripe payouts')
-      }
+      const recentPayouts = stripePayoutsResult
+        ? stripePayoutsResult.data.map((payout) => ({
+            id: payout.id,
+            amount: payout.amount,
+            currency: payout.currency,
+            status: payout.status,
+            created: payout.created,
+            arrivalDate: payout.arrival_date,
+          }))
+        : []
 
       // Format package distribution with names
       const packageNames: Record<number, string> = {

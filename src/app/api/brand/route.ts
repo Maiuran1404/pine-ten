@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { cachedSuccessResponse, CacheDurations } from '@/lib/cache'
 import { requireAuth } from '@/lib/require-auth'
 import { db } from '@/db'
 import { users, companies } from '@/db/schema'
@@ -24,7 +25,7 @@ export async function GET() {
         throw Errors.notFound('Brand')
       }
 
-      return successResponse(dbUser.company)
+      return cachedSuccessResponse(dbUser.company, CacheDurations.MEDIUM, { isPrivate: true })
     },
     { endpoint: 'GET /api/brand' }
   )

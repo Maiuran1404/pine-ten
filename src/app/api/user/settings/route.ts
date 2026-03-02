@@ -4,6 +4,7 @@ import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { updateUserSettingsSchema } from '@/lib/validations'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { cachedSuccessResponse, CacheDurations } from '@/lib/cache'
 import { requireAuth } from '@/lib/require-auth'
 
 export async function GET() {
@@ -28,7 +29,9 @@ export async function GET() {
       throw Errors.notFound('User')
     }
 
-    return successResponse({ user: userResult[0] })
+    return cachedSuccessResponse({ user: userResult[0] }, CacheDurations.MEDIUM, {
+      isPrivate: true,
+    })
   })
 }
 

@@ -3,7 +3,15 @@
 import { Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LoadingSpinner } from '@/components/shared/loading'
-import { InfiniteGrid } from '@/components/ui/infinite-grid-integration'
+import dynamic from 'next/dynamic'
+
+const InfiniteGrid = dynamic(
+  () =>
+    import('@/components/ui/infinite-grid-integration').then((mod) => ({
+      default: mod.InfiniteGrid,
+    })),
+  { ssr: false }
+)
 import { FreelancerOnboarding } from '@/components/onboarding/freelancer-onboarding'
 
 // Shared components

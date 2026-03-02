@@ -229,25 +229,34 @@ export async function GET(request: NextRequest) {
         ...(includeDeliverables ? { files: deliverablesByTaskId.get(task.id) || [] } : {}),
       }))
 
-      // Get stats
-      const statsResult = await db
-        .select({
-          activeTasks: count(
-            sql`CASE WHEN ${tasks.status} NOT IN ('COMPLETED', 'CANCELLED') AND ${tasks.clientId} = ${session.user.id} THEN 1 END`
+      // Get stats — 3 targeted queries with proper WHERE to hit indexes
+      const [activeResult, completedResult, creditsResult] = await Promise.all([
+        db
+          .select({ count: count() })
+          .from(tasks)
+          .where(
+            and(
+              eq(tasks.clientId, session.user.id),
+              ne(tasks.status, 'COMPLETED'),
+              ne(tasks.status, 'CANCELLED')
+            )
           ),
-          completedTasks: count(
-            sql`CASE WHEN ${tasks.status} = 'COMPLETED' AND ${tasks.clientId} = ${session.user.id} THEN 1 END`
-          ),
-          totalCreditsUsed: sql<number>`COALESCE(SUM(CASE WHEN ${tasks.clientId} = ${session.user.id} THEN ${tasks.creditsUsed} ELSE 0 END), 0)`,
-        })
-        .from(tasks)
+        db
+          .select({ count: count() })
+          .from(tasks)
+          .where(and(eq(tasks.clientId, session.user.id), eq(tasks.status, 'COMPLETED'))),
+        db
+          .select({ total: sql<number>`COALESCE(SUM(${tasks.creditsUsed}), 0)` })
+          .from(tasks)
+          .where(eq(tasks.clientId, session.user.id)),
+      ])
 
       return successResponse({
         tasks: taskList,
         stats: {
-          activeTasks: Number(statsResult[0]?.activeTasks) || 0,
-          completedTasks: Number(statsResult[0]?.completedTasks) || 0,
-          totalCreditsUsed: Number(statsResult[0]?.totalCreditsUsed) || 0,
+          activeTasks: Number(activeResult[0]?.count) || 0,
+          completedTasks: Number(completedResult[0]?.count) || 0,
+          totalCreditsUsed: Number(creditsResult[0]?.total) || 0,
         },
       })
     },

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "briefs_draft_id_user_id_unique_idx" ON "briefs" USING btree ("draft_id","user_id") WHERE draft_id IS NOT NULL;

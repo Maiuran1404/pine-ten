@@ -86,6 +86,7 @@ export function useUserCredits() {
   return useQuery({
     queryKey: queryKeys.user.credits(),
     queryFn: () => fetcher<{ credits: number }>('/api/user/credits'),
+    staleTime: 10 * 1000, // 10s — financial data needs freshness
   })
 }
 
@@ -93,6 +94,7 @@ export function useUserSettings() {
   return useQuery({
     queryKey: queryKeys.user.settings(),
     queryFn: () => fetcher<Record<string, unknown>>('/api/user/settings'),
+    staleTime: 5 * 60 * 1000, // 5min — changes rarely
   })
 }
 
@@ -157,6 +159,7 @@ export function useTaskMessages(taskId: string) {
     queryFn: () => fetcher<{ messages: Message[] }>(`/api/tasks/${taskId}/messages`),
     enabled: !!taskId,
     refetchInterval: 30000, // Refetch every 30 seconds for real-time feel
+    refetchIntervalInBackground: false, // Stop polling when tab is inactive — SSE handles real-time
   })
 }
 
@@ -196,6 +199,7 @@ export function useFreelancerProfile() {
   return useQuery({
     queryKey: queryKeys.freelancer.profile(),
     queryFn: () => fetcher<unknown>('/api/freelancer/profile'),
+    staleTime: 5 * 60 * 1000, // 5min — changes rarely
   })
 }
 
@@ -231,6 +235,7 @@ export function useStyleReferencesMatch(limit = 20) {
       fetcher<{ data: StyleReference[]; matchMethod: string }>(
         `/api/style-references/match?limit=${limit}`
       ),
+    staleTime: 10 * 60 * 1000, // 10min — changes only on brand update
   })
 }
 
@@ -246,6 +251,7 @@ export function useTemplateImages() {
   return useQuery({
     queryKey: queryKeys.templateImages.list(),
     queryFn: () => fetcher<{ images: TemplateImageData[] }>('/api/template-images'),
+    staleTime: 30 * 60 * 1000, // 30min — admin-managed, near-static
   })
 }
 
@@ -254,6 +260,7 @@ export function useBrand() {
   return useQuery({
     queryKey: queryKeys.brand.current(),
     queryFn: () => fetcher<unknown>('/api/brand'),
+    staleTime: 5 * 60 * 1000, // 5min — changes only on user save
   })
 }
 

@@ -252,14 +252,14 @@ describe('GET /api/tasks', () => {
       },
     ]
 
-    // First select: task list query
+    // 1st: task list query
     mockSelect.mockReturnValueOnce(chainableSelect(taskList))
-    // Second select: image attachments
+    // 2nd: image attachments
     mockSelect.mockReturnValueOnce(chainableSelect([]))
-    // Third select: stats
-    mockSelect.mockReturnValueOnce(
-      chainableSelect([{ activeTasks: 1, completedTasks: 0, totalCreditsUsed: 5 }])
-    )
+    // 3rd-5th: parallel stats (active count, completed count, credits sum)
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 1 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 0 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ total: 5 }]))
 
     const response = await GET(
       makeRequest(undefined, { url: 'http://localhost/api/tasks' }) as never
@@ -300,9 +300,10 @@ describe('GET /api/tasks', () => {
 
     mockSelect.mockReturnValueOnce(chainableSelect(taskList))
     mockSelect.mockReturnValueOnce(chainableSelect([]))
-    mockSelect.mockReturnValueOnce(
-      chainableSelect([{ activeTasks: 0, completedTasks: 0, totalCreditsUsed: 0 }])
-    )
+    // Parallel stats: active count, completed count, credits sum
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 0 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 0 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ total: 0 }]))
 
     const response = await GET(
       makeRequest(undefined, { url: 'http://localhost/api/tasks?view=freelancer' }) as never
@@ -320,10 +321,10 @@ describe('GET /api/tasks', () => {
 
     // 1st: task list (empty => image attachments query is skipped)
     mockSelect.mockReturnValueOnce(chainableSelect([]))
-    // 2nd: stats (no image query because taskIds is empty)
-    mockSelect.mockReturnValueOnce(
-      chainableSelect([{ activeTasks: 0, completedTasks: 0, totalCreditsUsed: 0 }])
-    )
+    // 2nd-4th: parallel stats (active, completed, credits)
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 0 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 0 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ total: 0 }]))
 
     const response = await GET(
       makeRequest(undefined, { url: 'http://localhost/api/tasks' }) as never
@@ -337,10 +338,10 @@ describe('GET /api/tasks', () => {
 
     // 1st: task list (empty => image attachments query is skipped)
     mockSelect.mockReturnValueOnce(chainableSelect([]))
-    // 2nd: stats (no image query because taskIds is empty)
-    mockSelect.mockReturnValueOnce(
-      chainableSelect([{ activeTasks: 0, completedTasks: 0, totalCreditsUsed: 0 }])
-    )
+    // 2nd-4th: parallel stats (active, completed, credits)
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 0 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 0 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ total: 0 }]))
 
     const response = await GET(
       makeRequest(undefined, { url: 'http://localhost/api/tasks?limit=5&offset=10' }) as never
@@ -379,10 +380,10 @@ describe('GET /api/tasks', () => {
     mockSelect.mockReturnValueOnce(chainableSelect(taskList))
     // 2nd: image attachments
     mockSelect.mockReturnValueOnce(chainableSelect([]))
-    // 3rd: stats
-    mockSelect.mockReturnValueOnce(
-      chainableSelect([{ activeTasks: 3, completedTasks: 7, totalCreditsUsed: 42 }])
-    )
+    // 3rd-5th: parallel stats (active count, completed count, credits sum)
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 3 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ count: 7 }]))
+    mockSelect.mockReturnValueOnce(chainableSelect([{ total: 42 }]))
 
     const response = await GET(
       makeRequest(undefined, { url: 'http://localhost/api/tasks' }) as never

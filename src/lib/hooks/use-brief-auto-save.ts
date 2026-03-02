@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useCsrfContext } from '@/providers/csrf-provider'
 import { logger } from '@/lib/logger'
 import type { LiveBrief } from '@/components/chat/brief-panel/types'
 
@@ -25,7 +26,8 @@ function useDebounce<T>(value: T, delay: number): T {
  * Thin auto-save adapter: persists the brief to the server via /api/briefs.
  * No local state — reads brief from the briefing state machine (single source of truth).
  */
-export function useBriefAutoSave(brief: LiveBrief, draftId: string, csrfFetch: typeof fetch) {
+export function useBriefAutoSave(brief: LiveBrief, draftId: string) {
+  const { csrfFetch } = useCsrfContext()
   const lastSavedRef = useRef<string>('')
   const isSavingRef = useRef(false)
   const debouncedBrief = useDebounce(brief, 500)

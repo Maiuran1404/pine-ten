@@ -152,7 +152,7 @@ function redirectToLogin(request: NextRequest, pathname: string): NextResponse {
 }
 
 /**
- * Main proxy function.
+ * Main proxy function (Next.js 16 convention, renamed from middleware).
  *
  * Provides defense-in-depth auth gating at the network layer:
  * - Page routes (/admin, /dashboard, /portal) redirect to /login without a session cookie
@@ -160,7 +160,7 @@ function redirectToLogin(request: NextRequest, pathname: string): NextResponse {
  * - Public paths (/api/auth, /api/health, /login, etc.) pass through unconditionally
  * - Rate limiting is applied to auth routes and all API routes
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
   // Gate /register behind invite code — redirect to /early-access if no code param

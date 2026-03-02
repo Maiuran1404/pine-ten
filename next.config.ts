@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 2592000, // 30 days — remote images are content-addressed
+    deviceSizes: [640, 828, 1080, 1200, 1920], // Drop 750, 2048, 3840 — unused sizes
+    imageSizes: [32, 48, 64, 96, 128, 256], // Drop 16, 384 — unused sizes
     remotePatterns: [
       {
         protocol: 'https',
@@ -66,6 +68,10 @@ const nextConfig: NextConfig = {
     'puppeteer-core',
     '@sparticuz/chromium-min',
     'posthog-node',
+    '@anthropic-ai/sdk',
+    'resend',
+    'stripe',
+    '@google/genai',
   ],
 
   // Increase body size limit for file uploads (default 10MB)
@@ -101,6 +107,11 @@ const nextConfig: NextConfig = {
       'react-markdown',
       'sonner',
       '@hookform/resolvers',
+      'react-resizable-panels',
+      'cmdk',
+      'react-day-picker',
+      'react-dropzone',
+      'better-auth',
     ],
   },
 

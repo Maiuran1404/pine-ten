@@ -46,15 +46,19 @@ async function handler(request: NextRequest) {
       // Parse task proposal from AI response
       const taskProposal = parseTaskFromChat(response.content)
 
-      // Get style reference images if categories were mentioned
-      let styleReferences = undefined
-      if (response.styleReferences && response.styleReferences.length > 0) {
-        styleReferences = await getStyleReferencesByCategory(response.styleReferences)
-      }
+      // Run independent post-AI pipelines in parallel:
+      // - Style reference lookup
+      // - Style + video processing
+      // - Post-AI pipeline (marker parsing, retry, stage derivation)
+      // - Quick options enrichment
+      const [styleReferences, stylesAndVideo, postResult, quickOptions] = await Promise.all([
+        // Get style reference images if categories were mentioned
+        response.styleReferences && response.styleReferences.length > 0
+          ? getStyleReferencesByCategory(response.styleReferences)
+          : Promise.resolve(undefined),
 
-      // Style + video processing (deliverable styles, auto-detect, video references)
-      const { deliverableStyles, deliverableStyleMarker, videoReferences } =
-        await processStylesAndVideo({
+        // Style + video processing (deliverable styles, auto-detect, video references)
+        processStylesAndVideo({
           responseContent: response.content,
           aiStyleMarker: response.deliverableStyleMarker,
           isStyleEligible: ctx.isStyleEligible,
@@ -68,22 +72,27 @@ async function handler(request: NextRequest) {
           lastUserMessage: ctx.body.messages[ctx.body.messages.length - 1]?.content || '',
           confirmedFields: ctx.chatContext.confirmedFields,
           brief: ctx.body.brief,
-        })
+        }),
 
-      // Post-AI pipeline: marker parsing, retry, stage derivation
-      let postResult: PostProcessResult = {}
-      if (ctx.body.briefingState) {
-        postResult = await runPostAiPipeline({
-          responseContent: response.content,
-          messages: ctx.body.messages,
-          clientBriefingState: ctx.body.briefingState,
-          updatedBriefingState: ctx.updatedBriefingState,
-          clientLatestStoryboard: ctx.body.latestStoryboard,
-          brandContext: ctx.brandContext,
-          chatContext: ctx.chatContext,
-          userId: session.user.id,
-        })
-      }
+        // Post-AI pipeline: marker parsing, retry, stage derivation
+        ctx.body.briefingState
+          ? runPostAiPipeline({
+              responseContent: response.content,
+              messages: ctx.body.messages,
+              clientBriefingState: ctx.body.briefingState,
+              updatedBriefingState: ctx.updatedBriefingState,
+              clientLatestStoryboard: ctx.body.latestStoryboard,
+              brandContext: ctx.brandContext,
+              chatContext: ctx.chatContext,
+              userId: session.user.id,
+            })
+          : Promise.resolve({} as PostProcessResult),
+
+        // Enrich style-direction quick options with representative images
+        enrichQuickOptions(response.quickOptions),
+      ])
+
+      const { deliverableStyles, deliverableStyleMarker, videoReferences } = stylesAndVideo
 
       // Strip structured markers from displayed content
       const cleanContent = stripMarkers(response.content, {
@@ -91,9 +100,6 @@ async function handler(request: NextRequest) {
         clientStage: ctx.body.briefingState?.stage,
         clientCategory: ctx.body.briefingState?.deliverableCategory ?? undefined,
       })
-
-      // Enrich style-direction quick options with representative images
-      const quickOptions = await enrichQuickOptions(response.quickOptions)
 
       return NextResponse.json({
         content: cleanContent,

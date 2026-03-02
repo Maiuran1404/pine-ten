@@ -1,4 +1,5 @@
 import { withErrorHandling, successResponse } from '@/lib/errors'
+import { cachedSuccessResponse, CacheDurations } from '@/lib/cache'
 import { requireAuth } from '@/lib/require-auth'
 import { db } from '@/db'
 import { audiences, users } from '@/db/schema'
@@ -33,7 +34,9 @@ export async function GET() {
         return b.confidence - a.confidence
       })
 
-      return successResponse({ audiences: sortedAudiences })
+      return cachedSuccessResponse({ audiences: sortedAudiences }, CacheDurations.MEDIUM, {
+        isPrivate: true,
+      })
     },
     { endpoint: 'GET /api/audiences' }
   )

@@ -1,0 +1,1 @@
+CREATE INDEX "credit_transactions_type_user_id_idx" ON "credit_transactions" USING btree ("type","user_id");

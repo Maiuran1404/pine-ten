@@ -147,19 +147,19 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const preferredType = searchParams.get('type') // e.g. 'presentation_slide', 'instagram_post'
 
-    // Get user with company
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-      with: {
-        company: true,
-      },
-    })
-
-    // Get all active style references (increased limit to show more per category)
-    const allReferences = await db.query.deliverableStyleReferences.findMany({
-      where: eq(deliverableStyleReferences.isActive, true),
-      limit: 500,
-    })
+    // Run user lookup and style reference fetch in parallel — they're independent
+    const [user, allReferences] = await Promise.all([
+      db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+        with: {
+          company: true,
+        },
+      }),
+      db.query.deliverableStyleReferences.findMany({
+        where: eq(deliverableStyleReferences.isActive, true),
+        limit: 500,
+      }),
+    ])
 
     if (!user?.company || allReferences.length === 0) {
       // Return references grouped by color family if no brand data

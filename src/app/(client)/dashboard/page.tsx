@@ -21,7 +21,13 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CreditPurchaseDialog } from '@/components/shared/credit-purchase-dialog'
+import dynamic from 'next/dynamic'
+
+const CreditPurchaseDialog = dynamic(() =>
+  import('@/components/shared/credit-purchase-dialog').then((mod) => ({
+    default: mod.CreditPurchaseDialog,
+  }))
+)
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { LoadingSpinner } from '@/components/shared/loading'
 import { QuickBriefForm, type QuickBriefData } from '@/components/chat/quick-brief-form'

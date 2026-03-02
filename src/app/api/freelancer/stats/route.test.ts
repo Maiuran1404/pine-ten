@@ -34,6 +34,7 @@ vi.mock('drizzle-orm', () => ({
   sum: vi.fn(),
   and: vi.fn(),
   gte: vi.fn(),
+  inArray: vi.fn(),
 }))
 
 const { GET } = await import('./route')
@@ -90,15 +91,12 @@ describe('GET /api/freelancer/stats', () => {
 
   it('returns stats for freelancer', async () => {
     setupAuth()
-    // Profile lookup
+    // 6 parallel queries: profile, active, completed, pendingReview, earnings, monthly
     mockDbSelect.mockReturnValueOnce(chainableSelect([{ rating: '4.5', completedTasksCount: 10 }]))
-    // Task stats — db.select().from(tasks) — no .where()
-    mockDbSelect.mockReturnValueOnce(
-      chainableSelectFromOnly([{ activeTasks: 2, completedTasks: 10, pendingReview: 1 }])
-    )
-    // Total earnings — db.select().from(tasks).where(...)
+    mockDbSelect.mockReturnValueOnce(chainableSelectNoLimit([{ count: 2 }]))
+    mockDbSelect.mockReturnValueOnce(chainableSelectNoLimit([{ count: 10 }]))
+    mockDbSelect.mockReturnValueOnce(chainableSelectNoLimit([{ count: 1 }]))
     mockDbSelect.mockReturnValueOnce(chainableSelectNoLimit([{ totalEarnings: 100 }]))
-    // Monthly earnings — db.select().from(tasks).where(...)
     mockDbSelect.mockReturnValueOnce(
       chainableSelectNoLimit([{ monthlyEarnings: 25, monthlyTasks: 3 }])
     )
@@ -117,15 +115,12 @@ describe('GET /api/freelancer/stats', () => {
 
   it('handles missing profile gracefully', async () => {
     setupAuth()
-    // No profile
+    // 6 parallel queries: profile (empty), active, completed, pendingReview, earnings, monthly
     mockDbSelect.mockReturnValueOnce(chainableSelect([]))
-    // Task stats
-    mockDbSelect.mockReturnValueOnce(
-      chainableSelectFromOnly([{ activeTasks: 0, completedTasks: 0, pendingReview: 0 }])
-    )
-    // Total earnings
+    mockDbSelect.mockReturnValueOnce(chainableSelectNoLimit([{ count: 0 }]))
+    mockDbSelect.mockReturnValueOnce(chainableSelectNoLimit([{ count: 0 }]))
+    mockDbSelect.mockReturnValueOnce(chainableSelectNoLimit([{ count: 0 }]))
     mockDbSelect.mockReturnValueOnce(chainableSelectNoLimit([{ totalEarnings: null }]))
-    // Monthly earnings
     mockDbSelect.mockReturnValueOnce(
       chainableSelectNoLimit([{ monthlyEarnings: null, monthlyTasks: 0 }])
     )

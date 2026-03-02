@@ -8,6 +8,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { flushSync } from 'react-dom'
 import { toast } from 'sonner'
+import { useCsrfContext } from '@/providers/csrf-provider'
 import {
   type ChatMessage as Message,
   type TaskProposal,
@@ -50,7 +51,6 @@ interface UseChatMessagesOptions {
   onVideoNarrative?: (data: VideoNarrative) => void
   onRegenerateSceneImages?: (sceneNumbers: number[]) => void
   latestStoryboardRef: React.MutableRefObject<StructureData | null>
-  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 
 export function useChatMessages({
@@ -65,8 +65,8 @@ export function useChatMessages({
   onVideoNarrative,
   onRegenerateSceneImages,
   latestStoryboardRef,
-  csrfFetch,
 }: UseChatMessagesOptions) {
+  const { csrfFetch } = useCsrfContext()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)

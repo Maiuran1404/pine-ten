@@ -88,7 +88,7 @@ function createMockRequest(
   } as unknown as NextRequest
 }
 
-describe('middleware', () => {
+describe('proxy', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.resetModules()
@@ -96,7 +96,7 @@ describe('middleware', () => {
 
   describe('isPublicPath', () => {
     it('identifies public page routes', async () => {
-      const { isPublicPath } = await import('./middleware')
+      const { isPublicPath } = await import('./proxy')
 
       expect(isPublicPath('/login')).toBe(true)
       expect(isPublicPath('/register')).toBe(true)
@@ -106,7 +106,7 @@ describe('middleware', () => {
     })
 
     it('identifies public API routes', async () => {
-      const { isPublicPath } = await import('./middleware')
+      const { isPublicPath } = await import('./proxy')
 
       expect(isPublicPath('/api/auth')).toBe(true)
       expect(isPublicPath('/api/auth/login')).toBe(true)
@@ -118,7 +118,7 @@ describe('middleware', () => {
     })
 
     it('identifies non-public routes', async () => {
-      const { isPublicPath } = await import('./middleware')
+      const { isPublicPath } = await import('./proxy')
 
       expect(isPublicPath('/admin')).toBe(false)
       expect(isPublicPath('/dashboard')).toBe(false)
@@ -130,7 +130,7 @@ describe('middleware', () => {
 
   describe('isProtectedApiRoute', () => {
     it('identifies protected API routes', async () => {
-      const { isProtectedApiRoute } = await import('./middleware')
+      const { isProtectedApiRoute } = await import('./proxy')
 
       expect(isProtectedApiRoute('/api/admin')).toBe(true)
       expect(isProtectedApiRoute('/api/admin/clients')).toBe(true)
@@ -140,7 +140,7 @@ describe('middleware', () => {
     })
 
     it('does not flag non-protected API routes', async () => {
-      const { isProtectedApiRoute } = await import('./middleware')
+      const { isProtectedApiRoute } = await import('./proxy')
 
       expect(isProtectedApiRoute('/api/auth')).toBe(false)
       expect(isProtectedApiRoute('/api/health')).toBe(false)
@@ -152,7 +152,7 @@ describe('middleware', () => {
 
   describe('isProtectedPageRoute', () => {
     it('identifies protected page routes', async () => {
-      const { isProtectedPageRoute } = await import('./middleware')
+      const { isProtectedPageRoute } = await import('./proxy')
 
       expect(isProtectedPageRoute('/admin')).toBe(true)
       expect(isProtectedPageRoute('/admin/clients')).toBe(true)
@@ -163,7 +163,7 @@ describe('middleware', () => {
     })
 
     it('does not flag non-protected page routes', async () => {
-      const { isProtectedPageRoute } = await import('./middleware')
+      const { isProtectedPageRoute } = await import('./proxy')
 
       expect(isProtectedPageRoute('/login')).toBe(false)
       expect(isProtectedPageRoute('/register')).toBe(false)
@@ -174,10 +174,10 @@ describe('middleware', () => {
   describe('public routes pass through', () => {
     it('allows /login without a session', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/login')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
       expect((response as unknown as Record<string, unknown>).redirectUrl).toBeUndefined()
@@ -185,10 +185,10 @@ describe('middleware', () => {
 
     it('allows /register with invite code without a session', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/register', { searchParams: { code: 'ABC123' } })
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       // /register is a public path, so it should pass through
       expect(response.status).toBe(200)
@@ -196,60 +196,60 @@ describe('middleware', () => {
 
     it('allows /early-access without a session', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/early-access')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
     })
 
     it('allows /api/auth/* without a session', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/api/auth/login')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
     })
 
     it('allows /api/health without a session', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/api/health')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
     })
 
     it('allows /api/csrf without a session', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/api/csrf')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
     })
 
     it('allows /api/webhooks/* without a session', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/api/webhooks/stripe')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
     })
 
     it('allows static files without a session', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/logo.png')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       // Static files (containing '.') pass through
       expect(response.status).toBe(200)
@@ -259,10 +259,10 @@ describe('middleware', () => {
   describe('protected routes without session redirect or return 401', () => {
     it('redirects /admin to /login when no session cookie', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/admin')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(307)
       const redirectUrl = (response as unknown as Record<string, unknown>).redirectUrl as string
@@ -272,10 +272,10 @@ describe('middleware', () => {
 
     it('redirects /admin/clients to /login when no session cookie', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/admin/clients')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(307)
       const redirectUrl = (response as unknown as Record<string, unknown>).redirectUrl as string
@@ -285,10 +285,10 @@ describe('middleware', () => {
 
     it('redirects /dashboard to /login when no session cookie', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/dashboard')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(307)
       const redirectUrl = (response as unknown as Record<string, unknown>).redirectUrl as string
@@ -298,10 +298,10 @@ describe('middleware', () => {
 
     it('redirects /dashboard/chat to /login when no session cookie', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/dashboard/chat')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(307)
       const redirectUrl = (response as unknown as Record<string, unknown>).redirectUrl as string
@@ -310,10 +310,10 @@ describe('middleware', () => {
 
     it('redirects /portal to /login when no session cookie', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/portal')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(307)
       const redirectUrl = (response as unknown as Record<string, unknown>).redirectUrl as string
@@ -323,10 +323,10 @@ describe('middleware', () => {
 
     it('redirects /portal/tasks to /login when no session cookie', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/portal/tasks')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(307)
       const redirectUrl = (response as unknown as Record<string, unknown>).redirectUrl as string
@@ -335,10 +335,10 @@ describe('middleware', () => {
 
     it('returns 401 JSON for /api/admin/* when no session cookie', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/api/admin/clients')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(401)
       const body = await response.json()
@@ -353,10 +353,10 @@ describe('middleware', () => {
 
     it('returns 401 JSON for /api/freelancer/* when no session cookie', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/api/freelancer/tasks')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(401)
       const body = await response.json()
@@ -373,10 +373,10 @@ describe('middleware', () => {
   describe('protected routes with session pass through', () => {
     it('allows /admin with a valid session cookie', async () => {
       mockGetSessionCookie.mockReturnValue('mock-session-token-value')
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/admin')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
       expect((response as unknown as Record<string, unknown>).redirectUrl).toBeUndefined()
@@ -384,10 +384,10 @@ describe('middleware', () => {
 
     it('allows /dashboard with a valid session cookie', async () => {
       mockGetSessionCookie.mockReturnValue('mock-session-token-value')
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/dashboard')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
       expect((response as unknown as Record<string, unknown>).redirectUrl).toBeUndefined()
@@ -395,20 +395,20 @@ describe('middleware', () => {
 
     it('allows /dashboard/chat with a valid session cookie', async () => {
       mockGetSessionCookie.mockReturnValue('mock-session-token-value')
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/dashboard/chat')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
     })
 
     it('allows /portal with a valid session cookie', async () => {
       mockGetSessionCookie.mockReturnValue('mock-session-token-value')
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/portal')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
       expect((response as unknown as Record<string, unknown>).redirectUrl).toBeUndefined()
@@ -416,20 +416,20 @@ describe('middleware', () => {
 
     it('allows /portal/tasks with a valid session cookie', async () => {
       mockGetSessionCookie.mockReturnValue('mock-session-token-value')
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/portal/tasks')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
     })
 
     it('allows /api/admin/* with a valid session cookie', async () => {
       mockGetSessionCookie.mockReturnValue('mock-session-token-value')
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/api/admin/clients')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
       expect((response as unknown as Record<string, unknown>).redirectUrl).toBeUndefined()
@@ -437,10 +437,10 @@ describe('middleware', () => {
 
     it('allows /api/freelancer/* with a valid session cookie', async () => {
       mockGetSessionCookie.mockReturnValue('mock-session-token-value')
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/api/freelancer/tasks')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(200)
     })
@@ -449,10 +449,10 @@ describe('middleware', () => {
   describe('register invite code gate', () => {
     it('redirects /register to /early-access when no invite code', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/register')
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       expect(response.status).toBe(307)
       const redirectUrl = (response as unknown as Record<string, unknown>).redirectUrl as string
@@ -461,10 +461,10 @@ describe('middleware', () => {
 
     it('allows /register when invite code is present', async () => {
       mockGetSessionCookie.mockReturnValue(null)
-      const { middleware } = await import('./middleware')
+      const { proxy } = await import('./proxy')
       const request = createMockRequest('/register', { searchParams: { code: 'INVITE123' } })
 
-      const response = await middleware(request)
+      const response = await proxy(request)
 
       // /register is public, so should pass through
       expect(response.status).toBe(200)

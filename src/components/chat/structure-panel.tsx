@@ -38,7 +38,7 @@ import { StyleSelectionPanel } from './style-selection-panel'
 // TYPES
 // =============================================================================
 
-interface StructurePanelProps {
+export interface StructurePanelProps {
   structureType: StructureData['type'] | null
   structureData: StructureData | null
   briefingStage?: string

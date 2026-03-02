@@ -1,3 +1,4 @@
+import 'server-only'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
@@ -11,6 +12,8 @@ if (!connectionString) {
 const isDev = process.env.NODE_ENV === 'development'
 
 // Create the postgres client
+// prepare: false is required for Supabase pgbouncer (port 6543) — prepared statements
+// are incompatible with transaction-mode connection pooling
 const client = postgres(connectionString, {
   prepare: false,
   ssl: 'require',

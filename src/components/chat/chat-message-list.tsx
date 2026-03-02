@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { memo, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -400,7 +400,7 @@ export interface ChatMessageListProps {
 // COMPONENT
 // =============================================================================
 
-export function ChatMessageList({
+export const ChatMessageList = memo(function ChatMessageList({
   messages,
   isLoading,
   seamlessTransition,
@@ -999,4 +999,42 @@ export function ChatMessageList({
       </div>
     </>
   )
+}, chatMessageListAreEqual)
+
+/**
+ * Custom comparator for ChatMessageList — skips re-render when only
+ * handler references change. Checks data props that actually affect output.
+ */
+function chatMessageListAreEqual(prev: ChatMessageListProps, next: ChatMessageListProps): boolean {
+  // Fast-changing data props — any change should re-render
+  if (prev.messages.length !== next.messages.length) return false
+  if (prev.messages.length > 0 && next.messages.length > 0) {
+    const prevLast = prev.messages[prev.messages.length - 1]
+    const nextLast = next.messages[next.messages.length - 1]
+    if (prevLast.id !== nextLast.id || prevLast.content !== nextLast.content) return false
+  }
+  if (prev.isLoading !== next.isLoading) return false
+  if (prev.animatingMessageId !== next.animatingMessageId) return false
+  if (prev.seamlessTransition !== next.seamlessTransition) return false
+  if (prev.hoveredStyleName !== next.hoveredStyleName) return false
+  if (prev.lastStyleMessageIndex !== next.lastStyleMessageIndex) return false
+  if (prev.isTaskMode !== next.isTaskMode) return false
+  if (prev.showManualSubmit !== next.showManualSubmit) return false
+  if (prev.userCredits !== next.userCredits) return false
+  if (prev.briefingStage !== next.briefingStage) return false
+  if (prev.structureType !== next.structureType) return false
+  if (prev.structurePanelVisible !== next.structurePanelVisible) return false
+  if (prev.isUploading !== next.isUploading) return false
+  if (prev.lastSendError !== next.lastSendError) return false
+
+  // Reference-equality checks for arrays/objects that change identity
+  if (prev.selectedStyles !== next.selectedStyles) return false
+  if (prev.moodboardStyleIds !== next.moodboardStyleIds) return false
+  if (prev.moodboardItems !== next.moodboardItems) return false
+  if (prev.pendingTask !== next.pendingTask) return false
+  if (prev.completedTypingIds !== next.completedTypingIds) return false
+  if (prev.uploadedFiles !== next.uploadedFiles) return false
+  if (prev.latestStoryboardScenes !== next.latestStoryboardScenes) return false
+
+  return true
 }

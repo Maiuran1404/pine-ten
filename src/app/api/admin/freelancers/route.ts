@@ -3,7 +3,8 @@ import { db } from '@/db'
 import { freelancerProfiles, users } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { requireAdmin } from '@/lib/require-auth'
-import { withErrorHandling, successResponse } from '@/lib/errors'
+import { withErrorHandling } from '@/lib/errors'
+import { cachedSuccessResponse, CacheDurations } from '@/lib/cache'
 
 export async function GET(_request: NextRequest) {
   return withErrorHandling(
@@ -51,7 +52,9 @@ export async function GET(_request: NextRequest) {
         user: f.user,
       }))
 
-      return successResponse({ freelancers: transformedFreelancers })
+      return cachedSuccessResponse({ freelancers: transformedFreelancers }, CacheDurations.SHORT, {
+        isPrivate: true,
+      })
     },
     { endpoint: 'GET /api/admin/freelancers' }
   )

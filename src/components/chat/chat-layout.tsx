@@ -12,17 +12,8 @@ import { type LiveBrief } from './brief-panel/types'
 import { LabeledProgressBar } from './progress-stepper'
 import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { UnifiedPanel } from './unified-panel'
-import { StructurePanel } from './structure-panel'
-import type {
-  StructureData,
-  StoryboardScene,
-  LayoutSection,
-  WebsiteGlobalStyles,
-  WebsiteInspiration,
-  VideoNarrative,
-} from '@/lib/ai/briefing-state-machine'
-import type { DeliverableStyle } from './types'
-import type { SceneImageData } from '@/hooks/use-storyboard'
+import { StructurePanel, type StructurePanelProps } from './structure-panel'
+import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
 
 interface ChatLayoutProps {
   children: ReactNode
@@ -50,95 +41,14 @@ interface ChatLayoutProps {
   onSceneClick?: (scene: StoryboardScene) => void
   onMultiSceneFeedback?: (scenes: StoryboardScene[]) => void
   onSceneSelectionChange?: (scenes: StoryboardScene[]) => void
-  // Structure panel props (new split layout)
+  // Structure panel — single passthrough replaces 50+ individual props
   structurePanelVisible?: boolean
-  structureType?: StructureData['type'] | null
-  structureData?: StructureData | null
-  onSceneEdit?: (sceneNumber: number, field: string, value: string) => void
-  onSceneReorder?: (scenes: StoryboardScene[]) => void
-  onRegenerateStoryboard?: () => void
-  onRegenerateScene?: (scene: StoryboardScene) => void
-  onRegenerateField?: (scene: StoryboardScene, field: string) => void
-  // User-specified target duration for storyboard header
-  targetDurationSeconds?: number | null
-  onSectionReorder?: (sections: LayoutSection[]) => void
-  onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
+  structurePanelProps?: StructurePanelProps
   // Moodboard-to-scene connection (#15)
   onApplyMoodboardToScene?: (item: MoodboardItem, sceneNumber: number) => void
   storyboardSceneCount?: number
-  // Scene image data from multi-source search (Film-Grab, Flim.ai, Pexels, Eyecannndy)
-  sceneImageData?: Map<number, SceneImageData>
-  // Loading state for regeneration / chat activity
-  isChatLoading?: boolean
-  isRegenerating?: boolean
-  // Changed scene numbers for visual diff highlighting (#21: field-level diffs)
-  changedScenes?: Map<number, { field: string; oldValue: string; newValue: string }[]>
-  // Undo/Redo (#20)
-  onUndo?: () => void
-  onRedo?: () => void
-  canUndo?: boolean
-  canRedo?: boolean
   // Imperative handle to open the structure view from children
   viewStructureRef?: MutableRefObject<(() => void) | null>
-  // Website-specific props
-  websiteGlobalStyles?: WebsiteGlobalStyles | null
-  websiteInspirations?: WebsiteInspiration[]
-  websiteInspirationIds?: string[]
-  inspirationGallery?: Array<{
-    id: string
-    name: string
-    url: string
-    screenshotUrl: string
-    industry: string[]
-    styleTags: string[]
-  }>
-  isGalleryLoading?: boolean
-  isCapturingScreenshot?: boolean
-  onInspirationSelect?: (item: {
-    id: string
-    name: string
-    url: string
-    screenshotUrl: string
-  }) => void
-  onRemoveInspiration?: (id: string) => void
-  onCaptureScreenshot?: (url: string) => Promise<WebsiteInspiration>
-  // Visual similarity & notes
-  onFindSimilar?: () => void
-  similarResults?: Array<{
-    inspiration: {
-      id: string
-      name: string
-      url: string
-      screenshotUrl: string
-      thumbnailUrl: string | null
-      industry: string[]
-      styleTags: string[]
-    }
-    score: number
-  }>
-  isFindingSimilar?: boolean
-  canFindSimilar?: boolean
-  onUpdateInspirationNotes?: (id: string, notes: string) => void
-  // Video narrative props
-  videoNarrative?: VideoNarrative | null
-  narrativeApproved?: boolean
-  onApproveNarrative?: () => void
-  onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
-  // Error recovery for storyboard generation
-  lastSendError?: string | null
-  onRetryGeneration?: () => void
-  onEditNarrative?: () => void
-  // DALL-E image generation
-  imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
-  isGeneratingImages?: boolean
-  onRegenerateImage?: (scene: StoryboardScene) => void
-  // Briefing stage (used by structure panel for fidelity)
-  briefingStage?: string | null
-  // Style selection props (shown during INSPIRATION stage in right panel)
-  styleSelectionStyles?: DeliverableStyle[]
-  onStyleConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void
-  onStyleShowMore?: (styleAxis: string) => void
-  onStyleShowDifferent?: () => void
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -171,60 +81,14 @@ export function ChatLayout({
   isReadyForDesigner,
   deliverableCategory,
   storyboardScenes: _storyboardScenes,
-  onSceneClick,
+  onSceneClick: _onSceneClick,
   onMultiSceneFeedback: _onMultiSceneFeedback,
-  onSceneSelectionChange,
+  onSceneSelectionChange: _onSceneSelectionChange,
   structurePanelVisible = false,
-  structureType,
-  structureData,
-  onSceneEdit,
-  onSceneReorder,
-  onRegenerateStoryboard,
-  onRegenerateScene,
-  onRegenerateField,
-  targetDurationSeconds,
-  onSectionReorder,
-  onSectionEdit,
+  structurePanelProps,
   onApplyMoodboardToScene,
   storyboardSceneCount,
-  sceneImageData,
-  isChatLoading,
-  isRegenerating,
-  changedScenes,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
   viewStructureRef,
-  websiteGlobalStyles,
-  websiteInspirations,
-  websiteInspirationIds,
-  inspirationGallery,
-  isGalleryLoading,
-  isCapturingScreenshot,
-  onInspirationSelect,
-  onRemoveInspiration,
-  onCaptureScreenshot,
-  onFindSimilar,
-  similarResults,
-  isFindingSimilar,
-  canFindSimilar,
-  onUpdateInspirationNotes,
-  videoNarrative,
-  narrativeApproved,
-  onApproveNarrative,
-  onNarrativeFieldEdit,
-  lastSendError,
-  onRetryGeneration,
-  onEditNarrative,
-  imageGenerationProgress,
-  isGeneratingImages,
-  onRegenerateImage,
-  briefingStage,
-  styleSelectionStyles,
-  onStyleConfirmSelection,
-  onStyleShowMore,
-  onStyleShowDifferent,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
@@ -241,7 +105,7 @@ export function ChatLayout({
   // synchronous setState inside the effect body (react-hooks/set-state-in-effect).
   const canvasShowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    if (videoNarrative || structureData) {
+    if (structurePanelProps?.videoNarrative || structurePanelProps?.structureData) {
       if (canvasShowTimerRef.current) clearTimeout(canvasShowTimerRef.current)
       if (canvasActiveTimerRef.current) clearTimeout(canvasActiveTimerRef.current)
       canvasShowTimerRef.current = setTimeout(() => setCanvasActive(true), 0)
@@ -251,7 +115,7 @@ export function ChatLayout({
       if (canvasShowTimerRef.current) clearTimeout(canvasShowTimerRef.current)
       if (canvasActiveTimerRef.current) clearTimeout(canvasActiveTimerRef.current)
     }
-  }, [videoNarrative, structureData])
+  }, [structurePanelProps?.videoNarrative, structurePanelProps?.structureData])
 
   // Expose imperative handle so children can open the structure view
   useEffect(() => {
@@ -266,7 +130,9 @@ export function ChatLayout({
   }, [viewStructureRef])
 
   const showRightPanel = showMoodboard || showBrief
-  const StructureIcon = structureType ? STRUCTURE_ICONS[structureType] || Film : Film
+  const StructureIcon = structurePanelProps?.structureType
+    ? STRUCTURE_ICONS[structurePanelProps.structureType] || Film
+    : Film
 
   return (
     <div className={cn('flex flex-col h-full relative', className)}>
@@ -322,57 +188,7 @@ export function ChatLayout({
                       stageDescription={stageDescription}
                     />
                   )}
-                  <StructurePanel
-                    structureType={structureType ?? null}
-                    structureData={structureData ?? null}
-                    briefingStage={briefingStage ?? undefined}
-                    sceneImageData={sceneImageData}
-                    isChatLoading={isChatLoading}
-                    isRegenerating={isRegenerating}
-                    changedScenes={changedScenes}
-                    onUndo={onUndo}
-                    onRedo={onRedo}
-                    canUndo={canUndo}
-                    canRedo={canRedo}
-                    onSceneClick={onSceneClick}
-                    onSelectionChange={onSceneSelectionChange}
-                    onSceneEdit={onSceneEdit}
-                    onSceneReorder={onSceneReorder}
-                    onRegenerateStoryboard={onRegenerateStoryboard}
-                    onRegenerateScene={onRegenerateScene}
-                    onRegenerateField={onRegenerateField}
-                    targetDurationSeconds={targetDurationSeconds}
-                    onSectionReorder={onSectionReorder}
-                    onSectionEdit={onSectionEdit}
-                    websiteGlobalStyles={websiteGlobalStyles}
-                    websiteInspirations={websiteInspirations}
-                    websiteInspirationIds={websiteInspirationIds}
-                    inspirationGallery={inspirationGallery}
-                    isGalleryLoading={isGalleryLoading}
-                    isCapturingScreenshot={isCapturingScreenshot}
-                    onInspirationSelect={onInspirationSelect}
-                    onRemoveInspiration={onRemoveInspiration}
-                    onCaptureScreenshot={onCaptureScreenshot}
-                    onFindSimilar={onFindSimilar}
-                    similarResults={similarResults}
-                    isFindingSimilar={isFindingSimilar}
-                    canFindSimilar={canFindSimilar}
-                    onUpdateInspirationNotes={onUpdateInspirationNotes}
-                    videoNarrative={videoNarrative}
-                    narrativeApproved={narrativeApproved}
-                    onApproveNarrative={onApproveNarrative}
-                    onNarrativeFieldEdit={onNarrativeFieldEdit}
-                    lastSendError={lastSendError}
-                    onRetryGeneration={onRetryGeneration}
-                    onEditNarrative={onEditNarrative}
-                    imageGenerationProgress={imageGenerationProgress}
-                    isGeneratingImages={isGeneratingImages}
-                    onRegenerateImage={onRegenerateImage}
-                    styleSelectionStyles={styleSelectionStyles}
-                    onStyleConfirmSelection={onStyleConfirmSelection}
-                    onStyleShowMore={onStyleShowMore}
-                    onStyleShowDifferent={onStyleShowDifferent}
-                  />
+                  {structurePanelProps && <StructurePanel {...structurePanelProps} />}
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>
@@ -381,52 +197,7 @@ export function ChatLayout({
             <Sheet open={isMobileStructureOpen} onOpenChange={setIsMobileStructureOpen}>
               <SheetContent side="bottom" className="h-[80vh] p-0 rounded-t-xl lg:hidden">
                 <div className="h-full pt-4">
-                  <StructurePanel
-                    structureType={structureType ?? null}
-                    structureData={structureData ?? null}
-                    briefingStage={briefingStage ?? undefined}
-                    sceneImageData={sceneImageData}
-                    isChatLoading={isChatLoading}
-                    isRegenerating={isRegenerating}
-                    changedScenes={changedScenes}
-                    onUndo={onUndo}
-                    onRedo={onRedo}
-                    canUndo={canUndo}
-                    canRedo={canRedo}
-                    onSceneClick={onSceneClick}
-                    onSelectionChange={onSceneSelectionChange}
-                    onSceneEdit={onSceneEdit}
-                    onSceneReorder={onSceneReorder}
-                    onRegenerateStoryboard={onRegenerateStoryboard}
-                    onRegenerateScene={onRegenerateScene}
-                    onRegenerateField={onRegenerateField}
-                    targetDurationSeconds={targetDurationSeconds}
-                    onSectionReorder={onSectionReorder}
-                    onSectionEdit={onSectionEdit}
-                    websiteGlobalStyles={websiteGlobalStyles}
-                    websiteInspirations={websiteInspirations}
-                    websiteInspirationIds={websiteInspirationIds}
-                    inspirationGallery={inspirationGallery}
-                    isGalleryLoading={isGalleryLoading}
-                    isCapturingScreenshot={isCapturingScreenshot}
-                    onInspirationSelect={onInspirationSelect}
-                    onRemoveInspiration={onRemoveInspiration}
-                    onCaptureScreenshot={onCaptureScreenshot}
-                    videoNarrative={videoNarrative}
-                    narrativeApproved={narrativeApproved}
-                    onApproveNarrative={onApproveNarrative}
-                    onNarrativeFieldEdit={onNarrativeFieldEdit}
-                    lastSendError={lastSendError}
-                    onRetryGeneration={onRetryGeneration}
-                    onEditNarrative={onEditNarrative}
-                    imageGenerationProgress={imageGenerationProgress}
-                    isGeneratingImages={isGeneratingImages}
-                    onRegenerateImage={onRegenerateImage}
-                    styleSelectionStyles={styleSelectionStyles}
-                    onStyleConfirmSelection={onStyleConfirmSelection}
-                    onStyleShowMore={onStyleShowMore}
-                    onStyleShowDifferent={onStyleShowDifferent}
-                  />
+                  {structurePanelProps && <StructurePanel {...structurePanelProps} />}
                 </div>
               </SheetContent>
             </Sheet>

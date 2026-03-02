@@ -1,5 +1,6 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/shared/loading'
@@ -20,12 +21,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type {
-  ChatMessage as Message,
-  TaskProposal,
-  MoodboardItem,
-  QuickOptions as QuickOptionsType,
-} from './types'
+import type { TaskProposal, MoodboardItem, QuickOptions as QuickOptionsType } from './types'
 import type { PendingFile } from '@/hooks/use-file-upload'
 import { QuickOptions } from './quick-options'
 import { SubmitActionBar } from './submit-action-bar'
@@ -36,7 +32,8 @@ import type { LiveBrief } from './brief-panel/types'
 // =============================================================================
 
 export interface ChatInputAreaProps {
-  messages: Message[]
+  messageCount: number
+  hasInlineStylePicker: boolean
   input: string
   setInput: (value: string) => void
   isLoading: boolean
@@ -116,8 +113,73 @@ export interface ChatInputAreaProps {
 // Stages too early for "I'm ready to submit" — not enough brief info yet
 const EARLY_STAGES = new Set(['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION'])
 
-export function ChatInputArea({
-  messages,
+// Extracted into its own component to isolate re-renders from the input area
+function WordCountRing({ input }: { input: string }) {
+  const { pct, circumference, offset, color, tooltip } = useMemo(() => {
+    const wordCount = input.trim().split(/\s+/).filter(Boolean).length
+    const greatPromptWords = 20
+    const specificityPatterns =
+      /instagram|tiktok|youtube|linkedin|facebook|audience|brand|style|color|#[0-9a-f]/gi
+    const specificityBonus = (input.match(specificityPatterns) || []).length * 2
+    const rawScore = Math.min(wordCount + specificityBonus, greatPromptWords)
+    const pctVal = Math.min((rawScore / greatPromptWords) * 100, 100)
+    const r = 10
+    const circ = 2 * Math.PI * r
+    return {
+      pct: pctVal,
+      circumference: circ,
+      offset: circ - (pctVal / 100) * circ,
+      color:
+        pctVal >= 100 ? 'text-crafted-green' : pctVal >= 50 ? 'text-ds-warning' : 'text-ds-error',
+      tooltip:
+        pctVal >= 100 ? 'Great detail!' : 'Add details like target audience or style preference',
+    }
+  }, [input])
+
+  return (
+    <div className="flex items-center gap-1.5" title={tooltip}>
+      <svg width="20" height="20" viewBox="0 0 24 24" className={color}>
+        <circle
+          cx="12"
+          cy="12"
+          r={10}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          opacity={0.15}
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r={10}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform="rotate(-90 12 12)"
+          className="transition-all duration-300"
+        />
+        {pct >= 100 && (
+          <path
+            d="M8 12.5l2.5 2.5 5-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+      </svg>
+      {pct < 100 && <span className={cn('text-[10px]', color)}>{Math.round(pct)}%</span>}
+    </div>
+  )
+}
+
+export const ChatInputArea = memo(function ChatInputArea({
+  messageCount,
+  hasInlineStylePicker,
   input,
   setInput,
   isLoading,
@@ -157,11 +219,6 @@ export function ChatInputArea({
   handleRequestTaskSummary: _handleRequestTaskSummary,
   removeFile,
 }: ChatInputAreaProps) {
-  // Hide quick options when the last assistant message already shows inline style/video references
-  const lastAssistant = messages.findLast((m) => m.role === 'assistant')
-  const hasInlineStylePicker =
-    !!lastAssistant?.videoReferences?.length || !!lastAssistant?.deliverableStyles?.length
-
   // When a pending task exists, render the submit action bar instead of the input
   if (pendingTask && onConfirmTask && onMakeChanges && onInsufficientCredits) {
     return (
@@ -376,7 +433,7 @@ export function ChatInputArea({
             placeholder={
               ghostText
                 ? '' // Hide placeholder when showing ghost text
-                : messages.length === 0
+                : messageCount === 0
                   ? 'Describe what you want to craft...'
                   : 'Type your message...'
             }
@@ -481,74 +538,7 @@ export function ChatInputArea({
           {/* Right: Word count + CTA */}
           <div className="flex items-center gap-3 shrink-0 ml-3">
             {/* Word count ring — only while typing */}
-            {input.trim().length > 0 &&
-              (() => {
-                const wordCount = input.trim().split(/\s+/).filter(Boolean).length
-                const greatPromptWords = 20
-
-                const specificityPatterns =
-                  /instagram|tiktok|youtube|linkedin|facebook|audience|brand|style|color|#[0-9a-f]/gi
-                const specificityBonus = (input.match(specificityPatterns) || []).length * 2
-                const rawScore = Math.min(wordCount + specificityBonus, greatPromptWords)
-                const pct = Math.min((rawScore / greatPromptWords) * 100, 100)
-
-                const r = 10
-                const circumference = 2 * Math.PI * r
-                const offset = circumference - (pct / 100) * circumference
-                const color =
-                  pct >= 100
-                    ? 'text-crafted-green'
-                    : pct >= 50
-                      ? 'text-ds-warning'
-                      : 'text-ds-error'
-
-                const tooltip =
-                  pct >= 100
-                    ? 'Great detail!'
-                    : 'Add details like target audience or style preference'
-
-                return (
-                  <div className="flex items-center gap-1.5" title={tooltip}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" className={color}>
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r={r}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        opacity={0.15}
-                      />
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r={r}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={offset}
-                        transform="rotate(-90 12 12)"
-                        className="transition-all duration-300"
-                      />
-                      {pct >= 100 && (
-                        <path
-                          d="M8 12.5l2.5 2.5 5-5"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      )}
-                    </svg>
-                    {pct < 100 && (
-                      <span className={cn('text-[10px]', color)}>{Math.round(pct)}%</span>
-                    )}
-                  </div>
-                )
-              })()}
+            {input.trim().length > 0 && <WordCountRing input={input} />}
             <Button
               onClick={handleSend}
               disabled={isLoading || (!input.trim() && !hasFiles)}
@@ -573,7 +563,7 @@ export function ChatInputArea({
       </div>
 
       {/* Enhanced empty state with quick start suggestions */}
-      {messages.length === 0 && (
+      {messageCount === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -647,4 +637,4 @@ export function ChatInputArea({
       )}
     </div>
   )
-}
+})

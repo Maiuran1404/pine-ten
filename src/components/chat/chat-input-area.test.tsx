@@ -51,7 +51,8 @@ vi.mock('@/components/shared/loading', () => ({
 
 function createDefaultProps(overrides: Partial<ChatInputAreaProps> = {}): ChatInputAreaProps {
   return {
-    messages: [],
+    messageCount: 0,
+    hasInlineStylePicker: false,
     input: '',
     setInput: vi.fn(),
     isLoading: false,
@@ -91,14 +92,7 @@ describe('ChatInputArea', () => {
 
   it('shows typing placeholder when there are messages', () => {
     const props = createDefaultProps({
-      messages: [
-        {
-          id: '1',
-          role: 'user',
-          content: 'Hello',
-          timestamp: new Date(),
-        },
-      ],
+      messageCount: 1,
     })
     render(<ChatInputArea {...props} />)
 
@@ -270,7 +264,7 @@ describe('ChatInputArea', () => {
     render(
       <ChatInputArea
         {...createDefaultProps({
-          messages: [{ id: '1', role: 'user', content: 'Hi', timestamp: new Date() }],
+          messageCount: 1,
           handleRequestTaskSummary,
         })}
       />

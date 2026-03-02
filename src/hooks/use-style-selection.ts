@@ -7,6 +7,7 @@
 
 import { useState, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
+import { useCsrfContext } from '@/providers/csrf-provider'
 import { type DeliverableStyle, type ChatMessage as Message } from '@/components/chat/types'
 import type { VideoReferenceStyle } from '@/components/chat/video-reference-grid'
 import type { ChatApiResponse } from './use-chat-messages'
@@ -29,7 +30,6 @@ interface UseStyleSelectionOptions {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>
   setAnimatingMessageId: (id: string | null) => void
   selectedStyles: string[]
-  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 
 export function useStyleSelection({
@@ -47,8 +47,8 @@ export function useStyleSelection({
   setMessages,
   setAnimatingMessageId,
   selectedStyles: selectedStylesProp,
-  csrfFetch,
 }: UseStyleSelectionOptions) {
+  const { csrfFetch } = useCsrfContext()
   const [selectedStyles, setSelectedStyles] = useState<string[]>([])
   const [hoveredStyleName, setHoveredStyleName] = useState<string | null>(null)
   const [selectedDeliverableStyles, setSelectedDeliverableStyles] = useState<string[]>([])

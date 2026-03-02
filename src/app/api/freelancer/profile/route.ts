@@ -6,6 +6,7 @@ import { freelancerProfiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { updateFreelancerProfileSchema } from '@/lib/validations'
 import { withErrorHandling, successResponse } from '@/lib/errors'
+import { cachedSuccessResponse, CacheDurations } from '@/lib/cache'
 import { requireAuth } from '@/lib/require-auth'
 
 export async function GET(_request: NextRequest) {
@@ -23,7 +24,7 @@ export async function GET(_request: NextRequest) {
         return successResponse({ status: 'NOT_FOUND' })
       }
 
-      return successResponse(profile[0])
+      return cachedSuccessResponse(profile[0], CacheDurations.MEDIUM, { isPrivate: true })
     },
     { endpoint: 'GET /api/freelancer/profile' }
   )

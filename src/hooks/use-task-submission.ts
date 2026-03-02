@@ -8,6 +8,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import * as Sentry from '@sentry/nextjs'
+import { useCsrfContext } from '@/providers/csrf-provider'
 import { usePostHog } from 'posthog-js/react'
 import { PostHogEvents } from '@/lib/posthog-events'
 import { toast } from 'sonner'
@@ -40,7 +41,6 @@ interface UseTaskSubmissionOptions {
   initialTaskData?: TaskData | null
   briefingState?: { stage?: string; brief?: LiveBrief } | null
   scrollAreaRef: React.RefObject<HTMLDivElement | null>
-  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 
 export function useTaskSubmission({
@@ -57,8 +57,8 @@ export function useTaskSubmission({
   initialTaskData,
   briefingState,
   scrollAreaRef,
-  csrfFetch,
 }: UseTaskSubmissionOptions) {
+  const { csrfFetch } = useCsrfContext()
   const router = useRouter()
   const posthog = usePostHog()
   const { credits: userCredits, refreshCredits, deductCredits } = useCredits()

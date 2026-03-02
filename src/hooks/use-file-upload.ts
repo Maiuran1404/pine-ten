@@ -7,6 +7,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
+import { useCsrfContext } from '@/providers/csrf-provider'
 import { type UploadedFile } from '@/components/chat/types'
 
 export interface PendingFile {
@@ -23,10 +24,10 @@ export interface PendingFile {
 
 interface UseFileUploadOptions {
   addFromUpload: (file: UploadedFile) => void
-  csrfFetch: (url: string, options?: RequestInit) => Promise<Response>
 }
 
-export function useFileUpload({ addFromUpload, csrfFetch }: UseFileUploadOptions) {
+export function useFileUpload({ addFromUpload }: UseFileUploadOptions) {
+  const { csrfFetch } = useCsrfContext()
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)

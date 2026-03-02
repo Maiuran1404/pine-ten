@@ -1,6 +1,14 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from 'react'
 
 const CSRF_HEADER_NAME = 'x-csrf-token'
 
@@ -57,19 +65,18 @@ export function CsrfProvider({ children }: CsrfProviderProps) {
     [csrfToken]
   )
 
-  return (
-    <CsrfContext.Provider
-      value={{
-        csrfToken,
-        isLoading,
-        getCsrfHeaders,
-        csrfFetch,
-        refreshToken: fetchToken,
-      }}
-    >
-      {children}
-    </CsrfContext.Provider>
+  const value = useMemo(
+    () => ({
+      csrfToken,
+      isLoading,
+      getCsrfHeaders,
+      csrfFetch,
+      refreshToken: fetchToken,
+    }),
+    [csrfToken, isLoading, getCsrfHeaders, csrfFetch, fetchToken]
   )
+
+  return <CsrfContext.Provider value={value}>{children}</CsrfContext.Provider>
 }
 
 export function useCsrfContext() {
