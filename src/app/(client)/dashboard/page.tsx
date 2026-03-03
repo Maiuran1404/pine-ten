@@ -630,8 +630,8 @@ function DashboardContent() {
                                 <p className="text-xs font-medium text-foreground leading-tight truncate">
                                   {tag.label}
                                 </p>
-                                <p className="text-[10px] text-muted-foreground leading-tight capitalize">
-                                  {tag.category}
+                                <p className="text-[10px] text-muted-foreground leading-tight">
+                                  {CATEGORY_SUBTITLE[tag.category] ?? tag.category}
                                 </p>
                               </div>
                             </div>
