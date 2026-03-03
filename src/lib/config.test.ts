@@ -42,15 +42,15 @@ describe('config', () => {
 
   describe('rateLimits', () => {
     it('should have api rate limit with window and max', () => {
-      expect(config.rateLimits.api).toEqual({ window: 60, max: 100 })
+      expect(config.rateLimits.api).toEqual({ window: 60, max: 1000 })
     })
 
     it('should have auth rate limit with window and max', () => {
-      expect(config.rateLimits.auth).toEqual({ window: 60, max: 20 })
+      expect(config.rateLimits.auth).toEqual({ window: 60, max: 200 })
     })
 
     it('should have chat rate limit with window and max', () => {
-      expect(config.rateLimits.chat).toEqual({ window: 60, max: 30 })
+      expect(config.rateLimits.chat).toEqual({ window: 60, max: 100 })
     })
 
     it('should have auth limit lower than api limit', () => {
