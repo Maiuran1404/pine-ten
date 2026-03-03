@@ -83,7 +83,8 @@ export function AppSidebar() {
   useEffect(loadDrafts, [pathname])
 
   const handleStartNewProject = () => {
-    router.push('/dashboard/chat')
+    const newDraftId = `draft_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    router.push(`/dashboard/chat?draft=${newDraftId}`)
   }
 
   const handleDeleteDraft = (e: React.MouseEvent, draftId: string) => {

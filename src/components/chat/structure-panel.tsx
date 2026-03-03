@@ -103,7 +103,7 @@ export interface StructurePanelProps {
   // Video narrative props
   videoNarrative?: VideoNarrative | null
   narrativeApproved?: boolean
-  onApproveNarrative?: () => void
+  onApproveNarrative?: (editedNarrative?: VideoNarrative) => void
   onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
   // Error recovery for storyboard generation after narrative approval
   isChatLoading?: boolean
@@ -674,6 +674,7 @@ export function StructurePanel({
             onApprove={onApproveNarrative}
             onFieldEdit={onNarrativeFieldEdit}
             isApproved={narrativeApproved}
+            isLoading={isChatLoading}
           />
         </div>
       )

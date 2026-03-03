@@ -1077,6 +1077,7 @@ interface RichStoryboardPanelProps {
   // Scene image generation
   imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
   onRegenerateImage?: (scene: StoryboardScene) => void
+  onRetryAllFailed?: () => void
   // User-specified target duration from briefing state (e.g. "45 second video")
   targetDurationSeconds?: number | null
 }
@@ -1111,6 +1112,7 @@ export function RichStoryboardPanel({
   canRedo,
   imageGenerationProgress,
   onRegenerateImage,
+  onRetryAllFailed,
   targetDurationSeconds,
 }: RichStoryboardPanelProps) {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([])
@@ -1321,6 +1323,20 @@ export function RichStoryboardPanel({
               <Play className="h-3 w-3" />
               Preview
             </Button>
+            {/* Retry All Failed — shown when any scene images have errors */}
+            {onRetryAllFailed &&
+              imageGenerationProgress &&
+              [...imageGenerationProgress.values()].some((s) => s === 'error') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onRetryAllFailed}
+                  className="gap-1.5 text-xs h-7 text-ds-warning hover:text-ds-warning/80 bg-ds-warning/10"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Retry Failed
+                </Button>
+              )}
             {onRegenerateStoryboard && (
               <Button
                 variant="ghost"
@@ -1348,6 +1364,42 @@ export function RichStoryboardPanel({
           </div>
         </div>
       </div>
+
+      {/* Image generation progress bar */}
+      {imageGenerationProgress &&
+        imageGenerationProgress.size > 0 &&
+        (() => {
+          const total = imageGenerationProgress.size
+          const done = [...imageGenerationProgress.values()].filter((s) => s === 'done').length
+          const errors = [...imageGenerationProgress.values()].filter((s) => s === 'error').length
+          const generating = [...imageGenerationProgress.values()].filter(
+            (s) => s === 'generating' || s === 'pending'
+          ).length
+          if (generating === 0 && done === total) return null
+          return (
+            <div className="shrink-0 px-4 py-2 border-b border-border/30 bg-muted/10">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3" />
+                  {generating > 0
+                    ? 'Generating scene images...'
+                    : errors > 0
+                      ? 'Some images failed'
+                      : 'Images ready'}
+                </span>
+                <span>
+                  {done} of {total} generated{errors > 0 ? ` (${errors} failed)` : ''}
+                </span>
+              </div>
+              <div className="h-1 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-crafted-green rounded-full transition-all duration-500"
+                  style={{ width: `${(done / total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )
+        })()}
 
       {/* Scrollable rich scene cards with DnD (#6) */}
       <ScrollArea className="flex-1 relative">
@@ -1493,6 +1545,7 @@ export function RichStoryboardPanel({
                   : undefined
               }
               onClose={() => setDetailScene(null)}
+              allScenes={scenes}
             />
           )}
         </SheetContent>
@@ -1519,12 +1572,14 @@ function SceneDetailDrawer({
   getImageUrl,
   onSceneEdit,
   onClose,
+  allScenes,
 }: {
   scene: StoryboardScene
   sceneImageData?: SceneImageData
   getImageUrl?: (imageId: string) => string
   onSceneEdit?: (field: string, value: string) => void
   onClose: () => void
+  allScenes?: StoryboardScene[]
 }) {
   const imageId = scene.referenceImageIds?.[0]
   const refImageUrl = imageId && getImageUrl ? getImageUrl(imageId) : null
@@ -1603,14 +1658,21 @@ function SceneDetailDrawer({
           <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Duration
           </label>
-          {onSceneEdit ? (
-            <DurationControl
-              duration={scene.duration}
-              onDurationChange={(val) => onSceneEdit('duration', val)}
-            />
-          ) : (
-            <p className="text-sm text-foreground">{scene.duration}</p>
-          )}
+          <div className="flex items-center gap-2">
+            {onSceneEdit ? (
+              <DurationControl
+                duration={scene.duration}
+                onDurationChange={(val) => onSceneEdit('duration', val)}
+              />
+            ) : (
+              <p className="text-sm text-foreground">{scene.duration}</p>
+            )}
+            {allScenes && allScenes.length > 1 && (
+              <span className="text-[10px] text-muted-foreground/50">
+                Total: {allScenes.reduce((acc, s) => acc + parseDurationSeconds(s.duration), 0)}s
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Voiceover / Script */}

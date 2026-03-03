@@ -155,6 +155,14 @@ export function useChatMessages({
       if (data.deliverableStyleMarker)
         onDeliverableTypeChange(data.deliverableStyleMarker.deliverableType)
 
+      // BUG-9: Surface parse failures to the user
+      if (data.parseFailures && data.parseFailures.length > 0) {
+        toast.warning('Some content couldn\u2019t be fully parsed', {
+          description: `Failed markers: ${data.parseFailures.join(', ')}`,
+          duration: 5000,
+        })
+      }
+
       return data
     },
     [

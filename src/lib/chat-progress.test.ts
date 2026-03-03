@@ -51,12 +51,12 @@ describe('mapBriefingStageToChat', () => {
     expect(mapBriefingStageToChat('ELABORATE')).toBe('storyboard')
   })
 
-  it('maps STRATEGIC_REVIEW to review', () => {
-    expect(mapBriefingStageToChat('STRATEGIC_REVIEW')).toBe('review')
+  it('maps STRATEGIC_REVIEW to storyboard', () => {
+    expect(mapBriefingStageToChat('STRATEGIC_REVIEW')).toBe('storyboard')
   })
 
-  it('maps MOODBOARD to review', () => {
-    expect(mapBriefingStageToChat('MOODBOARD')).toBe('review')
+  it('maps MOODBOARD to storyboard', () => {
+    expect(mapBriefingStageToChat('MOODBOARD')).toBe('storyboard')
   })
 
   it('maps REVIEW to review', () => {

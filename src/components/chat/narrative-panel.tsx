@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, type ReactNode } from 'react'
-import { Film, ArrowRight, Check, Pencil, Sparkles } from 'lucide-react'
+import { useState, useCallback, useEffect, type ReactNode } from 'react'
+import { Film, ArrowRight, Check, Pencil, Sparkles, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -13,9 +13,10 @@ import type { VideoNarrative } from '@/lib/ai/briefing-state-machine'
 
 interface NarrativePanelProps {
   narrative: VideoNarrative
-  onApprove: () => void
+  onApprove: (editedNarrative?: VideoNarrative) => void
   onFieldEdit: (field: 'concept' | 'narrative' | 'hook', value: string) => void
   isApproved?: boolean
+  isLoading?: boolean
   className?: string
 }
 
@@ -451,10 +452,18 @@ export function NarrativePanel({
   onApprove,
   onFieldEdit,
   isApproved,
+  isLoading,
   className,
 }: NarrativePanelProps) {
   const [editingField, setEditingField] = useState<'concept' | 'narrative' | 'hook' | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [hasEdited, setHasEdited] = useState(false)
+
+  // BUG-15: Reset edit mode when narrative data changes externally
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setEditingField(null)
+  }, [narrative.concept, narrative.narrative, narrative.hook])
 
   const startEditing = useCallback(
     (field: 'concept' | 'narrative' | 'hook') => {
@@ -470,6 +479,7 @@ export function NarrativePanel({
     if (editingField) {
       onFieldEdit(editingField, editValue)
       setEditingField(null)
+      setHasEdited(true)
     }
   }, [editingField, editValue, onFieldEdit])
 
@@ -538,13 +548,24 @@ export function NarrativePanel({
               {editingField === 'narrative' ? (
                 <div className="space-y-1">
                   <textarea
-                    className="w-full bg-white/80 dark:bg-card/80 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-crafted-green/40 focus:border-crafted-green/60 shadow-sm min-h-[5rem]"
+                    className="w-full bg-white/80 dark:bg-card/80 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-crafted-green/40 focus:border-crafted-green/60 shadow-sm min-h-[5rem] max-h-[20rem] overflow-y-auto"
                     value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
+                    onChange={(e) => {
+                      setEditValue(e.target.value)
+                      // Auto-resize
+                      const target = e.target
+                      target.style.height = 'auto'
+                      target.style.height = Math.min(target.scrollHeight, 320) + 'px'
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Escape') cancelEdit()
                     }}
-                    rows={4}
+                    ref={(el) => {
+                      if (el) {
+                        el.style.height = 'auto'
+                        el.style.height = Math.min(el.scrollHeight, 320) + 'px'
+                      }
+                    }}
                     autoFocus
                   />
                   <EditControls onSave={saveEdit} onCancel={cancelEdit} />
@@ -567,13 +588,23 @@ export function NarrativePanel({
                     <div className="w-0.5 shrink-0 rounded-full bg-crafted-green/40" />
                     <div className="flex-1 space-y-1">
                       <textarea
-                        className="w-full bg-white/80 dark:bg-card/80 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-crafted-green/40 focus:border-crafted-green/60 shadow-sm min-h-[2.5rem]"
+                        className="w-full bg-white/80 dark:bg-card/80 rounded-lg px-3 py-2 text-sm text-foreground/80 leading-relaxed resize-none outline-none border border-crafted-green/40 focus:border-crafted-green/60 shadow-sm min-h-[2.5rem] max-h-[12rem] overflow-y-auto"
                         value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
+                        onChange={(e) => {
+                          setEditValue(e.target.value)
+                          const target = e.target
+                          target.style.height = 'auto'
+                          target.style.height = Math.min(target.scrollHeight, 192) + 'px'
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Escape') cancelEdit()
                         }}
-                        rows={2}
+                        ref={(el) => {
+                          if (el) {
+                            el.style.height = 'auto'
+                            el.style.height = Math.min(el.scrollHeight, 192) + 'px'
+                          }
+                        }}
                         autoFocus
                       />
                       <EditControls onSave={saveEdit} onCancel={cancelEdit} />
@@ -621,10 +652,20 @@ export function NarrativePanel({
               <Button
                 size="lg"
                 className="gap-2 w-full bg-crafted-green hover:bg-crafted-forest text-white rounded-xl h-11 font-medium shadow-sm shadow-crafted-green/15"
-                onClick={onApprove}
+                onClick={() => onApprove(hasEdited ? narrative : undefined)}
+                disabled={isLoading}
               >
-                Continue to Storyboard
-                <ArrowRight className="h-4 w-4" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Building storyboard...
+                  </>
+                ) : (
+                  <>
+                    Continue to Storyboard
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             </div>
           )}

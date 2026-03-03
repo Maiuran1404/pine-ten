@@ -1,7 +1,16 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Check, Circle, Sparkles } from 'lucide-react'
+import {
+  Check,
+  Circle,
+  Sparkles,
+  MessageSquare,
+  Film,
+  Palette,
+  LayoutGrid,
+  Send,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type ChatStage } from '@/components/chat/types'
 import {
@@ -10,6 +19,24 @@ import {
   isStageCompleted,
   isCurrentStage,
 } from '@/lib/chat-progress'
+
+// Icons for each stage
+const STAGE_ICONS: Record<string, typeof MessageSquare> = {
+  brief: MessageSquare,
+  narrative: Film,
+  style: Palette,
+  storyboard: LayoutGrid,
+  review: Send,
+}
+
+// Short labels for the stepper (fits single row)
+const STAGE_LABELS: Record<string, string> = {
+  brief: 'Brief',
+  narrative: 'Narrative',
+  style: 'Style',
+  storyboard: 'Storyboard',
+  review: 'Review',
+}
 
 // =============================================================================
 // LABELED PROGRESS BAR (#4) — horizontal circles + labels
@@ -44,52 +71,68 @@ export function LabeledProgressBar({
         />
       </div>
 
-      {/* Compact label row */}
-      <div className="px-4 py-1 flex items-center gap-2 border-b border-border/30">
-        {/* Dot indicators */}
-        <div className="hidden sm:flex items-center gap-1">
-          {BRIEFING_CHAT_STAGES.map((stage) => {
-            const isCompleted = isStageCompleted(stage, completedStages)
-            const isCurrent = isCurrentStage(stage, currentStage)
-            return (
-              <div
-                key={stage}
-                className={cn(
-                  'w-1.5 h-1.5 rounded-full transition-colors',
-                  isCompleted && 'bg-primary/70',
-                  isCurrent && !isCompleted && 'bg-primary/40',
-                  !isCompleted && !isCurrent && 'bg-muted-foreground/15'
-                )}
-                title={STAGE_DESCRIPTIONS[stage]}
-              />
-            )
-          })}
-        </div>
+      {/* Horizontal labeled stepper — desktop */}
+      <div className="hidden sm:flex items-center justify-between px-4 py-1.5 border-b border-border/30">
+        {BRIEFING_CHAT_STAGES.map((stage, index) => {
+          const completed = isStageCompleted(stage, completedStages)
+          const current = isCurrentStage(stage, currentStage)
+          const Icon = STAGE_ICONS[stage] ?? Circle
+          const isLast = index === BRIEFING_CHAT_STAGES.length - 1
 
-        {/* Current step label */}
+          return (
+            <div key={stage} className="flex items-center">
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={cn(
+                    'w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors',
+                    completed && 'bg-crafted-green text-white',
+                    current && !completed && 'bg-crafted-green/15 text-crafted-green',
+                    !completed && !current && 'bg-muted text-muted-foreground/40'
+                  )}
+                >
+                  {completed ? <Check className="h-3 w-3" /> : <Icon className="h-2.5 w-2.5" />}
+                </div>
+                <span
+                  className={cn(
+                    'text-[10px] font-medium transition-colors',
+                    completed && 'text-foreground',
+                    current && !completed && 'text-foreground',
+                    !completed && !current && 'text-muted-foreground/50'
+                  )}
+                >
+                  {STAGE_LABELS[stage] ?? stage}
+                </span>
+              </div>
+              {!isLast && (
+                <div
+                  className={cn(
+                    'mx-2 h-px flex-1 min-w-[12px]',
+                    index < currentIndex ? 'bg-crafted-green/40' : 'bg-muted-foreground/10'
+                  )}
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Mobile: compact label + dots */}
+      <div className="flex sm:hidden items-center gap-2 px-4 py-1 border-b border-border/30">
         <span className="text-[10px] text-muted-foreground/60 font-medium">
           {stageDescription ?? STAGE_DESCRIPTIONS[currentStage]}
         </span>
-
-        {/* Step counter */}
-        <span className="text-[10px] text-muted-foreground/50 ml-auto hidden sm:inline">
-          {Math.min(currentIndex + 1, BRIEFING_CHAT_STAGES.length)} of {BRIEFING_CHAT_STAGES.length}{' '}
-          steps
-        </span>
-
-        {/* Mobile dots */}
-        <div className="flex sm:hidden items-center gap-1 ml-auto">
+        <div className="flex items-center gap-1 ml-auto">
           {BRIEFING_CHAT_STAGES.map((stage) => {
-            const isCompleted = isStageCompleted(stage, completedStages)
-            const isCurrent = isCurrentStage(stage, currentStage)
+            const completed = isStageCompleted(stage, completedStages)
+            const current = isCurrentStage(stage, currentStage)
             return (
               <div
                 key={stage}
                 className={cn(
                   'w-1.5 h-1.5 rounded-full transition-colors',
-                  isCompleted && 'bg-primary/70',
-                  isCurrent && !isCompleted && 'bg-primary/40',
-                  !isCompleted && !isCurrent && 'bg-muted-foreground/15'
+                  completed && 'bg-crafted-green',
+                  current && !completed && 'bg-crafted-green/40',
+                  !completed && !current && 'bg-muted-foreground/15'
                 )}
               />
             )

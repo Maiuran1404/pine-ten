@@ -346,6 +346,9 @@ export function useChatInterfaceData({
       stateOverrides?: Partial<import('@/lib/ai/briefing-state-machine').SerializedBriefingState>
     ) => void
   >(() => {})
+  const setMessagesRef = useRef<
+    React.Dispatch<React.SetStateAction<import('./types').ChatMessage[]>>
+  >(() => {})
 
   const storyboard = useStoryboard({
     inputRef,
@@ -357,6 +360,10 @@ export function useChatInterfaceData({
       []
     ),
     briefingState: _briefingState,
+    setMessages: useCallback<React.Dispatch<React.SetStateAction<import('./types').ChatMessage[]>>>(
+      (action) => setMessagesRef.current(action),
+      []
+    ),
   })
 
   // ─── Website inspiration (only active for website projects) ──
@@ -379,8 +386,9 @@ export function useChatInterfaceData({
     latestStoryboardRef: storyboard.latestStoryboardRef,
   })
 
-  // Wire up the forward ref so storyboard regeneration can call handleSendOption
+  // Wire up forward refs now that chatMessages is available
   sendOptionRef.current = chatMessages.handleSendOption
+  setMessagesRef.current = chatMessages.setMessages
 
   // ─── File upload ─────────────────────────────────────────────
   const fileUpload = useFileUpload({ addFromUpload })

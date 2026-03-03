@@ -500,6 +500,44 @@ function DashboardContent() {
             </p>
           </motion.div>
 
+          {/* Recent Activity Chips */}
+          {recentActiveTasks.length > 0 && (
+            <motion.div
+              initial={prefersReduced ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: prefersReduced ? 0 : 0.35,
+                delay: prefersReduced ? 0 : 0.04,
+                ease: [0.25, 0.1, 0.25, 1],
+              }}
+              className="flex items-center justify-center gap-2 flex-wrap mb-4"
+            >
+              {recentActiveTasks.map((task) => {
+                const config = statusConfig[task.status] || {
+                  label: task.status,
+                  colorClass: 'bg-muted-foreground',
+                }
+                return (
+                  <Link
+                    key={task.id}
+                    href={`/dashboard/tasks/${task.id}`}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/60 border border-border/40 backdrop-blur-sm text-xs hover:border-crafted-sage/30 hover:bg-card/80 transition-all duration-200"
+                  >
+                    <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', config.colorClass)} />
+                    <span className="text-muted-foreground font-medium">{config.label}</span>
+                    <span className="text-foreground/70 truncate max-w-[120px]">{task.title}</span>
+                  </Link>
+                )
+              })}
+              <Link
+                href="/dashboard/tasks"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-crafted-sage hover:text-crafted-green transition-colors"
+              >
+                View all <ArrowRight className="h-3 w-3" />
+              </Link>
+            </motion.div>
+          )}
+
           {/* Main Input Card */}
           <motion.div
             initial={prefersReduced ? false : { opacity: 0, y: 8, scale: 0.98 }}
@@ -728,39 +766,6 @@ function DashboardContent() {
               </button>{' '}
               to add your images, videos or files.
             </p>
-
-            {/* Recent Activity Chips */}
-            {recentActiveTasks.length > 0 && (
-              <div className="flex items-center justify-center gap-2 flex-wrap mt-3">
-                {recentActiveTasks.map((task) => {
-                  const config = statusConfig[task.status] || {
-                    label: task.status,
-                    colorClass: 'bg-muted-foreground',
-                  }
-                  return (
-                    <Link
-                      key={task.id}
-                      href={`/dashboard/tasks/${task.id}`}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/60 border border-border/40 backdrop-blur-sm text-xs hover:border-crafted-sage/30 hover:bg-card/80 transition-all duration-200"
-                    >
-                      <span
-                        className={cn('w-1.5 h-1.5 rounded-full shrink-0', config.colorClass)}
-                      />
-                      <span className="text-muted-foreground font-medium">{config.label}</span>
-                      <span className="text-foreground/70 truncate max-w-[120px]">
-                        {task.title}
-                      </span>
-                    </Link>
-                  )
-                })}
-                <Link
-                  href="/dashboard/tasks"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-crafted-sage hover:text-crafted-green transition-colors"
-                >
-                  View all <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-            )}
           </motion.div>
 
           {/* Template Cards */}

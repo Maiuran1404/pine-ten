@@ -42,9 +42,15 @@ interface UseStoryboardOptions {
   inputRef: React.RefObject<HTMLTextAreaElement | null>
   handleSendOption: (text: string, stateOverrides?: Partial<SerializedBriefingState>) => void
   briefingState?: BriefingState | null
+  setMessages?: React.Dispatch<React.SetStateAction<Message[]>>
 }
 
-export function useStoryboard({ inputRef, handleSendOption, briefingState }: UseStoryboardOptions) {
+export function useStoryboard({
+  inputRef,
+  handleSendOption,
+  briefingState,
+  setMessages,
+}: UseStoryboardOptions) {
   const { csrfFetch } = useCsrfContext()
   const [storyboardScenes, setStoryboardScenes] = useState<StructureData | null>(null)
   const [sceneReferences, setSceneReferences] = useState<SceneReference[]>([])
@@ -114,9 +120,11 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   }, [briefingState?.deliverableCategory])
 
   // Structure panel visible when we have structure data, video narrative,
-  // at INSPIRATION stage (for style selection panel), OR for website projects
+  // at STRUCTURE stage (narrative panel), INSPIRATION stage (style selection),
+  // ELABORATE stage (storyboard), OR for website projects
   // (websites show the InspirationPanel before structure data exists)
   const structurePanelVisible =
+    briefingState?.stage === 'STRUCTURE' ||
     briefingState?.stage === 'INSPIRATION' ||
     briefingState?.stage === 'ELABORATE' ||
     storyboardScenes !== null ||
@@ -498,6 +506,18 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   const handleApproveNarrative = useCallback(
     (editedNarrative?: VideoNarrative) => {
       setNarrativeApproved(true)
+
+      // UX-3: Inject optimistic acknowledgment before AI response
+      if (setMessages) {
+        const ackMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: 'Narrative approved! Building your storyboard...',
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, ackMessage])
+      }
+
       const currentNarrative = editedNarrative ?? videoNarrative
       if (currentNarrative) {
         const narrativeSummary = `Approved narrative:\nConcept: ${currentNarrative.concept}\nNarrative: ${currentNarrative.narrative}\nHook: ${currentNarrative.hook}`
@@ -512,7 +532,7 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
         )
       }
     },
-    [handleSendOption, videoNarrative]
+    [handleSendOption, videoNarrative, setMessages]
   )
 
   // Edit a narrative field inline

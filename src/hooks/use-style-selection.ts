@@ -188,6 +188,16 @@ export function useStyleSelection({
       if (selectedStylesList.length === 0 || isLoading) return
 
       const style = selectedStylesList[0]
+
+      // UX-3: Inject optimistic acknowledgment before AI response
+      const ackMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `Great choice! Moving forward with **${style.name}**...`,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, ackMessage])
+
       const userMessage: Message = {
         id: crypto.randomUUID(),
         role: 'user',
@@ -210,7 +220,14 @@ export function useStyleSelection({
         })
       }
     },
-    [isLoading, sendChatAndReceive, hasMoodboardItem, addFromStyle, addStyleToVisualDirection]
+    [
+      isLoading,
+      sendChatAndReceive,
+      setMessages,
+      hasMoodboardItem,
+      addFromStyle,
+      addStyleToVisualDirection,
+    ]
   )
 
   const handleSelectVideo = useCallback(

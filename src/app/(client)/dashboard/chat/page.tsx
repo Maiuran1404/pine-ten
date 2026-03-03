@@ -1,13 +1,65 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, startTransition } from 'react'
+import React, { useState, useEffect, useRef, useCallback, startTransition } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ChatInterface } from '@/components/chat/chat-interface'
 import { getDrafts, generateDraftId, type ChatDraft } from '@/lib/chat-drafts'
 import { Button } from '@/components/ui/button'
-import { Sparkles, User } from 'lucide-react'
+import { Sparkles, User, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useSession } from '@/lib/auth-client'
 import Link from 'next/link'
+
+// =============================================================================
+// ERROR BOUNDARY — catches render errors in the chat interface
+// =============================================================================
+
+interface ChatErrorBoundaryState {
+  hasError: boolean
+  error?: Error
+}
+
+class ChatErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  ChatErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error): ChatErrorBoundaryState {
+    return { hasError: true, error }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-foreground">Something went wrong</h3>
+            <p className="text-xs text-muted-foreground max-w-sm">
+              The chat encountered an unexpected error. Your draft has been saved.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => this.setState({ hasError: false, error: undefined })}
+            className="gap-1.5"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Try Again
+          </Button>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 export default function ChatPage() {
   const searchParams = useSearchParams()
@@ -160,14 +212,16 @@ export default function ChatPage() {
 
       {/* Chat content */}
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
-        <ChatInterface
-          draftId={currentDraftId}
-          onDraftUpdate={handleDraftUpdate}
-          initialMessage={initialMessage}
-          seamlessTransition={true}
-          showRightPanel={true}
-          onChatStart={() => {}}
-        />
+        <ChatErrorBoundary>
+          <ChatInterface
+            draftId={currentDraftId}
+            onDraftUpdate={handleDraftUpdate}
+            initialMessage={initialMessage}
+            seamlessTransition={true}
+            showRightPanel={true}
+            onChatStart={() => {}}
+          />
+        </ChatErrorBoundary>
       </div>
     </div>
   )
