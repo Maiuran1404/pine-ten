@@ -7,12 +7,14 @@ import 'server-only'
 import { logger } from '@/lib/logger'
 import {
   type BriefingState,
+  type BriefingStage,
   type DeliverableCategory,
   type StructureData,
   type SerializedBriefingState,
   deserialize,
   serialize,
   deriveStage,
+  getLegalTransitions,
 } from '@/lib/ai/briefing-state-machine'
 import {
   parseStructuredOutput,
@@ -238,6 +240,23 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
     structureData = retryResult.structureData ?? undefined
     strategicReviewData = retryResult.strategicReviewData ?? undefined
     videoNarrativeData = retryResult.videoNarrativeData ?? undefined
+
+    // Honor AI-declared stage for terminal stages (REVIEW/DEEPEN → SUBMIT).
+    // deriveStage() cannot exit REVIEW (exitWhen: () => false) or DEEPEN (no exitWhen).
+    // The only way to reach SUBMIT from these stages is via AI declaration or client dispatch.
+    const TERMINAL_STAGES: Set<BriefingStage> = new Set(['REVIEW', 'DEEPEN'])
+    if (
+      briefMetaResult.success &&
+      briefMetaResult.data?.stage &&
+      TERMINAL_STAGES.has(briefingState.stage)
+    ) {
+      const declaredStage = briefMetaResult.data.stage as BriefingStage
+      const legal = getLegalTransitions(briefingState.stage)
+      if (legal.includes(declaredStage) && declaredStage !== briefingState.stage) {
+        briefingState.stage = declaredStage
+        briefingState.turnsInCurrentStage = 0
+      }
+    }
 
     // Derive stage (single call, after ALL parsing + retries)
     if (briefingState.stage !== 'SUBMIT') {

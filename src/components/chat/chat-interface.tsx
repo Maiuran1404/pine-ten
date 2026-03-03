@@ -375,6 +375,17 @@ export function ChatInterface({
         return
       }
 
+      // At REVIEW/DEEPEN stage, "good enough, move on" signals submission intent.
+      // For video projects, require storyboard reviewed first.
+      if (
+        (briefingStage === 'REVIEW' || briefingStage === 'DEEPEN') &&
+        (!storyboardScenes || storyboardReviewed) &&
+        /\b(good enough|move on|submit|let'?s go|ready to submit|done|ship it)\b/i.test(lower)
+      ) {
+        handleRequestTaskSummary()
+        return
+      }
+
       // Narrative approval intent → trigger handleApproveNarrative (same as
       // clicking "Continue to Storyboard" button in the narrative panel)
       if (
@@ -413,6 +424,7 @@ export function ChatInterface({
       storyboardScenes,
       storyboardReviewed,
       handleApproveStoryboard,
+      briefingStage,
     ]
   )
 

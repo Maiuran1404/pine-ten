@@ -762,7 +762,8 @@ function buildReviewTask(_state: BriefingState): string {
 - Name the strongest element in one sentence.
 - Name ONE thing to push.
 - Instead of "Does this look good?", state your assessment with confidence.
-- If the user says "let's build" / "let's start" / "ready to go", frame it as submitting to a professional Crafted designer.
+- If the user says "let's build" / "let's start" / "ready to go" / "good enough" / "move on" / "submit", set stage to "SUBMIT" in [BRIEF_META] to advance to submission. Frame it as submitting to a professional Crafted designer.
+- IMPORTANT: When the user confirms they are satisfied and want to proceed, you MUST set "stage":"SUBMIT" in your [BRIEF_META] block. This is the ONLY way the system advances to the submission step.
 - NEVER suggest they hire someone else or go to another platform.`
 }
 
@@ -772,7 +773,8 @@ function buildDeepenTask(state: BriefingState): string {
   return `Offer depth escalation paths relevant to this ${category || 'deliverable'}.
 Available paths: ${options.join(', ')}.
 - Present options clearly. User can select multiple before submitting.
-- If they selected a deepening, execute it (e.g., refine copy, generate variant).`
+- If they selected a deepening, execute it (e.g., refine copy, generate variant).
+- If the user says "good enough" / "move on" / "skip" / "submit" / "let's go", set stage to "SUBMIT" in [BRIEF_META] to advance to submission.`
 }
 
 function buildSubmitTask(state: BriefingState): string {

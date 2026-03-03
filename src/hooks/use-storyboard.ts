@@ -487,10 +487,32 @@ export function useStoryboard({
       }
     }
 
-    previousScenesRef.current = data
-    setStoryboardScenes(data)
-    if (data.type === 'storyboard') {
-      latestStoryboardRef.current = data
+    // Preserve client-side image URLs when the server sends back scenes without them.
+    // The AI response never includes resolvedImageUrl (that's set client-side after generation),
+    // so without this merge, every AI response would wipe images and re-trigger generation shimmer.
+    let mergedData = data
+    if (data.type === 'storyboard' && previousScenesRef.current?.type === 'storyboard') {
+      const oldScenes = previousScenesRef.current.scenes
+      const mergedScenes = data.scenes.map((newScene) => {
+        if (newScene.resolvedImageUrl) return newScene
+        const oldScene = oldScenes.find((s) => s.sceneNumber === newScene.sceneNumber)
+        if (oldScene?.resolvedImageUrl) {
+          return {
+            ...newScene,
+            resolvedImageUrl: oldScene.resolvedImageUrl,
+            resolvedImageSource: oldScene.resolvedImageSource,
+            resolvedImageAttribution: oldScene.resolvedImageAttribution,
+          }
+        }
+        return newScene
+      })
+      mergedData = { ...data, scenes: mergedScenes }
+    }
+
+    previousScenesRef.current = mergedData
+    setStoryboardScenes(mergedData)
+    if (mergedData.type === 'storyboard') {
+      latestStoryboardRef.current = mergedData
       // sceneImageData is now derived via useMemo from storyboardScenes — no hydration needed
     }
   }, [])
@@ -503,7 +525,7 @@ export function useStoryboard({
   // Approve narrative and transition to style selection (INSPIRATION stage)
   // Storyboard building happens AFTER the user selects visual styles
   const handleApproveNarrative = useCallback(
-    (editedNarrative?: VideoNarrative) => {
+    (_editedNarrative?: VideoNarrative) => {
       setNarrativeApproved(true)
 
       // UX-3: Inject optimistic acknowledgment before AI response
@@ -517,23 +539,14 @@ export function useStoryboard({
         setMessages((prev) => [...prev, ackMessage])
       }
 
-      const currentNarrative = editedNarrative ?? videoNarrative
-      if (currentNarrative) {
-        // Strip <<highlight markers>> so the user-visible message is clean
-        const clean = (s: string) => s.replace(/<<|>>/g, '')
-        const narrativeSummary = `Approved narrative:\nConcept: ${clean(currentNarrative.concept)}\nNarrative: ${clean(currentNarrative.narrative)}\nHook: ${clean(currentNarrative.hook)}`
-        handleSendOption(
-          `I've finalized the story narrative. ${narrativeSummary}\n\nNow let's choose a visual style for the video.`,
-          { narrativeApproved: true, stage: 'INSPIRATION', turnsInCurrentStage: 0 }
-        )
-      } else {
-        handleSendOption(
-          'The story narrative looks great. Now let\u2019s choose a visual style for the video.',
-          { narrativeApproved: true, stage: 'INSPIRATION', turnsInCurrentStage: 0 }
-        )
-      }
+      // The AI prompt already has the full narrative via state.videoNarrative,
+      // so the user message just needs a short approval — no need to echo narrative fields.
+      handleSendOption(
+        'The story narrative looks great. Let\u2019s choose a visual style for the video.',
+        { narrativeApproved: true, stage: 'INSPIRATION', turnsInCurrentStage: 0 }
+      )
     },
-    [handleSendOption, videoNarrative, setMessages]
+    [handleSendOption, setMessages]
   )
 
   // Approve storyboard and allow stage to advance past ELABORATE → REVIEW.

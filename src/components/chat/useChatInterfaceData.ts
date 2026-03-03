@@ -940,15 +940,19 @@ export function useChatInterfaceData({
     if (chatMessages.isLoading || msgs.length === 0) return
     const stage = _briefingState?.stage
 
-    const baseReady =
-      stage === 'SUBMIT' ||
-      (stage === 'REVIEW' &&
-        msgs[msgs.length - 1]?.role === 'assistant' &&
-        hasReadyIndicator(msgs[msgs.length - 1].content))
+    const lastMsg = msgs[msgs.length - 1]
+    const aiSignalsReady = lastMsg?.role === 'assistant' && hasReadyIndicator(lastMsg.content)
 
-    // For video projects, also require storyboard reviewed + images done
+    const baseReady =
+      stage === 'SUBMIT' || ((stage === 'REVIEW' || stage === 'DEEPEN') && aiSignalsReady)
+
+    // For video projects, also require storyboard reviewed + images done.
+    // When stage is SUBMIT or the AI explicitly signals readiness, bypass
+    // the video gate to avoid blocking submission on slow/stuck image generation.
     const videoReady =
       _briefingState?.deliverableCategory !== 'video' ||
+      stage === 'SUBMIT' ||
+      aiSignalsReady ||
       (_briefingState?.storyboardReviewed === true && !storyboard.isGeneratingImages)
 
     const shouldConstruct = baseReady && videoReady
