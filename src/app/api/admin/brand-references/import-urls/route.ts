@@ -7,6 +7,7 @@ import { classifyBrandImage } from '@/lib/ai/classify-brand-image'
 import { uploadToStorage } from '@/lib/storage'
 import { optimizeImage } from '@/lib/image/optimize'
 import { logger } from '@/lib/logger'
+import { assertSafeUrl } from '@/lib/ssrf-guard'
 
 const BUCKET_NAME = 'brand-references'
 
@@ -192,6 +193,9 @@ export async function POST(request: NextRequest) {
             continue
           }
 
+          // SECURITY: Block private/internal IPs to prevent SSRF
+          assertSafeUrl(parsedUrl)
+
           // Fetch the image
           const response = await fetch(url, {
             headers: {
@@ -376,6 +380,9 @@ export async function PUT(request: NextRequest) {
             })
             continue
           }
+
+          // SECURITY: Block private/internal IPs to prevent SSRF
+          assertSafeUrl(parsedUrl)
 
           // Fetch the image
           const response = await fetch(url, {

@@ -1,5 +1,5 @@
 import { requireAdmin } from '@/lib/require-auth'
-import { withErrorHandling, successResponse } from '@/lib/errors'
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { sendEmail } from '@/lib/notifications'
 
 // GET - Test email sending (admin only)
@@ -9,8 +9,12 @@ export async function GET() {
       const { user } = await requireAdmin()
 
       // Try to send a test email to the admin
+      if (!user.email) {
+        throw Errors.badRequest('Admin user has no email address configured')
+      }
+
       const result = await sendEmail({
-        to: user.email || 'maiuran@getcrafted.ai',
+        to: user.email,
         subject: 'Test Email from Crafted',
         html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">

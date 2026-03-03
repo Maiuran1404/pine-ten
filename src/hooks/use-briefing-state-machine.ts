@@ -55,6 +55,8 @@ export interface UseBriefingStateMachineReturn {
   updateStructure: (
     structure: import('@/lib/ai/briefing-state-machine').StructureData | null
   ) => void
+  /** Lightweight category hint (only sets if currently null/unknown) */
+  setDeliverableCategory: (category: DeliverableCategory) => void
 }
 
 // =============================================================================
@@ -242,6 +244,24 @@ export function useBriefingStateMachine(
     }
   }, [state.stage, posthog])
 
+  // ==========================================================================
+  // setDeliverableCategory — lightweight category update (no structure reset)
+  // Used by keyword tagging auto-classification for early-stage category hints.
+  // Only sets category if currently null or 'unknown'.
+  // ==========================================================================
+
+  const setDeliverableCategory = useCallback(
+    (category: DeliverableCategory) => {
+      setState((prev) => {
+        if (prev.deliverableCategory && prev.deliverableCategory !== 'unknown') return prev
+        const newState = { ...prev, deliverableCategory: category }
+        persistState(newState)
+        return newState
+      })
+    },
+    [persistState]
+  )
+
   return {
     briefingState: state,
     serializedState,
@@ -251,5 +271,6 @@ export function useBriefingStateMachine(
     syncFromServer,
     updateBrief,
     updateStructure,
+    setDeliverableCategory,
   }
 }

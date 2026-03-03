@@ -10,6 +10,7 @@ import {
   testSchedules,
 } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
+import { z } from 'zod'
 
 // GET - List test runs with optional filtering
 export async function GET(request: NextRequest) {
@@ -19,8 +20,8 @@ export async function GET(request: NextRequest) {
 
       const { searchParams } = new URL(request.url)
       const runId = searchParams.get('id')
-      const limit = parseInt(searchParams.get('limit') || '20')
-      const offset = parseInt(searchParams.get('offset') || '0')
+      const limit = Math.min(parseInt(searchParams.get('limit') || '20') || 20, 100)
+      const offset = Math.max(parseInt(searchParams.get('offset') || '0') || 0, 0)
 
       // If specific run ID, get full details with results
       if (runId) {
@@ -152,18 +153,23 @@ export async function POST(request: NextRequest) {
   )
 }
 
+// SECURITY: Whitelist allowed fields to prevent mass assignment
+const updateRunSchema = z.object({
+  id: z.string().min(1),
+  status: z.enum(['PENDING', 'RUNNING', 'COMPLETED', 'CANCELLED', 'FAILED']).optional(),
+  passedTests: z.number().int().min(0).optional(),
+  failedTests: z.number().int().min(0).optional(),
+  errorTests: z.number().int().min(0).optional(),
+  score: z.string().optional(),
+})
+
 // PUT - Update a test run (for updating status/results)
 export async function PUT(request: NextRequest) {
   return withErrorHandling(
     async () => {
       await requireAdmin()
 
-      const body = await request.json()
-      const { id, ...updates } = body
-
-      if (!id) {
-        throw Errors.badRequest('Run ID is required')
-      }
+      const { id, ...updates } = updateRunSchema.parse(await request.json())
 
       const [run] = await db
         .update(securityTestRuns)

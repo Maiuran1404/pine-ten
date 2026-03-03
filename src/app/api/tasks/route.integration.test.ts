@@ -75,6 +75,7 @@ vi.mock('@/lib/rate-limit', () => ({
 const mockRequireAuth = vi.fn()
 vi.mock('@/lib/require-auth', () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+  requireRole: (...args: unknown[]) => mockRequireAuth(...args),
 }))
 
 // -- Mock assignment algorithm --
@@ -350,7 +351,7 @@ function buildTxMock(options: {
 describe('POST /api/tasks - Integration (Task Creation Flow)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCheckRateLimit.mockReturnValue({ limited: false, resetIn: 0 })
+    mockCheckRateLimit.mockResolvedValue({ limited: false, resetIn: 0 })
     mockDetectTaskComplexity.mockReturnValue('INTERMEDIATE')
     mockDetectTaskUrgency.mockReturnValue('STANDARD')
   })
@@ -655,7 +656,7 @@ describe('POST /api/tasks - Integration (Task Creation Flow)', () => {
   // -------------------------------------------------------------------
   describe('error: rate limited', () => {
     it('returns 429 with Retry-After header', async () => {
-      mockCheckRateLimit.mockReturnValue({ limited: true, resetIn: 45 })
+      mockCheckRateLimit.mockResolvedValue({ limited: true, resetIn: 45 })
 
       const response = await POST(makeRequest(validBody) as never)
       expect(response.status).toBe(429)

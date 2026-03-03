@@ -7,11 +7,22 @@ vi.mock('@/lib/slack', () => ({
   getChannelConfig: (...args: unknown[]) => mockGetChannelConfig(...args),
 }))
 
+// Mock requireAdmin — default: allows access
+const mockRequireAdmin = vi.fn()
+vi.mock('@/lib/require-auth', () => ({
+  requireAdmin: (...args: unknown[]) => mockRequireAdmin(...args),
+}))
+
+vi.mock('@/lib/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
+}))
+
 const { GET } = await import('./route')
 
 describe('GET /api/webhooks/slack/test', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1', role: 'ADMIN' } })
     mockGetChannelConfig.mockReturnValue({
       superadminAlerts: 'C_ALERTS',
       newSignups: 'C_SIGNUPS',
@@ -22,90 +33,53 @@ describe('GET /api/webhooks/slack/test', () => {
     })
   })
 
-  it('should return 401 in production without correct key', async () => {
-    const originalEnv = process.env.NODE_ENV
-    const originalPwd = process.env.ADMIN_PASSWORD
-
-    vi.stubEnv('NODE_ENV', 'production')
-    process.env.ADMIN_PASSWORD = 'secret123'
-
-    const request = new Request('http://localhost/api/webhooks/slack/test?key=wrong')
-    ;(request as unknown as { nextUrl: { searchParams: URLSearchParams } }).nextUrl = new URL(
-      request.url
-    )
-
-    const response = await GET(request as never)
-    const data = await response.json()
-
-    expect(response.status).toBe(401)
-    expect(data.error).toBe('Not authorized')
-
-    vi.stubEnv('NODE_ENV', originalEnv ?? 'test')
-    process.env.ADMIN_PASSWORD = originalPwd
-  })
-
-  it('should return config status in development', async () => {
-    const originalEnv = process.env.NODE_ENV
-    vi.stubEnv('NODE_ENV', 'development')
-
+  it('should return config status when admin is authenticated', async () => {
     mockIsSlackConfigured.mockReturnValue(true)
 
-    const request = new Request('http://localhost/api/webhooks/slack/test')
-    ;(request as unknown as { nextUrl: { searchParams: URLSearchParams } }).nextUrl = new URL(
-      request.url
-    )
-
-    const response = await GET(request as never)
+    const response = await GET()
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.configured).toBe(true)
-    expect(data.channels).toBeDefined()
-
-    vi.stubEnv('NODE_ENV', originalEnv ?? 'test')
+    expect(data.data.configured).toBe(true)
+    expect(data.data.channels).toBeDefined()
   })
 
-  it('should allow access in production with correct key', async () => {
-    const originalEnv = process.env.NODE_ENV
-    const originalPwd = process.env.ADMIN_PASSWORD
+  it('should mask sensitive values in response', async () => {
+    mockIsSlackConfigured.mockReturnValue(true)
 
-    vi.stubEnv('NODE_ENV', 'production')
-    process.env.ADMIN_PASSWORD = 'correct-key'
+    const response = await GET()
+    const data = await response.json()
 
+    expect(response.status).toBe(200)
+    // Should show "Set" or "NOT SET", never raw values
+    expect(data.data.channels.superadminAlerts).toBe('Set')
+    expect(data.data.channels.newSignups).toBe('Set')
+  })
+
+  it('should show NOT SET when channels are not configured', async () => {
     mockIsSlackConfigured.mockReturnValue(false)
+    mockGetChannelConfig.mockReturnValue({
+      superadminAlerts: '',
+      newSignups: '',
+      allTasks: '',
+      freelancerApps: '',
+      creditPurchases: '',
+      pendingReviews: '',
+    })
 
-    const request = new Request('http://localhost/api/webhooks/slack/test?key=correct-key')
-    ;(request as unknown as { nextUrl: { searchParams: URLSearchParams } }).nextUrl = new URL(
-      request.url
-    )
-
-    const response = await GET(request as never)
+    const response = await GET()
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.configured).toBe(false)
-
-    vi.stubEnv('NODE_ENV', originalEnv ?? 'test')
-    process.env.ADMIN_PASSWORD = originalPwd
+    expect(data.data.configured).toBe(false)
+    expect(data.data.channels.superadminAlerts).toBe('NOT SET')
   })
 
-  it('should include channel config in response', async () => {
-    const originalEnv = process.env.NODE_ENV
-    vi.stubEnv('NODE_ENV', 'development')
+  it('should reject non-admin users', async () => {
+    mockRequireAdmin.mockRejectedValue(new Error('Forbidden'))
 
-    mockIsSlackConfigured.mockReturnValue(true)
+    const response = await GET()
 
-    const request = new Request('http://localhost/api/webhooks/slack/test')
-    ;(request as unknown as { nextUrl: { searchParams: URLSearchParams } }).nextUrl = new URL(
-      request.url
-    )
-
-    const response = await GET(request as never)
-    const data = await response.json()
-
-    expect(data.channels.superadminAlerts).toContain('C_ALERTS')
-    expect(data.channels.newSignups).toContain('C_SIGNUPS')
-
-    vi.stubEnv('NODE_ENV', originalEnv ?? 'test')
+    expect(response.status).toBe(500)
   })
 })

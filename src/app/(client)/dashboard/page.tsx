@@ -19,6 +19,11 @@ import {
   Check,
   Zap,
   ArrowRight,
+  Film,
+  Share2,
+  Palette,
+  Bookmark,
+  LayoutGrid,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import dynamic from 'next/dynamic'
@@ -39,6 +44,32 @@ import { useTasks, useTemplateImages } from '@/hooks/use-queries'
 import { TEMPLATE_CATEGORIES } from './_constants/template-categories'
 import { SOCIAL_MEDIA_PLATFORMS, FREQUENCY_OPTIONS } from './_constants/social-media'
 import type { UploadedFile, PlatformSelection } from './_types/dashboard-types'
+import { useKeywordTagging } from '@/hooks/use-keyword-tagging'
+
+// Category visuals for keyword tag chips
+const CATEGORY_ICON: Record<string, typeof Film> = {
+  video: Film,
+  website: LayoutGrid,
+  content: Share2,
+  design: Palette,
+  brand: Bookmark,
+}
+
+const CATEGORY_ICON_BG: Record<string, string> = {
+  video: 'bg-crafted-green/15',
+  website: 'bg-crafted-sage/15',
+  content: 'bg-crafted-mint/20',
+  design: 'bg-crafted-green/15',
+  brand: 'bg-crafted-sage/15',
+}
+
+const CATEGORY_SUBTITLE: Record<string, string> = {
+  video: 'Motion & Film',
+  website: 'Web Design',
+  content: 'Social & Content',
+  design: 'Graphic Design',
+  brand: 'Brand Identity',
+}
 
 function DashboardContent() {
   const router = useRouter()
@@ -64,6 +95,9 @@ function DashboardContent() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
   const prefersReduced = useReducedMotion()
+
+  // Keyword tagging — detects deliverable keywords inline
+  const { detectedTags } = useKeywordTagging(chatInput)
 
   // React Query hooks — deduplicate across StrictMode remounts
   const { data: tasksData, error: tasksError } = useTasks({ limit: 10, view: 'client' })
@@ -566,6 +600,48 @@ function DashboardContent() {
                   />
                 </div>
 
+                {/* Detected keyword entity cards — Perplexity style */}
+                <AnimatePresence mode="popLayout">
+                  {detectedTags.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="px-5 sm:px-6 pb-2"
+                    >
+                      <div className="flex flex-wrap gap-2">
+                        {detectedTags.map((tag) => {
+                          const Icon = CATEGORY_ICON[tag.category] ?? Film
+                          return (
+                            <div
+                              key={tag.label}
+                              className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-xl bg-muted/60 border border-border/50"
+                            >
+                              <div
+                                className={cn(
+                                  'w-7 h-7 rounded-lg flex items-center justify-center shrink-0',
+                                  CATEGORY_ICON_BG[tag.category] ?? CATEGORY_ICON_BG.content
+                                )}
+                              >
+                                <Icon className="h-3.5 w-3.5 text-crafted-forest dark:text-crafted-mint" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-foreground leading-tight truncate">
+                                  {tag.label}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground leading-tight capitalize">
+                                  {tag.category}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Toolbar Row */}
                 <div className="flex items-center justify-between gap-3 px-5 sm:px-6 pb-3.5 pt-1">
                   {/* Left side - attachment icons and credits */}
@@ -696,25 +772,49 @@ function DashboardContent() {
               delay: prefersReduced ? 0 : 0.2,
               ease: [0.25, 0.1, 0.25, 1],
             }}
-            className="w-full max-w-[480px] mt-4"
+            className="w-full max-w-[640px] mt-4"
           >
             <p className="text-center text-xs text-muted-foreground/60 mb-4">
               or start from a template
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {Object.entries(TEMPLATE_CATEGORIES).map(
-                ([category, { icon: Icon, categoryKey, options }], index) => {
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {Object.entries(TEMPLATE_CATEGORIES)
+                .filter(([category]) =>
+                  ['Launch Videos', 'Pitch Deck', 'Landing Page', 'Content Calendar'].includes(
+                    category
+                  )
+                )
+                .map(([category, { icon: Icon, categoryKey, options }], index) => {
                   const categoryImage = templateImageMap.get(categoryKey)
-                  const gradients: Record<string, string> = {
-                    'Launch Videos': 'from-[var(--crafted-green)] to-[var(--crafted-forest)]',
-                    'Pitch Deck': 'from-[var(--crafted-green-light)] to-[var(--crafted-green)]',
-                    Branding: 'from-[var(--crafted-sage)] to-[var(--crafted-green)]',
-                    'Social Media': 'from-[var(--crafted-forest)] to-[var(--crafted-green)]',
-                    'Content Calendar': 'from-[var(--crafted-green)] to-[var(--crafted-sage)]',
-                    'Landing Page': 'from-[var(--crafted-green-light)] to-[var(--crafted-forest)]',
+                  const gradientStyles: Record<string, React.CSSProperties> = {
+                    'Launch Videos': {
+                      background:
+                        'linear-gradient(135deg, rgba(140,190,130,0.15) 0%, rgba(200,180,130,0.1) 100%)',
+                    },
+                    'Pitch Deck': {
+                      background:
+                        'linear-gradient(135deg, rgba(160,200,150,0.13) 0%, rgba(230,200,130,0.1) 100%)',
+                    },
+                    Branding: {
+                      background:
+                        'linear-gradient(135deg, rgba(150,210,170,0.13) 0%, rgba(200,180,130,0.1) 100%)',
+                    },
+                    'Social Media': {
+                      background:
+                        'linear-gradient(135deg, rgba(100,170,120,0.15) 0%, rgba(160,200,150,0.1) 100%)',
+                    },
+                    'Content Calendar': {
+                      background:
+                        'linear-gradient(135deg, rgba(140,190,130,0.13) 0%, rgba(150,210,170,0.1) 100%)',
+                    },
+                    'Landing Page': {
+                      background:
+                        'linear-gradient(135deg, rgba(160,200,150,0.12) 0%, rgba(100,170,120,0.1) 100%)',
+                    },
                   }
-                  const gradient =
-                    gradients[category] || 'from-muted-foreground to-muted-foreground/80'
+                  const cardStyle = gradientStyles[category] || {
+                    background: 'rgba(140,190,130,0.12)',
+                  }
                   return (
                     <motion.div
                       key={category}
@@ -733,7 +833,7 @@ function DashboardContent() {
                           setModalNotes('')
                           setPlatformSelections({})
                         }}
-                        className="group relative flex flex-col items-center justify-center gap-2 w-full h-[85px] rounded-xl overflow-hidden shadow-md ring-1 ring-transparent hover:ring-crafted-sage/40 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer"
+                        className="group relative flex flex-col items-start justify-center gap-1 w-full h-[85px] px-4 rounded-md overflow-hidden ring-1 ring-crafted-sage/10 hover:ring-crafted-sage/25 hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer backdrop-blur-sm"
                       >
                         {categoryImage ? (
                           <>
@@ -749,34 +849,31 @@ function DashboardContent() {
                         ) : (
                           <>
                             <div
-                              className={cn(
-                                'absolute inset-0 bg-gradient-to-br opacity-90 group-hover:opacity-100 transition-opacity',
-                                gradient
-                              )}
+                              className="absolute inset-0 group-hover:brightness-95 transition-all"
+                              style={cardStyle}
                             />
                             <div
-                              className="absolute inset-0 opacity-[0.15]"
+                              className="absolute inset-0 opacity-[0.12]"
                               style={{
                                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
                                 backgroundSize: '128px 128px',
                               }}
                             />
-                            <Icon className="relative z-10 h-6 w-6 text-white/90 drop-shadow-sm" />
+                            <Icon className="relative z-10 h-5 w-5 text-foreground/70" />
                           </>
                         )}
-                        <div className="relative z-10 flex flex-col items-center">
-                          <span className="text-white text-[13px] font-semibold leading-tight drop-shadow-md">
+                        <div className="relative z-10 flex flex-col items-start">
+                          <span className="text-foreground/80 text-[13px] font-normal tracking-[-0.02em] leading-tight">
                             {category}
                           </span>
-                          <span className="text-white/70 text-[10px] mt-0.5 drop-shadow-sm">
+                          <span className="text-foreground/50 text-[10px] font-light mt-0.5">
                             {options.length} templates
                           </span>
                         </div>
                       </button>
                     </motion.div>
                   )
-                }
-              )}
+                })}
             </div>
           </motion.div>
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useMemo } from 'react'
+import React, { memo, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/shared/loading'
@@ -26,6 +26,36 @@ import type { PendingFile } from '@/hooks/use-file-upload'
 import { QuickOptions } from './quick-options'
 import { SubmitActionBar } from './submit-action-bar'
 import type { LiveBrief } from './brief-panel/types'
+import { useKeywordTagging } from '@/hooks/use-keyword-tagging'
+import type { DeliverableCategory } from '@/lib/ai/briefing-state-machine'
+
+// =============================================================================
+// CATEGORY VISUALS (icon + color mapping per deliverable category)
+// =============================================================================
+
+const CATEGORY_ICON: Record<string, typeof Film> = {
+  video: Film,
+  website: LayoutGrid,
+  content: Share2,
+  design: Palette,
+  brand: Bookmark,
+}
+
+const CATEGORY_ICON_BG: Record<string, string> = {
+  video: 'bg-crafted-green/15',
+  website: 'bg-crafted-sage/15',
+  content: 'bg-crafted-mint/20',
+  design: 'bg-crafted-green/15',
+  brand: 'bg-crafted-sage/15',
+}
+
+const CATEGORY_SUBTITLE: Record<string, string> = {
+  video: 'Motion & Film',
+  website: 'Web Design',
+  content: 'Social & Content',
+  design: 'Graphic Design',
+  brand: 'Brand Identity',
+}
 
 // =============================================================================
 // PROPS
@@ -98,6 +128,9 @@ export interface ChatInputAreaProps {
   needsAutoContinueConfirmation?: boolean
   onConfirmAutoContinue?: () => void
   onDismissAutoContinue?: () => void
+
+  // Keyword tagging auto-classification callback
+  onCategoryDetected?: (category: DeliverableCategory) => void
 
   // Handlers
   handleSend: () => void
@@ -214,11 +247,30 @@ export const ChatInputArea = memo(function ChatInputArea({
   needsAutoContinueConfirmation,
   onConfirmAutoContinue,
   onDismissAutoContinue,
+  onCategoryDetected,
   handleSend,
   handleFileUpload,
   handleRequestTaskSummary: _handleRequestTaskSummary,
   removeFile,
 }: ChatInputAreaProps) {
+  // Keyword tagging — detects deliverable keywords inline
+  const { detectedTags, primaryCategory } = useKeywordTagging(input)
+
+  // Fire category detection callback in useEffect to avoid setState-during-render
+  const lastDetectedCategoryRef = useRef<DeliverableCategory | null>(null)
+  const onCategoryDetectedRef = useRef(onCategoryDetected)
+
+  useEffect(() => {
+    onCategoryDetectedRef.current = onCategoryDetected
+  }, [onCategoryDetected])
+
+  useEffect(() => {
+    if (primaryCategory && primaryCategory !== lastDetectedCategoryRef.current) {
+      lastDetectedCategoryRef.current = primaryCategory
+      onCategoryDetectedRef.current?.(primaryCategory)
+    }
+  }, [primaryCategory])
+
   // When a pending task exists, render the submit action bar instead of the input
   if (pendingTask && onConfirmTask && onMakeChanges && onInsufficientCredits) {
     return (
@@ -453,6 +505,48 @@ export const ChatInputArea = memo(function ChatInputArea({
             </div>
           )}
         </div>
+
+        {/* Detected keyword entity cards — Perplexity-style */}
+        <AnimatePresence mode="popLayout">
+          {detectedTags.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.15 }}
+              className="px-4 pb-2"
+            >
+              <div className="flex flex-wrap gap-2">
+                {detectedTags.map((tag) => {
+                  const Icon = CATEGORY_ICON[tag.category] ?? Film
+                  return (
+                    <div
+                      key={tag.label}
+                      className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-xl bg-muted/60 border border-border/50"
+                    >
+                      <div
+                        className={cn(
+                          'w-7 h-7 rounded-lg flex items-center justify-center shrink-0',
+                          CATEGORY_ICON_BG[tag.category] ?? CATEGORY_ICON_BG.content
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5 text-crafted-forest dark:text-crafted-mint" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-foreground leading-tight truncate">
+                          {tag.label}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          {CATEGORY_SUBTITLE[tag.category] ?? tag.category}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Toolbar */}
         <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 rounded-b-2xl">

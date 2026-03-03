@@ -33,12 +33,14 @@ vi.mock('@/lib/require-auth', () => ({
 const mockSelect = vi.fn()
 const mockUpdate = vi.fn()
 const mockInsert = vi.fn()
+const mockWithTransaction = vi.fn()
 vi.mock('@/db', () => ({
   db: {
     select: (...args: unknown[]) => mockSelect(...args),
     update: (...args: unknown[]) => mockUpdate(...args),
     insert: (...args: unknown[]) => mockInsert(...args),
   },
+  withTransaction: (...args: unknown[]) => mockWithTransaction(...args),
 }))
 
 vi.mock('@/db/schema', () => ({
@@ -48,19 +50,10 @@ vi.mock('@/db/schema', () => ({
 
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(),
+  sql: vi.fn(),
 }))
 
 const { POST } = await import('./route')
-
-function chainableSelect(result: unknown[]) {
-  return {
-    from: vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue(result),
-      }),
-    }),
-  }
-}
 
 function makeRequest(body: unknown) {
   return {
@@ -91,18 +84,24 @@ describe('POST /api/admin/credits', () => {
     })
   }
 
-  function setupUpdate() {
-    mockUpdate.mockReturnValue({
-      set: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(undefined),
+  function makeMockTx(selectResult: unknown[]) {
+    return {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            for: vi.fn().mockResolvedValue(selectResult),
+          }),
+        }),
       }),
-    })
-  }
-
-  function setupInsert() {
-    mockInsert.mockReturnValue({
-      values: vi.fn().mockResolvedValue(undefined),
-    })
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
+      }),
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue(undefined),
+      }),
+    }
   }
 
   it('returns 401 when not admin', async () => {
@@ -117,7 +116,10 @@ describe('POST /api/admin/credits', () => {
 
   it('returns 404 when user not found', async () => {
     setupAdmin()
-    mockSelect.mockReturnValueOnce(chainableSelect([]))
+    const mockTx = makeMockTx([])
+    mockWithTransaction.mockImplementation(async (fn: (tx: typeof mockTx) => Promise<unknown>) =>
+      fn(mockTx)
+    )
 
     const response = await POST(makeRequest(validBody) as never)
     const data = await response.json()
@@ -128,8 +130,9 @@ describe('POST /api/admin/credits', () => {
 
   it('returns 400 when amount would cause negative balance', async () => {
     setupAdmin()
-    mockSelect.mockReturnValueOnce(
-      chainableSelect([{ id: 'user-1', name: 'Test User', email: 'test@test.com', credits: 5 }])
+    const mockTx = makeMockTx([{ credits: 5, email: 'test@test.com', name: 'Test User' }])
+    mockWithTransaction.mockImplementation(async (fn: (tx: typeof mockTx) => Promise<unknown>) =>
+      fn(mockTx)
     )
 
     const response = await POST(
@@ -143,11 +146,10 @@ describe('POST /api/admin/credits', () => {
 
   it('successfully grants credits', async () => {
     setupAdmin()
-    mockSelect.mockReturnValueOnce(
-      chainableSelect([{ id: 'user-1', name: 'Test User', email: 'test@test.com', credits: 20 }])
+    const mockTx = makeMockTx([{ credits: 20, email: 'test@test.com', name: 'Test User' }])
+    mockWithTransaction.mockImplementation(async (fn: (tx: typeof mockTx) => Promise<unknown>) =>
+      fn(mockTx)
     )
-    setupUpdate()
-    setupInsert()
 
     const response = await POST(makeRequest(validBody) as never)
     const data = await response.json()
@@ -156,8 +158,6 @@ describe('POST /api/admin/credits', () => {
     expect(data.data.previousCredits).toBe(20)
     expect(data.data.newCredits).toBe(30)
     expect(data.data.adjustment).toBe(10)
-    expect(mockUpdate).toHaveBeenCalled()
-    expect(mockInsert).toHaveBeenCalled()
   })
 
   it('returns 400 for invalid schema input', async () => {

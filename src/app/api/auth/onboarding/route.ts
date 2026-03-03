@@ -208,8 +208,16 @@ async function handler(request: NextRequest) {
       }
 
       if (parsed.type === 'freelancer') {
+        // SECURITY: Only users already assigned FREELANCER role can onboard as freelancer
+        // This prevents CLIENT users from escalating to FREELANCER via the onboarding endpoint
+        if (currentUser.role !== 'FREELANCER') {
+          throw Errors.forbidden(
+            'Only users with FREELANCER role can complete freelancer onboarding'
+          )
+        }
+
         const data = parsed.data
-        // Update user role and create freelancer profile
+        // Update user profile and create freelancer profile
         await db
           .update(users)
           .set({

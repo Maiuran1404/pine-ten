@@ -29,7 +29,9 @@ describe('POST /api/webhooks/slack/events', () => {
     vi.clearAllMocks()
   })
 
-  it('should echo challenge for url_verification', async () => {
+  it('should echo challenge for url_verification with valid signature', async () => {
+    mockVerifySlackSignature.mockReturnValue(true)
+
     const request = makeSlackRequest({
       type: 'url_verification',
       challenge: 'test-challenge-token',
@@ -40,9 +42,13 @@ describe('POST /api/webhooks/slack/events', () => {
 
     expect(response.status).toBe(200)
     expect(data.challenge).toBe('test-challenge-token')
+    // SECURITY: Signature must be verified even for url_verification
+    expect(mockVerifySlackSignature).toHaveBeenCalled()
   })
 
-  it('should not require signature for url_verification', async () => {
+  it('should reject url_verification with invalid signature', async () => {
+    mockVerifySlackSignature.mockReturnValue(false)
+
     const request = makeSlackRequest({
       type: 'url_verification',
       challenge: 'my-challenge',
@@ -51,8 +57,10 @@ describe('POST /api/webhooks/slack/events', () => {
     const response = await POST(request as never)
     const data = await response.json()
 
-    expect(data.challenge).toBe('my-challenge')
-    expect(mockVerifySlackSignature).not.toHaveBeenCalled()
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('Invalid signature')
+    // Challenge should NOT be echoed
+    expect(data.challenge).toBeUndefined()
   })
 
   it('should return 401 for invalid signature on event_callback', async () => {
@@ -104,6 +112,8 @@ describe('POST /api/webhooks/slack/events', () => {
   })
 
   it('should return 500 for malformed JSON', async () => {
+    mockVerifySlackSignature.mockReturnValue(true)
+
     const request = new Request('http://localhost/api/webhooks/slack/events', {
       method: 'POST',
       body: 'not-json',

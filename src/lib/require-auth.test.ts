@@ -2,6 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('server-only', () => ({}))
 
+// Mock db for requireApprovedFreelancer which now queries freelancerProfiles
+const mockDbSelect = vi.fn()
+vi.mock('@/db', () => ({
+  db: {
+    select: (...args: unknown[]) => mockDbSelect(...args),
+  },
+}))
+vi.mock('@/db/schema', () => ({
+  freelancerProfiles: { status: 'status', userId: 'userId' },
+}))
+vi.mock('drizzle-orm', () => ({
+  eq: vi.fn((...args: unknown[]) => args),
+}))
+
 const mockGetSession = vi.fn()
 vi.mock('@/lib/auth', () => ({
   auth: {
@@ -208,27 +222,31 @@ describe('requireApprovedFreelancer', () => {
 
   it('allows approved freelancers', async () => {
     mockGetSession.mockResolvedValueOnce({
-      user: {
-        id: 'u1',
-        name: 'FL',
-        email: 'f@b.com',
-        role: 'FREELANCER',
-        freelancerApproved: true,
-      },
+      user: { id: 'u1', name: 'FL', email: 'f@b.com', role: 'FREELANCER' },
+    })
+    // Mock DB query: db.select().from().where().limit()
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([{ status: 'APPROVED' }]),
+        }),
+      }),
     })
     const result = await requireApprovedFreelancer()
-    expect(result.user.freelancerApproved).toBe(true)
+    expect(result.user.role).toBe('FREELANCER')
   })
 
   it('rejects unapproved freelancers', async () => {
     mockGetSession.mockResolvedValueOnce({
-      user: {
-        id: 'u1',
-        name: 'FL',
-        email: 'f@b.com',
-        role: 'FREELANCER',
-        freelancerApproved: false,
-      },
+      user: { id: 'u1', name: 'FL', email: 'f@b.com', role: 'FREELANCER' },
+    })
+    // Mock DB query returning non-APPROVED status
+    mockDbSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue([{ status: 'PENDING' }]),
+        }),
+      }),
     })
     await expect(requireApprovedFreelancer()).rejects.toThrow('pending approval')
   })

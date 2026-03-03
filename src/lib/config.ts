@@ -64,9 +64,9 @@ export const config = {
   },
   // Rate limits
   rateLimits: {
-    api: { window: 60, max: 100 }, // 100 req/min
-    auth: { window: 60, max: 20 }, // 20 req/min
-    chat: { window: 60, max: 30 }, // 30 req/min (AI is expensive)
+    api: { window: 60, max: 1000 }, // 1000 req/min
+    auth: { window: 60, max: 200 }, // 200 req/min
+    chat: { window: 60, max: 100 }, // 100 req/min
   },
 } as const
 

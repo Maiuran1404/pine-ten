@@ -10,9 +10,9 @@ vi.mock('better-auth/cookies', () => ({
 // Mock rate limiters to not interfere with auth tests
 vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: {
-    auth: vi.fn().mockReturnValue({ limited: false, remaining: 19, resetIn: 60 }),
-    api: vi.fn().mockReturnValue({ limited: false, remaining: 99, resetIn: 60 }),
-    chat: vi.fn().mockReturnValue({ limited: false, remaining: 29, resetIn: 60 }),
+    auth: vi.fn().mockResolvedValue({ limited: false, remaining: 19, resetIn: 60 }),
+    api: vi.fn().mockResolvedValue({ limited: false, remaining: 99, resetIn: 60 }),
+    chat: vi.fn().mockResolvedValue({ limited: false, remaining: 29, resetIn: 60 }),
   },
 }))
 

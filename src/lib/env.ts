@@ -85,6 +85,10 @@ const envSchema = z.object({
   // PostHog (optional — server-side events disabled if unset)
   POSTHOG_API_KEY: z.string().min(1).optional(),
 
+  // Upstash Redis (optional — rate limiting falls back to in-memory without these)
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),

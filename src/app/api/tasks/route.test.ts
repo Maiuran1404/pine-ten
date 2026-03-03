@@ -42,8 +42,10 @@ vi.mock('@/lib/rate-limit', () => ({
 
 // Mock require-auth
 const mockRequireAuth = vi.fn()
+const mockRequireRole = vi.fn()
 vi.mock('@/lib/require-auth', () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+  requireRole: (...args: unknown[]) => mockRequireRole(...args),
 }))
 
 // Mock assignment algorithm
@@ -195,17 +197,18 @@ function setupAuth(overrides: Record<string, unknown> = {}) {
     ...overrides,
   }
   mockRequireAuth.mockResolvedValue({ user })
+  mockRequireRole.mockResolvedValue({ user })
   return user
 }
 
 describe('GET /api/tasks', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCheckRateLimit.mockReturnValue({ limited: false, resetIn: 0 })
+    mockCheckRateLimit.mockResolvedValue({ limited: false, resetIn: 0 })
   })
 
   it('returns 429 when rate limited', async () => {
-    mockCheckRateLimit.mockReturnValue({ limited: true, resetIn: 30 })
+    mockCheckRateLimit.mockResolvedValue({ limited: true, resetIn: 30 })
 
     const response = await GET(
       makeRequest(undefined, { url: 'http://localhost/api/tasks' }) as never
@@ -408,20 +411,20 @@ describe('POST /api/tasks', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCheckRateLimit.mockReturnValue({ limited: false, resetIn: 0 })
+    mockCheckRateLimit.mockResolvedValue({ limited: false, resetIn: 0 })
     mockDetectTaskComplexity.mockReturnValue('INTERMEDIATE')
     mockDetectTaskUrgency.mockReturnValue('STANDARD')
   })
 
   it('returns 429 when rate limited', async () => {
-    mockCheckRateLimit.mockReturnValue({ limited: true, resetIn: 60 })
+    mockCheckRateLimit.mockResolvedValue({ limited: true, resetIn: 60 })
 
     const response = await POST(makeRequest(validBody) as never)
     expect(response.status).toBe(429)
   })
 
   it('returns 401 when not authenticated', async () => {
-    mockRequireAuth.mockRejectedValue(
+    mockRequireRole.mockRejectedValue(
       new APIError(ErrorCodes.UNAUTHORIZED, 'Authentication required', 401)
     )
 
@@ -457,13 +460,24 @@ describe('POST /api/tasks', () => {
     setupAuth()
 
     const mockTx = {
-      select: vi.fn().mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockReturnValue({
-            for: vi.fn().mockResolvedValue([{ credits: 2, companyId: null }]),
+      select: vi
+        .fn()
+        // 1st call: user lookup with .for('update')
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              for: vi.fn().mockResolvedValue([{ credits: 2, companyId: null }]),
+            }),
+          }),
+        })
+        // 2nd call: category lookup with .limit()
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([{ id: 'cat-1', baseCredits: 5 }]),
+            }),
           }),
         }),
-      }),
       insert: vi.fn(),
       update: vi.fn(),
     }

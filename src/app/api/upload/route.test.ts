@@ -106,11 +106,11 @@ function makeUploadRequest(
 describe('POST /api/upload', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCheckRateLimit.mockReturnValue({ limited: false, resetIn: 0 })
+    mockCheckRateLimit.mockResolvedValue({ limited: false, resetIn: 0 })
   })
 
   it('returns 429 when rate limited', async () => {
-    mockCheckRateLimit.mockReturnValue({ limited: true, resetIn: 30 })
+    mockCheckRateLimit.mockResolvedValue({ limited: true, resetIn: 30 })
 
     const response = await POST(makeUploadRequest() as never)
     expect(response.status).toBe(429)

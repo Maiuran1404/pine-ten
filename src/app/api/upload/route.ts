@@ -16,7 +16,9 @@ const ALLOWED_TYPES: Record<string, { extensions: string[]; maxSize?: number }> 
   'image/png': { extensions: ['png'] },
   'image/gif': { extensions: ['gif'] },
   'image/webp': { extensions: ['webp'] },
-  'image/svg+xml': { extensions: ['svg'], maxSize: 5 * 1024 * 1024 }, // 5MB max for SVG (prevents XML bombs)
+  // SECURITY: SVG uploads disabled — SVGs can contain embedded JavaScript, XSS payloads,
+  // and XXE attacks. Use PNG/JPEG/WebP instead.
+  // 'image/svg+xml': { extensions: ['svg'] },
   'image/tiff': { extensions: ['tiff', 'tif'] },
   'image/bmp': { extensions: ['bmp'] },
   // Documents
@@ -110,7 +112,7 @@ function sanitizeFilename(filename: string): string {
 
 export async function POST(request: NextRequest) {
   // Check rate limit first (100 req/min for API)
-  const { limited, resetIn } = checkRateLimit(request, 'api', config.rateLimits.api)
+  const { limited, resetIn } = await checkRateLimit(request, 'api', config.rateLimits.api)
   if (limited) {
     const response = NextResponse.json(
       { error: 'Too many requests. Please try again later.', retryAfter: resetIn },

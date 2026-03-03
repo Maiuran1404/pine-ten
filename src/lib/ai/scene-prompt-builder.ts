@@ -12,6 +12,7 @@
 //  4. COLOR PALETTE      — merged style colorSamples + brand colors
 //  5. ATMOSPHERE         — moodKeywords + colorTemperature -> lighting + mood
 //  6. SCENE CONTENT      — AI's imageGenerationPrompt OR assembled fields
+// 6b. CASTING            — default demographic guidance for depicted people
 //  7. CAMERA             — enriched shot type + lens spec
 //  8. LIGHTING           — inferred from mood + color temp
 //  9. MOOD               — voiceover as atmospheric direction (NOT text)
@@ -133,7 +134,16 @@ export function buildScenePrompt(
   // 6. SCENE CONTENT
   if (scene.imageGenerationPrompt) {
     sections.push(`SCENE CONTENT: ${scene.imageGenerationPrompt}`)
-  } else {
+  }
+
+  // 6b. CASTING — default demographic guidance for people in scenes
+  sections.push(
+    'CASTING: When depicting people, default to young adults (20-40 years old) with natural, ' +
+      'contemporary appearances unless the scene explicitly specifies otherwise. Avoid elderly ' +
+      'or overly mature subjects unless the narrative requires it.'
+  )
+
+  if (!scene.imageGenerationPrompt) {
     const contentParts: string[] = []
     if (scene.title) {
       const prefix = scene.sceneNumber ? `Scene ${scene.sceneNumber}` : 'Scene'
@@ -202,6 +212,12 @@ function buildLegacyPrompt(
   if (styleContext) {
     parts.push(`STYLE DIRECTION: ${styleContext}`)
   }
+
+  // CASTING — default demographic guidance
+  parts.push(
+    'CASTING: When depicting people, default to young adults (20-40 years old) with natural, ' +
+      'contemporary appearances unless the scene explicitly specifies otherwise.'
+  )
 
   if (scene.imageGenerationPrompt) {
     parts.push(scene.imageGenerationPrompt)

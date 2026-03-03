@@ -199,11 +199,13 @@ export function useChatMessages({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [...messagesRef.current, userMessage].map((m) => ({
-              role: m.role,
-              content: m.content,
-              attachments: m.attachments,
-            })),
+            messages: [...messagesRef.current, userMessage]
+              .filter((m) => m.content)
+              .map((m) => ({
+                role: m.role,
+                content: m.content,
+                attachments: m.attachments,
+              })),
             attachments: currentFiles && currentFiles.length > 0 ? currentFiles : undefined,
             selectedStyles,
             moodboardHasStyles,
@@ -274,10 +276,12 @@ export function useChatMessages({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [...messagesRef.current, userMessage].map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
+            messages: [...messagesRef.current, userMessage]
+              .filter((m) => m.content)
+              .map((m) => ({
+                role: m.role,
+                content: m.content,
+              })),
             selectedStyles: selectedStylesRef.current,
             moodboardHasStyles: moodboardHasStylesRef.current,
             briefingState: mergedBriefingState,
@@ -331,10 +335,12 @@ export function useChatMessages({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [...messagesRef.current, userMessage].map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
+            messages: [...messagesRef.current, userMessage]
+              .filter((m) => m.content)
+              .map((m) => ({
+                role: m.role,
+                content: m.content,
+              })),
             briefingState: serializedBriefingState,
             latestStoryboard: latestStoryboardRef.current,
             ...extraBody,
@@ -375,7 +381,9 @@ export function useChatMessages({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: currentMessages.map((m) => ({ role: m.role, content: m.content })),
+          messages: currentMessages
+            .filter((m) => m.content)
+            .map((m) => ({ role: m.role, content: m.content })),
           selectedStyles: selectedStylesRef.current,
           moodboardHasStyles: moodboardHasStylesRef.current,
           briefingState: serializedBriefingStateRef.current,

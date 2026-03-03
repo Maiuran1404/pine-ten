@@ -45,7 +45,7 @@ export function useStyleSelection({
   sendChatAndReceive,
   setIsLoading,
   setMessages,
-  setAnimatingMessageId,
+  setAnimatingMessageId: _setAnimatingMessageId,
   selectedStyles: selectedStylesProp,
 }: UseStyleSelectionOptions) {
   const { csrfFetch } = useCsrfContext()
@@ -289,7 +289,9 @@ export function useStyleSelection({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: messages.map((m) => ({ role: m.role, content: m.content })),
+            messages: messages
+              .filter((m) => m.content)
+              .map((m) => ({ role: m.role, content: m.content })),
             selectedStyles: selectedStylesProp,
             styleOffset: newOffset,
             deliverableStyleMarker: {
@@ -407,7 +409,9 @@ export function useStyleSelection({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          messages: messages
+            .filter((m) => m.content)
+            .map((m) => ({ role: m.role, content: m.content })),
           selectedStyles: selectedStylesProp,
           excludeStyleAxes: newExcludedAxes,
           deliverableStyleMarker: {
@@ -502,7 +506,9 @@ export function useStyleSelection({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: messages.map((m) => ({ role: m.role, content: m.content })),
+            messages: messages
+              .filter((m) => m.content)
+              .map((m) => ({ role: m.role, content: m.content })),
             deliverableStyleMarker: {
               type: 'initial',
               deliverableType,

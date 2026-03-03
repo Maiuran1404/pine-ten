@@ -158,7 +158,10 @@ export async function createCheckoutSession(
   // Build success and cancel URLs
   // If returnUrl is provided, redirect back there with payment params
   // Otherwise default to dashboard
-  const baseReturnUrl = returnUrl || '/dashboard'
+  // SECURITY: Validate returnUrl is a safe relative path
+  const safeReturnUrl =
+    returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/dashboard'
+  const baseReturnUrl = safeReturnUrl
   const successUrl = new URL(baseReturnUrl, config.app.url)
   successUrl.searchParams.set('payment', 'success')
   successUrl.searchParams.set('credits', creditPackage.credits.toString())

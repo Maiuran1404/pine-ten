@@ -130,6 +130,7 @@ export function useChatInterfaceData({
     updateBrief: updateBriefInState,
     updateStructure,
     quickOptions: stateMachineQuickOptions,
+    setDeliverableCategory,
   } = useBriefingStateMachine(initialBriefingState, { draftId })
 
   // ─── Brief (derived from _briefingState — single source of truth) ─
@@ -1182,6 +1183,7 @@ export function useChatInterfaceData({
     progressState,
     briefingStage: _briefingState?.stage ?? null,
     deliverableCategory: _briefingState?.deliverableCategory ?? null,
+    setDeliverableCategory,
     estimatedCredits,
     targetDurationSeconds: _briefingState?.targetDurationSeconds ?? null,
 

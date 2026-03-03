@@ -513,8 +513,12 @@ export const createDeliverableStyleSchema = z.object({
   promptGuide: z.string().max(5000).optional().nullable(),
   colorTemperature: z.string().optional().nullable(),
   energyLevel: z.string().optional().nullable(),
+  densityLevel: z.string().optional().nullable(),
   formalityLevel: z.string().optional().nullable(),
   moodKeywords: z.array(z.string()).optional().default([]),
+  colorSamples: z.array(z.string()).optional().default([]),
+  visualElements: z.array(z.string()).optional().default([]),
+  styleReferenceImages: z.array(z.string().url()).optional().default([]),
 })
 
 // ============ Onboarding Request Schema ============
@@ -780,6 +784,8 @@ export const chatRouteSchema = z.object({
   moodboardHasStyles: z.boolean().optional(),
   brief: z.any().optional().nullable(),
   briefingState: z.any().optional().nullable(),
+  selectedDeliverableStyles: z.array(z.string()).optional(),
+  latestStoryboard: z.any().optional().nullable(),
 })
 
 // ============ Artist Invite Schemas ============

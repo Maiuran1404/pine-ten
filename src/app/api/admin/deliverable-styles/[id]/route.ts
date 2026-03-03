@@ -36,6 +36,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       if (validated.formalityLevel !== undefined)
         updateData.formalityLevel = validated.formalityLevel
       if (validated.moodKeywords !== undefined) updateData.moodKeywords = validated.moodKeywords
+      if (validated.densityLevel !== undefined) updateData.densityLevel = validated.densityLevel
+      if (validated.colorSamples !== undefined) updateData.colorSamples = validated.colorSamples
+      if (validated.visualElements !== undefined)
+        updateData.visualElements = validated.visualElements
+      if (validated.styleReferenceImages !== undefined)
+        updateData.styleReferenceImages = validated.styleReferenceImages
 
       const [updatedStyle] = await db
         .update(deliverableStyleReferences)

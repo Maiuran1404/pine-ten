@@ -35,12 +35,14 @@ vi.mock('@/lib/notifications', () => ({
 const mockDbSelect = vi.fn()
 const mockDbUpdate = vi.fn()
 const mockDbInsert = vi.fn()
+const mockWithTransaction = vi.fn()
 vi.mock('@/db', () => ({
   db: {
     select: (...args: unknown[]) => mockDbSelect(...args),
     update: (...args: unknown[]) => mockDbUpdate(...args),
     insert: (...args: unknown[]) => mockDbInsert(...args),
   },
+  withTransaction: (...args: unknown[]) => mockWithTransaction(...args),
 }))
 
 vi.mock('@/db/schema', () => ({
@@ -50,6 +52,15 @@ vi.mock('@/db/schema', () => ({
 
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(),
+  sql: vi.fn(),
+}))
+
+vi.mock('@/lib/posthog', () => ({
+  captureServerEvent: vi.fn(),
+}))
+
+vi.mock('@/lib/posthog-events', () => ({
+  PostHogEvents: { CREDIT_PURCHASE_COMPLETED: 'credit_purchase_completed' },
 }))
 
 const { POST } = await import('./route')
@@ -98,26 +109,30 @@ describe('POST /api/webhooks/stripe', () => {
       eventId: 'evt_123',
     })
 
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi
-            .fn()
-            .mockResolvedValue([
-              { id: 'user-1', name: 'Test User', email: 'user@test.com', credits: 10 },
-            ]),
+    const mockTx = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            for: vi
+              .fn()
+              .mockResolvedValue([
+                { id: 'user-1', name: 'Test User', email: 'user@test.com', credits: 10 },
+              ]),
+          }),
         }),
       }),
-    })
-
-    mockDbUpdate.mockReturnValue({
-      set: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
       }),
-    })
-    mockDbInsert.mockReturnValue({
-      values: vi.fn().mockResolvedValue(undefined),
-    })
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue(undefined),
+      }),
+    }
+    mockWithTransaction.mockImplementation(async (fn: (tx: typeof mockTx) => Promise<unknown>) =>
+      fn(mockTx)
+    )
 
     const response = await POST(makeRequest() as never)
     const data = await response.json()
@@ -139,13 +154,21 @@ describe('POST /api/webhooks/stripe', () => {
       eventId: 'evt_456',
     })
 
-    mockDbSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue([]),
-        }),
-      }),
-    })
+    // withTransaction returns null when user not found
+    mockWithTransaction.mockImplementation(
+      async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([]),
+              }),
+            }),
+          }),
+        }
+        return fn(mockTx as never)
+      }
+    )
 
     const response = await POST(makeRequest() as never)
     const data = await response.json()

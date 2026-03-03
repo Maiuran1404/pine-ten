@@ -127,7 +127,13 @@ function LoginContent() {
   // Users should be redirected to the appropriate page for the subdomain they're on
   const getRedirectUrl = useCallback(() => {
     const redirect = searchParams.get('redirect')
-    if (redirect && redirect !== '/' && !redirect.includes('login')) {
+    // SECURITY: Only allow relative paths — block absolute URLs and protocol-relative URLs
+    if (
+      redirect &&
+      redirect.startsWith('/') &&
+      !redirect.startsWith('//') &&
+      !redirect.includes('login')
+    ) {
       return redirect
     }
 

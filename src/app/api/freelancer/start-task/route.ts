@@ -9,12 +9,12 @@ import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'
 import { claimTaskSchema } from '@/lib/validations'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
-import { requireAuth } from '@/lib/require-auth'
+import { requireRole } from '@/lib/require-auth'
 
 export async function POST(request: NextRequest) {
   return withErrorHandling(
     async () => {
-      const { user } = await requireAuth()
+      const { user } = await requireRole('FREELANCER', 'ADMIN')
 
       const { taskId } = claimTaskSchema.parse(await request.json())
 

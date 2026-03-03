@@ -5,18 +5,30 @@ vi.mock('@/lib/logger', () => ({
 }))
 
 const mockDelete = vi.fn()
-const _mockGetAll = vi.fn()
 const mockCookies = vi.fn()
 
 vi.mock('next/headers', () => ({
   cookies: () => mockCookies(),
+  headers: vi.fn().mockResolvedValue(new Headers()),
+}))
+
+// Mock auth to simulate authenticated user
+const mockGetSession = vi.fn()
+vi.mock('@/lib/auth', () => ({
+  auth: {
+    api: {
+      getSession: (...args: unknown[]) => mockGetSession(...args),
+    },
+  },
 }))
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Default: authenticated user
+  mockGetSession.mockResolvedValue({ user: { id: 'user-1', email: 'test@test.com' } })
 })
 
-const { POST, GET } = await import('./route')
+const { POST } = await import('./route')
 
 describe('POST /api/auth/clear-session', () => {
   it('clears auth-related cookies and returns success', async () => {
@@ -57,36 +69,19 @@ describe('POST /api/auth/clear-session', () => {
     expect(data.success).toBe(true)
     expect(data.clearedCookies).toEqual([])
   })
-})
 
-describe('GET /api/auth/clear-session', () => {
-  it('clears cookies and redirects to login', async () => {
+  it('returns 401 when not authenticated', async () => {
+    mockGetSession.mockResolvedValue(null)
+
     mockCookies.mockResolvedValue({
-      getAll: () => [{ name: 'crafted.session_token', value: 'abc' }],
+      getAll: () => [],
       delete: mockDelete,
     })
 
-    const response = await GET()
+    const response = await POST()
+    const data = await response.json()
 
-    // Should be a redirect
-    expect(response.status).toBe(307)
-    const location = response.headers.get('location')
-    expect(location).toContain('/login')
-  })
-
-  it('clears multiple auth cookies before redirecting', async () => {
-    mockCookies.mockResolvedValue({
-      getAll: () => [
-        { name: 'pine_session', value: 'a' },
-        { name: 'auth_token', value: 'b' },
-      ],
-      delete: mockDelete,
-    })
-
-    const response = await GET()
-
-    expect(mockDelete).toHaveBeenCalledWith('pine_session')
-    expect(mockDelete).toHaveBeenCalledWith('auth_token')
-    expect(response.status).toBe(307)
+    expect(response.status).toBe(401)
+    expect(data.error).toBe('Not authenticated')
   })
 })

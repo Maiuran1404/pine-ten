@@ -79,14 +79,13 @@ function FeaturedStyleCard({
           'transition-all duration-300',
           disabled && 'pointer-events-none opacity-60',
           isSelected
-            ? 'ring-2 ring-crafted-green shadow-lg shadow-crafted-green/15'
-            : !disabled &&
-                'ring-1 ring-border/40 hover:ring-border/70 hover:shadow-md cursor-pointer',
+            ? 'ring-2 ring-crafted-green'
+            : !disabled && 'ring-1 ring-border/40 hover:ring-border/70 cursor-pointer',
           !isSelected && disabled && 'ring-1 ring-border/40'
         )}
       >
         {/* Image — landscape hero */}
-        <div className="relative aspect-[16/10] overflow-hidden">
+        <div className="relative aspect-[16/8] overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={style.imageUrl}
@@ -118,7 +117,7 @@ function FeaturedStyleCard({
                 transition={{ type: 'spring', stiffness: 500, damping: 25 }}
                 className="absolute top-2.5 right-2.5"
               >
-                <div className="w-6 h-6 rounded-full bg-crafted-green flex items-center justify-center shadow-lg shadow-crafted-green/30">
+                <div className="w-6 h-6 rounded-full bg-crafted-green flex items-center justify-center">
                   <Check className="w-3.5 h-3.5 text-white" />
                 </div>
               </motion.div>
@@ -196,9 +195,8 @@ function CompactStyleCard({
           'transition-all duration-300',
           disabled && 'pointer-events-none opacity-60',
           isSelected
-            ? 'ring-2 ring-crafted-green shadow-md shadow-crafted-green/10'
-            : !disabled &&
-                'ring-1 ring-border/40 hover:ring-border/70 hover:shadow-sm cursor-pointer',
+            ? 'ring-2 ring-crafted-green'
+            : !disabled && 'ring-1 ring-border/40 hover:ring-border/70 cursor-pointer',
           !isSelected && disabled && 'ring-1 ring-border/40'
         )}
       >
@@ -261,7 +259,7 @@ function SkeletonCards() {
     <div className="px-5 space-y-3">
       {/* Hero skeleton */}
       <div className="rounded-xl overflow-hidden animate-pulse">
-        <div className="aspect-[16/10] bg-muted-foreground/10" />
+        <div className="aspect-[16/8] bg-muted-foreground/10" />
         <div className="px-3.5 py-3 bg-card space-y-2">
           <div className="h-4 w-2/3 bg-muted-foreground/10 rounded" />
           <div className="h-3 w-full bg-muted-foreground/8 rounded" />
@@ -413,7 +411,7 @@ export function StyleSelectionPanel({
         ) : (
           <div className="px-5 py-5 space-y-3">
             {/* Card area — slides on page change */}
-            <div className="overflow-hidden">
+            <div className="overflow-x-clip">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
                   key={page}

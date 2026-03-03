@@ -19,7 +19,7 @@ vi.mock('@/lib/config', () => ({
 // Mock rate limiting to passthrough
 vi.mock('@/lib/rate-limit', () => ({
   withRateLimit: (_handler: (...args: unknown[]) => unknown) => _handler,
-  checkRateLimit: vi.fn().mockReturnValue({ limited: false }),
+  checkRateLimit: vi.fn().mockResolvedValue({ limited: false }),
 }))
 
 // Hoisted mock references via wrapper pattern

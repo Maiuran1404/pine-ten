@@ -9,6 +9,7 @@ import { withRateLimit } from '@/lib/rate-limit'
 import { config } from '@/lib/config'
 import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling } from '@/lib/errors'
+import { chatRouteSchema } from '@/lib/validations'
 // Stock image search removed — DALL-E generation now handled client-side after INSPIRATION stage
 import { buildPipelineContext } from '@/lib/ai/chat-pipeline/pre-process'
 import { runPostAiPipeline } from '@/lib/ai/chat-pipeline/post-process'
@@ -24,7 +25,7 @@ async function handler(request: NextRequest) {
   return withErrorHandling(
     async () => {
       const session = await requireAuth()
-      const body = await request.json()
+      const body = chatRouteSchema.parse(await request.json())
 
       // Style shortcut: early return for more/different style requests (no AI call needed)
       const shortcutResponse = await handleStyleShortcut(body, session.user.id)

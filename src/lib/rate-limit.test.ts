@@ -97,10 +97,13 @@ function createMockRequest(
   } as unknown as import('next/server').NextRequest
 }
 
-describe('rate-limit module', () => {
+describe('rate-limit module (in-memory fallback)', () => {
   beforeEach(async () => {
     vi.useFakeTimers()
     vi.resetModules()
+    // Ensure Upstash env vars are NOT set so we use in-memory fallback
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
   })
 
   afterEach(() => {
@@ -112,7 +115,7 @@ describe('rate-limit module', () => {
       const { checkRateLimit } = await import('./rate-limit')
       const request = createMockRequest()
 
-      const result = checkRateLimit(request, 'test', { window: 60, max: 10 })
+      const result = await checkRateLimit(request, 'test', { window: 60, max: 10 })
       expect(result.limited).toBe(false)
       expect(result.remaining).toBe(9)
     })
@@ -123,13 +126,13 @@ describe('rate-limit module', () => {
 
       const config = { window: 60, max: 5 }
 
-      const r1 = checkRateLimit(request, 'track-test', config)
+      const r1 = await checkRateLimit(request, 'track-test', config)
       expect(r1.remaining).toBe(4)
 
-      const r2 = checkRateLimit(request, 'track-test', config)
+      const r2 = await checkRateLimit(request, 'track-test', config)
       expect(r2.remaining).toBe(3)
 
-      const r3 = checkRateLimit(request, 'track-test', config)
+      const r3 = await checkRateLimit(request, 'track-test', config)
       expect(r3.remaining).toBe(2)
     })
 
@@ -140,12 +143,12 @@ describe('rate-limit module', () => {
       const config = { window: 60, max: 3 }
 
       // Make 3 requests (at the limit)
-      checkRateLimit(request, 'block-test', config)
-      checkRateLimit(request, 'block-test', config)
-      checkRateLimit(request, 'block-test', config)
+      await checkRateLimit(request, 'block-test', config)
+      await checkRateLimit(request, 'block-test', config)
+      await checkRateLimit(request, 'block-test', config)
 
       // 4th request should be limited
-      const result = checkRateLimit(request, 'block-test', config)
+      const result = await checkRateLimit(request, 'block-test', config)
       expect(result.limited).toBe(true)
       expect(result.remaining).toBe(0)
     })
@@ -157,16 +160,16 @@ describe('rate-limit module', () => {
       const config = { window: 60, max: 2 }
 
       // Exhaust the limit
-      checkRateLimit(request, 'reset-test', config)
-      checkRateLimit(request, 'reset-test', config)
-      const blocked = checkRateLimit(request, 'reset-test', config)
+      await checkRateLimit(request, 'reset-test', config)
+      await checkRateLimit(request, 'reset-test', config)
+      const blocked = await checkRateLimit(request, 'reset-test', config)
       expect(blocked.limited).toBe(true)
 
       // Advance time past window
       vi.advanceTimersByTime(61000)
 
       // Should be allowed again
-      const result = checkRateLimit(request, 'reset-test', config)
+      const result = await checkRateLimit(request, 'reset-test', config)
       expect(result.limited).toBe(false)
       expect(result.remaining).toBe(1)
     })
@@ -178,13 +181,13 @@ describe('rate-limit module', () => {
       const config = { window: 60, max: 2 }
 
       // Exhaust prefix A
-      checkRateLimit(request, 'prefix-a', config)
-      checkRateLimit(request, 'prefix-a', config)
-      const blockedA = checkRateLimit(request, 'prefix-a', config)
+      await checkRateLimit(request, 'prefix-a', config)
+      await checkRateLimit(request, 'prefix-a', config)
+      const blockedA = await checkRateLimit(request, 'prefix-a', config)
       expect(blockedA.limited).toBe(true)
 
       // Prefix B should still be allowed
-      const resultB = checkRateLimit(request, 'prefix-b', config)
+      const resultB = await checkRateLimit(request, 'prefix-b', config)
       expect(resultB.limited).toBe(false)
     })
 
@@ -201,13 +204,13 @@ describe('rate-limit module', () => {
       const config = { window: 60, max: 2 }
 
       // Exhaust limit for session 1
-      checkRateLimit(requestWithSession, 'session-test', config)
-      checkRateLimit(requestWithSession, 'session-test', config)
-      const blocked = checkRateLimit(requestWithSession, 'session-test', config)
+      await checkRateLimit(requestWithSession, 'session-test', config)
+      await checkRateLimit(requestWithSession, 'session-test', config)
+      const blocked = await checkRateLimit(requestWithSession, 'session-test', config)
       expect(blocked.limited).toBe(true)
 
       // Different session should have separate limit
-      const other = checkRateLimit(requestDifferentSession, 'session-test', config)
+      const other = await checkRateLimit(requestDifferentSession, 'session-test', config)
       expect(other.limited).toBe(false)
     })
 
@@ -219,12 +222,12 @@ describe('rate-limit module', () => {
 
       const config = { window: 60, max: 1 }
 
-      checkRateLimit(request1, 'ip-test', config)
-      const blocked = checkRateLimit(request1, 'ip-test', config)
+      await checkRateLimit(request1, 'ip-test', config)
+      const blocked = await checkRateLimit(request1, 'ip-test', config)
       expect(blocked.limited).toBe(true)
 
       // Different IP should be allowed
-      const allowed = checkRateLimit(request2, 'ip-test', config)
+      const allowed = await checkRateLimit(request2, 'ip-test', config)
       expect(allowed.limited).toBe(false)
     })
 
@@ -232,7 +235,7 @@ describe('rate-limit module', () => {
       const { checkRateLimit } = await import('./rate-limit')
       const request = createMockRequest()
 
-      const result = checkRateLimit(request, 'reset-in-test', { window: 120, max: 10 })
+      const result = await checkRateLimit(request, 'reset-in-test', { window: 120, max: 10 })
       expect(result.resetIn).toBeGreaterThan(0)
       expect(result.resetIn).toBeLessThanOrEqual(120)
     })
@@ -336,7 +339,7 @@ describe('rate-limit module', () => {
       const { rateLimiters } = await import('./rate-limit')
       const request = createMockRequest()
 
-      const result = rateLimiters.api(request as never)
+      const result = await rateLimiters.api(request as never)
       expect(result).toHaveProperty('limited')
       expect(result).toHaveProperty('remaining')
       expect(result).toHaveProperty('resetIn')

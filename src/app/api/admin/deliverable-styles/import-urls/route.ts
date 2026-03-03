@@ -6,6 +6,7 @@ import { deliverableStyleReferences } from '@/db/schema'
 import { classifyDeliverableStyle } from '@/lib/ai/classify-deliverable-style'
 import { getAdminStorageClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
+import { assertSafeUrl } from '@/lib/ssrf-guard'
 
 const BUCKET_NAME = 'deliverable-styles'
 
@@ -65,6 +66,9 @@ export async function POST(request: NextRequest) {
             })
             continue
           }
+
+          // SECURITY: Block private/internal IPs to prevent SSRF
+          assertSafeUrl(parsedUrl)
 
           // Fetch the image
           const response = await fetch(url, {
@@ -285,6 +289,9 @@ export async function PUT(request: NextRequest) {
             })
             continue
           }
+
+          // SECURITY: Block private/internal IPs to prevent SSRF
+          assertSafeUrl(parsedUrl)
 
           // Fetch the image
           const response = await fetch(url, {

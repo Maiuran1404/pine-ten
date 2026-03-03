@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
-import { db } from '@/db'
+import { withTransaction } from '@/db'
 import { users, creditTransactions } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { sendEmail, emailTemplates } from '@/lib/notifications'
 import { config } from '@/lib/config'
 import { requireAdmin } from '@/lib/require-auth'
@@ -18,48 +18,61 @@ export async function POST(request: NextRequest) {
       const body = await request.json()
       const { userId, amount, type, description } = adminCreditsSchema.parse(body)
 
-      // Get user
-      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+      // SECURITY: Use transaction with row lock to prevent race conditions
+      const result = await withTransaction(async (tx) => {
+        // Lock the user row to prevent concurrent modifications
+        const [user] = await tx
+          .select({ credits: users.credits, email: users.email, name: users.name })
+          .from(users)
+          .where(eq(users.id, userId))
+          .for('update')
 
-      if (!user.length) {
-        throw Errors.notFound('User')
-      }
+        if (!user) {
+          throw Errors.notFound('User')
+        }
 
-      const currentCredits = user[0].credits
-      const newCredits = currentCredits + amount
+        const currentCredits = user.credits
+        const newCredits = currentCredits + amount
 
-      // Prevent negative credit balance
-      if (newCredits < 0) {
-        throw Errors.badRequest('Operation would result in negative credit balance')
-      }
+        // Prevent negative credit balance
+        if (newCredits < 0) {
+          throw Errors.badRequest('Operation would result in negative credit balance')
+        }
 
-      // Update user credits
-      await db
-        .update(users)
-        .set({
-          credits: newCredits,
-          updatedAt: new Date(),
+        // Atomically update credits and log transaction
+        await tx
+          .update(users)
+          .set({
+            credits: sql`${users.credits} + ${amount}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId))
+
+        await tx.insert(creditTransactions).values({
+          userId,
+          amount,
+          type: type === 'BONUS' ? 'ADMIN_GRANT' : type,
+          description: description || `Admin ${type.toLowerCase()}: ${amount} credits`,
         })
-        .where(eq(users.id, userId))
 
-      // Log the transaction
-      await db.insert(creditTransactions).values({
-        userId,
-        amount,
-        type: type === 'BONUS' ? 'ADMIN_GRANT' : type,
-        description: description || `Admin ${type.toLowerCase()}: ${amount} credits`,
+        return {
+          currentCredits,
+          newCredits,
+          userEmail: user.email,
+          userName: user.name,
+        }
       })
 
-      // Send notification email for positive adjustments
-      if (amount > 0 && user[0].email) {
+      // Send notification email for positive adjustments (outside transaction)
+      if (amount > 0 && result.userEmail) {
         try {
           const email = emailTemplates.creditsPurchased(
-            user[0].name,
+            result.userName,
             amount,
             `${config.app.url}/dashboard`
           )
           await sendEmail({
-            to: user[0].email,
+            to: result.userEmail,
             subject: `You've received ${amount} credits!`,
             html: email.html.replace(
               'Thank you for your purchase!',
@@ -71,11 +84,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      logger.info({ userId, amount, type, newCredits }, 'Credits adjusted by admin')
+      logger.info(
+        { userId, amount, type, newCredits: result.newCredits },
+        'Credits adjusted by admin'
+      )
 
       return successResponse({
-        previousCredits: currentCredits,
-        newCredits,
+        previousCredits: result.currentCredits,
+        newCredits: result.newCredits,
         adjustment: amount,
       })
     },

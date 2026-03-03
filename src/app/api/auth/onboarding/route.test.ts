@@ -13,7 +13,7 @@ vi.mock('@/lib/config', () => ({
 
 vi.mock('@/lib/rate-limit', () => ({
   withRateLimit: (_handler: (...args: unknown[]) => unknown) => _handler,
-  checkRateLimit: vi.fn().mockReturnValue({ limited: false }),
+  checkRateLimit: vi.fn().mockResolvedValue({ limited: false }),
 }))
 
 vi.mock('@/lib/notifications', () => ({

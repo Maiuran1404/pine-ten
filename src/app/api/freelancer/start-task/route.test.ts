@@ -20,9 +20,9 @@ vi.mock('@/lib/validations', () => ({
   },
 }))
 
-const mockRequireAuth = vi.fn()
+const mockRequireRole = vi.fn()
 vi.mock('@/lib/require-auth', () => ({
-  requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+  requireRole: (...args: unknown[]) => mockRequireRole(...args),
 }))
 
 const mockDbSelect = vi.fn()
@@ -75,7 +75,7 @@ describe('POST /api/freelancer/start-task', () => {
   const validBody = { taskId: 'task-1' }
 
   function setupAuth(userId = 'freelancer-1') {
-    mockRequireAuth.mockResolvedValue({
+    mockRequireRole.mockResolvedValue({
       user: { id: userId, name: 'Test Artist', email: 'artist@test.com' },
     })
   }
@@ -90,7 +90,7 @@ describe('POST /api/freelancer/start-task', () => {
 
   it('returns 401 when not authenticated', async () => {
     const { APIError, ErrorCodes } = await import('@/lib/errors')
-    mockRequireAuth.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
+    mockRequireRole.mockRejectedValue(new APIError(ErrorCodes.UNAUTHORIZED, 'Unauthorized', 401))
 
     const response = await POST(makeRequest(validBody) as never)
     expect(response.status).toBe(401)

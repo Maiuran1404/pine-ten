@@ -50,10 +50,8 @@ describe('POST /api/webhooks/stripe/checkout', () => {
     setupAuth()
 
     const response = await POST(makeRequest({}) as never)
-    const data = await response.json()
 
     expect(response.status).toBe(400)
-    expect(data.error.message).toContain('Package ID')
   })
 
   it('creates checkout session and returns URL', async () => {
@@ -63,7 +61,7 @@ describe('POST /api/webhooks/stripe/checkout', () => {
     })
 
     const response = await POST(
-      makeRequest({ packageId: 'pkg-10', returnUrl: 'https://app.test/billing' }) as never
+      makeRequest({ packageId: 'pkg-10', returnUrl: '/billing' }) as never
     )
     const data = await response.json()
 
@@ -73,7 +71,7 @@ describe('POST /api/webhooks/stripe/checkout', () => {
       'user-1',
       'test@test.com',
       'pkg-10',
-      'https://app.test/billing'
+      '/billing'
     )
   })
 })

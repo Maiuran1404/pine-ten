@@ -23,7 +23,7 @@ import { sendNotificationEmail } from '@/lib/notifications/safe-send'
 import { config } from '@/lib/config'
 import { createTaskSchema } from '@/lib/validations'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
-import { requireAuth } from '@/lib/require-auth'
+import { requireAuth, requireRole } from '@/lib/require-auth'
 import { logger } from '@/lib/logger'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { captureServerEvent } from '@/lib/posthog'
@@ -39,7 +39,7 @@ import { calculateDeliveryDays, calculateDeadlineFromNow } from '@/lib/deadline'
 
 export async function GET(request: NextRequest) {
   // Check rate limit (100 req/min)
-  const { limited, resetIn } = checkRateLimit(request, 'api', config.rateLimits.api)
+  const { limited, resetIn } = await checkRateLimit(request, 'api', config.rateLimits.api)
   if (limited) {
     const response = NextResponse.json(
       { error: 'Too many requests', retryAfter: resetIn },
@@ -64,11 +64,11 @@ export async function GET(request: NextRequest) {
       const user = session.user as { role?: string }
       let conditions
 
-      // Allow forcing a specific view via query parameter
-      // This is useful when users access different dashboards regardless of their role
-      const effectiveView =
-        view ||
-        (user.role === 'ADMIN' ? 'admin' : user.role === 'FREELANCER' ? 'freelancer' : 'client')
+      // SECURITY: Only allow view override for ADMIN users
+      // Non-admin users always see data for their own role
+      const derivedView =
+        user.role === 'ADMIN' ? 'admin' : user.role === 'FREELANCER' ? 'freelancer' : 'client'
+      const effectiveView = user.role === 'ADMIN' && view ? view : derivedView
 
       if (effectiveView === 'admin' && user.role === 'ADMIN') {
         // Admin sees all tasks
@@ -266,7 +266,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   // Check rate limit (100 req/min)
-  const { limited, resetIn } = checkRateLimit(request, 'api', config.rateLimits.api)
+  const { limited, resetIn } = await checkRateLimit(request, 'api', config.rateLimits.api)
   if (limited) {
     const response = NextResponse.json(
       { error: 'Too many requests', retryAfter: resetIn },
@@ -278,7 +278,8 @@ export async function POST(request: NextRequest) {
 
   return withErrorHandling(
     async () => {
-      const session = await requireAuth()
+      // SECURITY: Only CLIENT and ADMIN can create tasks
+      const session = await requireRole('CLIENT', 'ADMIN')
 
       // Parse and validate request body
       const body = await request.json()
@@ -301,9 +302,14 @@ export async function POST(request: NextRequest) {
       } = validatedData
 
       // Idempotency: if a task already exists for this briefId, return it
+      // SECURITY: Verify brief belongs to the requesting user
       if (briefId) {
         const existingBrief = await db.query.briefs.findFirst({
-          where: and(eq(briefs.id, briefId), sql`${briefs.taskId} IS NOT NULL`),
+          where: and(
+            eq(briefs.id, briefId),
+            eq(briefs.userId, session.user.id),
+            sql`${briefs.taskId} IS NOT NULL`
+          ),
           columns: { taskId: true },
         })
         if (existingBrief?.taskId) {
@@ -330,9 +336,8 @@ export async function POST(request: NextRequest) {
         const currentCredits = userResult.credits
         const userCompanyId = userResult.companyId
 
-        if (currentCredits < creditsRequired) {
-          throw Errors.insufficientCredits(creditsRequired, currentCredits)
-        }
+        // SECURITY: Server-side credit calculation — never trust client-supplied amount
+        let serverCreditsRequired = creditsRequired
 
         // Find category ID and slug
         let categoryId = null
@@ -340,14 +345,35 @@ export async function POST(request: NextRequest) {
         if (category) {
           categorySlug = category.toLowerCase().replace(/_/g, '-')
           const [categoryResult] = await tx
-            .select({ id: taskCategories.id })
+            .select({ id: taskCategories.id, baseCredits: taskCategories.baseCredits })
             .from(taskCategories)
             .where(eq(taskCategories.slug, categorySlug))
             .limit(1)
 
           if (categoryResult) {
             categoryId = categoryResult.id
+            // Use server-side base credits from DB if available
+            if (categoryResult.baseCredits) {
+              serverCreditsRequired = categoryResult.baseCredits
+            }
           }
+        }
+
+        // Validate client amount is reasonable (within 50% tolerance of server value)
+        // This allows some flexibility for urgency/quantity adjustments while blocking
+        // blatant manipulation (e.g., sending 1 for a 40-credit task)
+        const tolerance = Math.max(5, Math.ceil(serverCreditsRequired * 0.5))
+        if (creditsRequired < serverCreditsRequired - tolerance) {
+          throw Errors.badRequest(
+            `Credit amount too low. Minimum for this task type: ${serverCreditsRequired - tolerance}`
+          )
+        }
+
+        // Use the higher of client-declared or server-calculated amount
+        const creditsToDeduct = Math.max(creditsRequired, serverCreditsRequired)
+
+        if (currentCredits < creditsToDeduct) {
+          throw Errors.insufficientCredits(creditsToDeduct, currentCredits)
         }
 
         // Auto-detect complexity and urgency
@@ -378,7 +404,7 @@ export async function POST(request: NextRequest) {
             description,
             requirements,
             estimatedHours: estimatedHours?.toString(),
-            creditsUsed: creditsRequired,
+            creditsUsed: creditsToDeduct,
             maxRevisions: config.tasks.defaultMaxRevisions,
             chatHistory: chatHistory || [],
             styleReferences: styleReferences || [],
@@ -521,7 +547,7 @@ export async function POST(request: NextRequest) {
           action: 'created',
           newStatus: bestArtist ? 'ASSIGNED' : 'PENDING',
           metadata: {
-            creditsUsed: creditsRequired,
+            creditsUsed: creditsToDeduct,
             category: category || undefined,
             complexity: taskComplexity,
             urgency: taskUrgency,
@@ -549,7 +575,7 @@ export async function POST(request: NextRequest) {
         await tx
           .update(users)
           .set({
-            credits: sql`${users.credits} - ${creditsRequired}`,
+            credits: sql`${users.credits} - ${creditsToDeduct}`,
             updatedAt: new Date(),
           })
           .where(eq(users.id, session.user.id))
@@ -557,7 +583,7 @@ export async function POST(request: NextRequest) {
         // Log credit transaction
         await tx.insert(creditTransactions).values({
           userId: session.user.id,
-          amount: -creditsRequired,
+          amount: -creditsToDeduct,
           type: 'USAGE',
           description: `Task created: ${title}`,
           relatedTaskId: newTask.id,
@@ -587,7 +613,7 @@ export async function POST(request: NextRequest) {
               status: 'SUBMITTED',
               updatedAt: new Date(),
             })
-            .where(eq(briefs.id, briefId))
+            .where(and(eq(briefs.id, briefId), eq(briefs.userId, session.user.id)))
         }
 
         return {
@@ -605,7 +631,7 @@ export async function POST(request: NextRequest) {
           clientName: session.user.name || 'Unknown',
           clientEmail: session.user.email || '',
           category: category || 'General',
-          creditsUsed: creditsRequired,
+          creditsUsed: result.task.creditsUsed,
           deadline: deadline ? new Date(deadline) : undefined,
           companyId: result.companyId || undefined,
         })
@@ -623,7 +649,7 @@ export async function POST(request: NextRequest) {
           clientName: session.user.name || 'Unknown',
           clientEmail: session.user.email || '',
           category: category || 'General',
-          creditsUsed: creditsRequired,
+          creditsUsed: result.task.creditsUsed,
           taskUrl: `${config.app.url}/admin/tasks`,
         })
         await notifyAdminWhatsApp(whatsappMessage)
@@ -671,7 +697,7 @@ export async function POST(request: NextRequest) {
       captureServerEvent(session.user.id, PostHogEvents.TASK_CREATED, {
         task_id: result.task.id,
         category: category || null,
-        credits_used: creditsRequired,
+        credits_used: result.task.creditsUsed,
         complexity: result.task.complexity,
         urgency: result.task.urgency,
         match_score: result.assignedTo?.totalScore ?? null,
@@ -683,7 +709,7 @@ export async function POST(request: NextRequest) {
         {
           taskId: result.task.id,
           userId: session.user.id,
-          creditsUsed: creditsRequired,
+          creditsUsed: result.task.creditsUsed,
           assignedTo: result.assignedTo?.artist.userId,
           matchScore: result.assignedTo?.totalScore,
         },

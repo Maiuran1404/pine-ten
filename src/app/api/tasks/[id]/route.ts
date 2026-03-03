@@ -72,6 +72,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Check if user has permission to view this task
     const user = session.user as { role?: string }
+    const isFreelancerViewing =
+      user.role === 'FREELANCER' && taskRow.freelancerId === session.user.id
     if (
       user.role !== 'ADMIN' &&
       taskRow.clientId !== session.user.id &&
@@ -311,7 +313,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         requirements: taskRow.requirements,
         styleReferences: taskRow.styleReferences,
         moodboardItems: taskRow.moodboardItems,
-        chatHistory: taskRow.chatHistory,
+        // SECURITY: Strip full chat history from freelancer view — it may contain
+        // client PII, credit discussions, or internal brief details not relevant to delivery
+        chatHistory: isFreelancerViewing ? [] : taskRow.chatHistory,
         estimatedHours: taskRow.estimatedHours,
         creditsUsed: taskRow.creditsUsed,
         maxRevisions: taskRow.maxRevisions,

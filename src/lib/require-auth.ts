@@ -2,6 +2,9 @@ import 'server-only'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { Errors } from '@/lib/errors'
+import { db } from '@/db'
+import { freelancerProfiles } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 /**
  * User roles in the system
@@ -112,15 +115,22 @@ export async function requireOwnerOrAdmin(resourceOwnerId: string): Promise<Auth
 }
 
 /**
- * Check if the current user is an approved freelancer
+ * Check if the current user is an approved freelancer.
+ * SECURITY: Queries the database directly instead of relying on session cache,
+ * which may be stale (~5min TTL). This ensures approval status is always current.
  * @throws {APIError} If user is not an approved freelancer
  */
 export async function requireApprovedFreelancer(): Promise<AuthenticatedSession> {
   const session = await requireRole('FREELANCER')
 
-  // Note: freelancerApproved is stored in the freelancer_profiles table
-  // This check is a basic one - for full verification, check the profile status
-  if (!session.user.freelancerApproved) {
+  // Live DB check — session.user.freelancerApproved is not populated by Better Auth
+  const [profile] = await db
+    .select({ status: freelancerProfiles.status })
+    .from(freelancerProfiles)
+    .where(eq(freelancerProfiles.userId, session.user.id))
+    .limit(1)
+
+  if (!profile || profile.status !== 'APPROVED') {
     throw Errors.forbidden('Your freelancer account is pending approval')
   }
 

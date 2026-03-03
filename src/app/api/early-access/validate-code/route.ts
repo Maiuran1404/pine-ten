@@ -8,7 +8,7 @@ import { checkRateLimit } from '@/lib/rate-limit'
 export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
     // Rate limit: 10 attempts per minute to prevent brute-force
-    const { limited } = checkRateLimit(request, 'early-access-validate', {
+    const { limited } = await checkRateLimit(request, 'early-access-validate', {
       window: 60,
       max: 10,
     })

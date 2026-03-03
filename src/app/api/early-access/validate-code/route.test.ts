@@ -21,7 +21,7 @@ vi.mock('@/db', () => ({
 }))
 
 vi.mock('@/lib/rate-limit', () => ({
-  checkRateLimit: () => ({ limited: false, remaining: 10, resetIn: 60 }),
+  checkRateLimit: () => Promise.resolve({ limited: false, remaining: 10, resetIn: 60 }),
 }))
 
 // Dynamic import after mocks are set up

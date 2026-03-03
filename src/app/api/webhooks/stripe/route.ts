@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { handleWebhook, markEventProcessed } from '@/lib/stripe'
-import { db } from '@/db'
+import { withTransaction } from '@/db'
 import { users, creditTransactions } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { adminNotifications, sendEmail, emailTemplates } from '@/lib/notifications'
 import { config } from '@/lib/config'
 import { logger } from '@/lib/logger'
@@ -22,28 +22,37 @@ export async function POST(request: NextRequest) {
 
     if (result) {
       try {
-        // Get full user data in a single query (fixes N+1 - previously fetched twice)
-        const [user] = await db.select().from(users).where(eq(users.id, result.userId)).limit(1)
+        // SECURITY: Use transaction with row lock for atomic credit operations
+        const txResult = await withTransaction(async (tx) => {
+          const [user] = await tx
+            .select()
+            .from(users)
+            .where(eq(users.id, result.userId))
+            .for('update')
 
-        if (user) {
-          const newCredits = user.credits + result.credits
+          if (!user) return null
 
-          // Update credits and log transaction in parallel
-          await Promise.all([
-            db
-              .update(users)
-              .set({
-                credits: newCredits,
-                updatedAt: new Date(),
-              })
-              .where(eq(users.id, result.userId)),
-            db.insert(creditTransactions).values({
-              userId: result.userId,
-              amount: result.credits,
-              type: 'PURCHASE',
-              description: `Purchased ${result.credits} credits`,
-            }),
-          ])
+          // Atomically update credits and log transaction
+          await tx
+            .update(users)
+            .set({
+              credits: sql`${users.credits} + ${result.credits}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, result.userId))
+
+          await tx.insert(creditTransactions).values({
+            userId: result.userId,
+            amount: result.credits,
+            type: 'PURCHASE',
+            description: `Purchased ${result.credits} credits`,
+          })
+
+          return { user, newCredits: user.credits + result.credits }
+        })
+
+        if (txResult) {
+          const { user, newCredits } = txResult
 
           // Mark event as successfully processed
           await markEventProcessed(

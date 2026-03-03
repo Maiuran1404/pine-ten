@@ -28,19 +28,19 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-slack-signature') || ''
     const timestamp = request.headers.get('x-slack-request-timestamp') || ''
 
-    // Parse payload first to check for url_verification (doesn't need signature)
+    // SECURITY: Verify signature FIRST before processing any payload
+    // This prevents attackers from sending fake url_verification challenges
+    if (!verifySlackSignature(signature, timestamp, rawBody)) {
+      logger.warn('Invalid Slack signature for event')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+
     const payload: SlackEventPayload = JSON.parse(rawBody)
 
     // Handle URL verification challenge (Slack sends this when setting up)
     if (payload.type === 'url_verification') {
       logger.info('Slack URL verification challenge received')
       return NextResponse.json({ challenge: payload.challenge })
-    }
-
-    // Verify signature for all other requests
-    if (!verifySlackSignature(signature, timestamp, rawBody)) {
-      logger.warn('Invalid Slack signature for event')
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
     // Handle event callbacks

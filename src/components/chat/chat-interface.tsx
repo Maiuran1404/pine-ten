@@ -188,6 +188,7 @@ export function ChatInterface({
     progressState,
     briefingStage,
     deliverableCategory,
+    setDeliverableCategory,
     estimatedCredits,
     targetDurationSeconds,
 
@@ -702,6 +703,7 @@ export function ChatInterface({
               needsAutoContinueConfirmation={needsAutoContinueConfirmation}
               onConfirmAutoContinue={handleConfirmAutoContinue}
               onDismissAutoContinue={handleDismissAutoContinue}
+              onCategoryDetected={setDeliverableCategory}
             />
           )}
 

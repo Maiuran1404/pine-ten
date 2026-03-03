@@ -86,6 +86,7 @@ interface DeliverableStyleReference {
   targetAudience?: string
   visualElements?: string[]
   moodKeywords?: string[]
+  styleReferenceImages?: string[]
 }
 
 interface Stats {
@@ -114,8 +115,12 @@ const defaultFormState = {
   promptGuide: '',
   colorTemperature: '',
   energyLevel: '',
+  densityLevel: '',
   formalityLevel: '',
   moodKeywords: '',
+  colorSamples: '',
+  visualElements: '',
+  styleReferenceImages: [] as string[],
 }
 
 // Matrix cell component
@@ -288,8 +293,12 @@ export default function DeliverableStylesPage() {
       promptGuide: style.promptGuide || '',
       colorTemperature: style.colorTemperature || '',
       energyLevel: style.energyLevel || '',
+      densityLevel: style.densityLevel || '',
       formalityLevel: style.formalityLevel || '',
       moodKeywords: style.moodKeywords?.join(', ') || '',
+      colorSamples: style.colorSamples?.join(', ') || '',
+      visualElements: style.visualElements?.join(', ') || '',
+      styleReferenceImages: style.styleReferenceImages || [],
     })
     setDialogOpen(true)
   }
@@ -318,11 +327,21 @@ export default function DeliverableStylesPage() {
         promptGuide: formState.promptGuide || null,
         colorTemperature: formState.colorTemperature || null,
         energyLevel: formState.energyLevel || null,
+        densityLevel: formState.densityLevel || null,
         formalityLevel: formState.formalityLevel || null,
         moodKeywords: formState.moodKeywords
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean),
+        colorSamples: formState.colorSamples
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        visualElements: formState.visualElements
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        styleReferenceImages: formState.styleReferenceImages.filter(Boolean),
       }
 
       if (editingStyle) {
@@ -644,7 +663,7 @@ export default function DeliverableStylesPage() {
                       Describes the visual direction for AI when this style is selected
                     </p>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="colorTemperature">Color Temperature</Label>
                       <Select
@@ -684,6 +703,25 @@ export default function DeliverableStylesPage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="densityLevel">Density Level</Label>
+                      <Select
+                        value={formState.densityLevel || 'none'}
+                        onValueChange={(v) =>
+                          setFormState({ ...formState, densityLevel: v === 'none' ? '' : v })
+                        }
+                      >
+                        <SelectTrigger id="densityLevel">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not set</SelectItem>
+                          <SelectItem value="minimal">Minimal</SelectItem>
+                          <SelectItem value="balanced">Balanced</SelectItem>
+                          <SelectItem value="rich">Rich</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="formalityLevel">Formality Level</Label>
                       <Select
                         value={formState.formalityLevel || 'none'}
@@ -711,6 +749,128 @@ export default function DeliverableStylesPage() {
                       onChange={(e) => setFormState({ ...formState, moodKeywords: e.target.value })}
                       placeholder="serene, professional, bold, playful"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="colorSamples">Color Samples (comma-separated hex values)</Label>
+                    <Input
+                      id="colorSamples"
+                      value={formState.colorSamples}
+                      onChange={(e) => setFormState({ ...formState, colorSamples: e.target.value })}
+                      placeholder="#1a1a2e, #16213e, #0f3460, #e94560"
+                    />
+                    {formState.colorSamples && (
+                      <div className="flex gap-1 mt-1">
+                        {formState.colorSamples
+                          .split(',')
+                          .map((c) => c.trim())
+                          .filter((c) => /^#[0-9a-fA-F]{3,8}$/.test(c))
+                          .map((color, i) => (
+                            <div
+                              key={i}
+                              className="w-6 h-6 rounded border border-border"
+                              style={{ backgroundColor: color }}
+                              title={color}
+                            />
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="visualElements">
+                      Visual Elements (comma-separated technique tags)
+                    </Label>
+                    <Input
+                      id="visualElements"
+                      value={formState.visualElements}
+                      onChange={(e) =>
+                        setFormState({ ...formState, visualElements: e.target.value })
+                      }
+                      placeholder="shallow DOF, film grain, natural light, handheld camera"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Style Reference Images</Label>
+                    {formState.styleReferenceImages.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {formState.styleReferenceImages.map((url, i) => (
+                          <div key={i} className="relative group">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={url}
+                              alt={`Reference ${i + 1}`}
+                              className="w-full h-20 object-cover rounded border border-border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFormState({
+                                  ...formState,
+                                  styleReferenceImages: formState.styleReferenceImages.filter(
+                                    (_, j) => j !== i
+                                  ),
+                                })
+                              }
+                              className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </button>
+                            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                              {url}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Input
+                        id="newRefImageUrl"
+                        placeholder="Paste reference image URL..."
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            const input = e.currentTarget
+                            const url = input.value.trim()
+                            if (url) {
+                              try {
+                                new URL(url)
+                                setFormState({
+                                  ...formState,
+                                  styleReferenceImages: [...formState.styleReferenceImages, url],
+                                })
+                                input.value = ''
+                              } catch {
+                                toast.error('Please enter a valid URL')
+                              }
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.getElementById(
+                            'newRefImageUrl'
+                          ) as HTMLInputElement
+                          const url = input?.value.trim()
+                          if (url) {
+                            try {
+                              new URL(url)
+                              setFormState({
+                                ...formState,
+                                styleReferenceImages: [...formState.styleReferenceImages, url],
+                              })
+                              input.value = ''
+                            } catch {
+                              toast.error('Please enter a valid URL')
+                            }
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
                   </div>
                 </CollapsibleContent>
               </Collapsible>

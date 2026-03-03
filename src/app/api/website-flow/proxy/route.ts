@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/require-auth'
+import { assertSafeUrl } from '@/lib/ssrf-guard'
 
 /**
  * Reverse proxy that fetches a website and serves it without
@@ -8,6 +10,9 @@ import { NextRequest, NextResponse } from 'next/server'
  * GET /api/website-flow/proxy?url=https://example.com
  */
 export async function GET(request: NextRequest) {
+  // SECURITY: Require authentication — prevents unauthenticated SSRF
+  await requireAuth()
+
   const url = request.nextUrl.searchParams.get('url')
 
   if (!url) {
@@ -23,6 +28,13 @@ export async function GET(request: NextRequest) {
     }
   } catch {
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
+  }
+
+  // SECURITY: Block private/internal IP ranges to prevent SSRF
+  try {
+    assertSafeUrl(parsed)
+  } catch {
+    return NextResponse.json({ error: 'URL not allowed' }, { status: 400 })
   }
 
   try {

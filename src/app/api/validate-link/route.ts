@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { withErrorHandling, successResponse } from '@/lib/errors'
 import { requireAuth } from '@/lib/require-auth'
+import { assertSafeUrl } from '@/lib/ssrf-guard'
 
 const validateLinkSchema = z.object({
   url: z.string().url(),
@@ -15,6 +16,9 @@ export async function POST(request: NextRequest) {
 
       const body = validateLinkSchema.parse(await request.json())
       const { url, provider } = body
+
+      // SECURITY: Block private/internal IP ranges to prevent SSRF
+      assertSafeUrl(new URL(url))
 
       let isAccessible = false
       let fileName: string | null = null

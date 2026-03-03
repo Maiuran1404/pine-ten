@@ -173,65 +173,76 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Rate limit auth routes (stricter — 20 req/min per IP)
-  if (pathname.startsWith('/api/auth') || pathname === '/login' || pathname === '/register') {
-    const { limited, remaining: _remaining, resetIn } = rateLimiters.auth(request)
-    if (limited) {
-      return new NextResponse(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'SRV_004',
-            message: 'Too many requests. Please try again later.',
-          },
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': String(resetIn),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': String(resetIn),
-          },
-        }
-      )
+  // Rate limiting — skip entirely in development to avoid Edge Runtime import issues
+  if (isProduction) {
+    // Rate limit auth routes (stricter)
+    if (pathname.startsWith('/api/auth') || pathname === '/login' || pathname === '/register') {
+      const { limited, remaining: _remaining, resetIn } = await rateLimiters.auth(request)
+      if (limited) {
+        return new NextResponse(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'SRV_004',
+              message: 'Too many requests. Please try again later.',
+            },
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': String(resetIn),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(resetIn),
+            },
+          }
+        )
+      }
+    }
+
+    // Rate limit all API routes
+    if (pathname.startsWith('/api/')) {
+      const { limited, remaining, resetIn } = await rateLimiters.api(request)
+      if (limited) {
+        return new NextResponse(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'SRV_004',
+              message: 'Too many requests. Please try again later.',
+            },
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': String(resetIn),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(resetIn),
+            },
+          }
+        )
+      }
+
+      // Defense-in-depth: check session cookie for protected API routes
+      if (isProtectedApiRoute(pathname) && !hasSessionCookie(request)) {
+        return unauthorizedApiResponse()
+      }
+
+      // API routes that passed rate limiting and auth checks
+      const apiResponse = NextResponse.next()
+      apiResponse.headers.set('X-RateLimit-Remaining', String(remaining))
+      apiResponse.headers.set('X-RateLimit-Reset', String(resetIn))
+      return apiResponse
     }
   }
 
-  // Rate limit all API routes (100 req/min per IP)
-  if (pathname.startsWith('/api/')) {
-    const { limited, remaining, resetIn } = rateLimiters.api(request)
-    if (limited) {
-      return new NextResponse(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'SRV_004',
-            message: 'Too many requests. Please try again later.',
-          },
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': String(resetIn),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': String(resetIn),
-          },
-        }
-      )
-    }
-
-    // Defense-in-depth: check session cookie for protected API routes
+  // In development, still check session cookie for protected API routes (no rate limiting)
+  if (!isProduction && pathname.startsWith('/api/')) {
     if (isProtectedApiRoute(pathname) && !hasSessionCookie(request)) {
       return unauthorizedApiResponse()
     }
-
-    // API routes that passed rate limiting and auth checks
-    const apiResponse = NextResponse.next()
-    apiResponse.headers.set('X-RateLimit-Remaining', String(remaining))
-    apiResponse.headers.set('X-RateLimit-Reset', String(resetIn))
-    return apiResponse
+    return NextResponse.next()
   }
 
   // Get subdomain context
@@ -262,11 +273,11 @@ export async function proxy(request: NextRequest) {
       'Content-Security-Policy',
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+        "script-src 'self' 'unsafe-inline' https://js.stripe.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
-        "img-src 'self' data: blob: https: http:",
-        "connect-src 'self' https://api.stripe.com wss: https:",
+        "img-src 'self' data: blob: https:",
+        `connect-src 'self' https://api.stripe.com wss: https://*.${baseDomain} https://*.supabase.co https://us.i.posthog.com`,
         "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com",
         "worker-src 'self' blob:",
       ].join('; ')

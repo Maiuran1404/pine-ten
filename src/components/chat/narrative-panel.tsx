@@ -24,22 +24,8 @@ interface NarrativePanelProps {
 // Parses <<highlighted phrases>> in text and renders them as inline chips
 // =============================================================================
 
-function renderHighlightedText(text: string): ReactNode[] {
-  const parts = text.split(/(<<[^>]+>>)/)
-  return parts.map((part, i) => {
-    if (part.startsWith('<<') && part.endsWith('>>')) {
-      const inner = part.slice(2, -2)
-      return (
-        <span
-          key={i}
-          className="inline-flex items-center px-1.5 py-0 rounded-md bg-crafted-mint/20 text-crafted-forest text-[0.85em] font-medium mx-0.5"
-        >
-          {inner}
-        </span>
-      )
-    }
-    return <span key={i}>{part}</span>
-  })
+function renderHighlightedText(text: string): string {
+  return text.replace(/<<|>>/g, '')
 }
 
 // =============================================================================

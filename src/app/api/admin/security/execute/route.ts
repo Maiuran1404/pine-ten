@@ -5,6 +5,8 @@ import { db } from '@/db'
 import { securityTestRuns, securityTestResults, securityTests } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { logger } from '@/lib/logger'
+import { z } from 'zod'
+import { assertSafeUrl } from '@/lib/ssrf-guard'
 
 // Test execution helper types
 interface TestResult {
@@ -361,6 +363,9 @@ export async function POST(request: NextRequest) {
         throw Errors.badRequest(`Run is already ${run.status}`)
       }
 
+      // SECURITY: Validate target URL to prevent SSRF
+      assertSafeUrl(new URL(run.targetUrl))
+
       // Mark run as started
       await db
         .update(securityTestRuns)
@@ -532,30 +537,35 @@ export async function GET(request: NextRequest) {
   )
 }
 
+// SECURITY: Whitelist allowed fields to prevent mass assignment
+const updateResultSchema = z.object({
+  resultId: z.string().min(1),
+  status: z.enum(['PASSED', 'FAILED', 'ERROR', 'SKIPPED']).optional(),
+  errorMessage: z.string().optional(),
+  findings: z
+    .array(
+      z.object({
+        type: z.string(),
+        severity: z.string(),
+        message: z.string(),
+        location: z.string().optional(),
+      })
+    )
+    .optional(),
+  durationMs: z.number().int().min(0).optional(),
+})
+
 // PUT - Update individual test result (for manual updates)
 export async function PUT(request: NextRequest) {
   return withErrorHandling(
     async () => {
       await requireAdmin()
 
-      const body = await request.json()
-      const { resultId, status, errorMessage, findings, durationMs } = body
-
-      if (!resultId) {
-        throw Errors.badRequest('Result ID is required')
-      }
-
-      const updateData: Record<string, unknown> = {}
-
-      if (status) updateData.status = status
-      if (errorMessage !== undefined) updateData.errorMessage = errorMessage
-      if (findings !== undefined) updateData.findings = findings
-      if (durationMs !== undefined) updateData.durationMs = durationMs
-      updateData.completedAt = new Date()
+      const { resultId, ...updates } = updateResultSchema.parse(await request.json())
 
       const [result] = await db
         .update(securityTestResults)
-        .set(updateData)
+        .set({ ...updates, completedAt: new Date() })
         .where(eq(securityTestResults.id, resultId))
         .returning()
 
