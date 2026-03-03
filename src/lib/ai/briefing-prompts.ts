@@ -508,18 +508,15 @@ Do NOT offer options about moving to storyboard, visual style, or submission.`
 
       // Phase 3: Narrative approved — acknowledge and let state machine advance to INSPIRATION (style)
       // Storyboard building has moved to ELABORATE stage where styles are already selected
-      const narrativeContext3 = JSON.stringify(state.videoNarrative)
 
       return `The user has approved the story narrative. The state machine will now advance to visual style selection.
 
-APPROVED NARRATIVE:
-${narrativeContext3}
-
-MANDATORY: Output the narrative as [VIDEO_NARRATIVE]${narrativeContext3}[/VIDEO_NARRATIVE] — keep the approved narrative intact.
+MANDATORY: Output the approved narrative unchanged as [VIDEO_NARRATIVE]${JSON.stringify(state.videoNarrative)}[/VIDEO_NARRATIVE] to keep the panel in sync.
 
 CONVERSATIONAL TEXT:
-Write a short, excited acknowledgment: "Great story direction locked in! Now let's pick a visual style that brings this to life."
-Do NOT build a storyboard. Do NOT output [STORYBOARD] markers. The storyboard will be built after the user picks a visual style.
+Your ENTIRE conversational response must be exactly: "Narrative approved! Let's pick a visual style..."
+Do NOT repeat, summarize, or reference the narrative content. Do NOT list concept, narrative, or hook fields. Just the one-line acknowledgment above.
+Do NOT build a storyboard. Do NOT output [STORYBOARD] markers.
 Your [QUICK_OPTIONS] should be forward-looking about style: {"question": "Ready for visual direction?", "options": ["Show me style options", "I have a style in mind"]}
 Do NOT offer options about storyboard, scenes, or submission.`
     }

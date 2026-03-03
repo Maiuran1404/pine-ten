@@ -36,6 +36,7 @@ import {
   Image,
   GalleryThumbnails,
   Eye,
+  Clapperboard,
 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import {
@@ -142,6 +143,11 @@ const navigationGroups: NavigationGroup[] = [
         name: 'Intake Prompts',
         href: '/admin/creative-intake-prompts',
         icon: Sparkles,
+      },
+      {
+        name: 'Image Pipeline',
+        href: '/admin/image-pipeline',
+        icon: Clapperboard,
       },
     ],
   },
