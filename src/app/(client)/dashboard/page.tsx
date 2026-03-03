@@ -833,7 +833,7 @@ function DashboardContent() {
                           setModalNotes('')
                           setPlatformSelections({})
                         }}
-                        className="group relative flex flex-col items-start justify-center gap-1 w-full h-[85px] px-4 rounded-md overflow-hidden ring-1 ring-crafted-sage/10 hover:ring-crafted-sage/25 hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200 cursor-pointer backdrop-blur-sm"
+                        className="group relative flex flex-col items-start justify-between w-full h-[120px] p-4 rounded-xl overflow-hidden ring-1 ring-crafted-sage/10 hover:ring-crafted-sage/25 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 cursor-pointer backdrop-blur-sm"
                       >
                         {categoryImage ? (
                           <>
@@ -859,17 +859,17 @@ function DashboardContent() {
                                 backgroundSize: '128px 128px',
                               }}
                             />
-                            <Icon className="relative z-10 h-5 w-5 text-foreground/70" />
                           </>
                         )}
                         <div className="relative z-10 flex flex-col items-start">
-                          <span className="text-foreground/80 text-[13px] font-normal tracking-[-0.02em] leading-tight">
+                          <span className="text-foreground/80 text-[13px] font-medium tracking-[-0.01em] leading-snug">
                             {category}
                           </span>
-                          <span className="text-foreground/50 text-[10px] font-light mt-0.5">
+                          <span className="text-foreground/45 text-[10px] font-light mt-0.5">
                             {options.length} templates
                           </span>
                         </div>
+                        <Icon className="relative z-10 h-5 w-5 text-foreground/50" />
                       </button>
                     </motion.div>
                   )

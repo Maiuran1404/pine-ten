@@ -70,7 +70,7 @@ export function mapBriefingStageToChat(stage: BriefingStage): ChatStage {
       return 'storyboard'
     case 'STRATEGIC_REVIEW':
     case 'MOODBOARD':
-      return 'review'
+      return 'storyboard'
     case 'REVIEW':
     case 'DEEPEN':
       return 'review'
@@ -329,7 +329,10 @@ export function getContextualStageDescription(
     case 'INSPIRATION':
       return 'Choose your visual style'
     case 'ELABORATE':
-      if (context?.deliverableCategory === 'video') return 'Building storyboard'
+      if (context?.deliverableCategory === 'video') {
+        if (context?.structure) return 'Storyboard ready'
+        return 'Building storyboard'
+      }
       return 'Refine details'
     case 'STRATEGIC_REVIEW':
       return 'Strategic review'

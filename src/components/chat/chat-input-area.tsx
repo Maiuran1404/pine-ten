@@ -143,8 +143,8 @@ export interface ChatInputAreaProps {
 // COMPONENT
 // =============================================================================
 
-// Stages too early for "I'm ready to submit" — not enough brief info yet
-const EARLY_STAGES = new Set(['EXTRACT', 'TASK_TYPE', 'INTENT', 'INSPIRATION'])
+// Stages too early for estimated credit display — only hide during initial extraction
+const EARLY_STAGES = new Set(['EXTRACT'])
 
 // Extracted into its own component to isolate re-renders from the input area
 function WordCountRing({ input }: { input: string }) {
@@ -473,11 +473,11 @@ export const ChatInputArea = memo(function ChatInputArea({
               else if (e.key === 'Escape' && smartCompletion) {
                 setSmartCompletion(null)
               }
-              // Submit on Enter (without shift) or Cmd/Ctrl+Enter
-              else if (e.key === 'Enter' && !e.shiftKey) {
+              // Submit on Enter (without shift) or Cmd/Ctrl+Enter — guard against sending during streaming
+              else if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
                 e.preventDefault()
                 handleSend()
-              } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isLoading) {
                 e.preventDefault()
                 handleSend()
               }
@@ -578,9 +578,9 @@ export const ChatInputArea = memo(function ChatInputArea({
             </div>
             {/* Divider */}
             <div className="h-4 w-px bg-border/50 shrink-0" />
-            {/* Credits — compact, left-aligned */}
+            {/* Credits — compact, left-aligned (hidden on very narrow viewports to avoid overflow) */}
             <div
-              className="flex items-center gap-1.5 text-xs text-muted-foreground/60"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground/60"
               title="Credits are used when you submit a brief to a designer, not during chat."
             >
               <span
@@ -665,7 +665,7 @@ export const ChatInputArea = memo(function ChatInputArea({
           className="mt-4 space-y-4"
         >
           {/* Popular requests - clickable cards */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[
               {
                 label: 'Instagram Carousel',

@@ -494,13 +494,26 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
   }, [])
 
   // Approve narrative and trigger storyboard generation
-  const handleApproveNarrative = useCallback(() => {
-    setNarrativeApproved(true)
-    handleSendOption(
-      'The story narrative looks great. Let\u2019s build the storyboard based on this.',
-      { narrativeApproved: true }
-    )
-  }, [handleSendOption])
+  // If the user has edited the narrative, include the edits in the message
+  const handleApproveNarrative = useCallback(
+    (editedNarrative?: VideoNarrative) => {
+      setNarrativeApproved(true)
+      const currentNarrative = editedNarrative ?? videoNarrative
+      if (currentNarrative) {
+        const narrativeSummary = `Approved narrative:\nConcept: ${currentNarrative.concept}\nNarrative: ${currentNarrative.narrative}\nHook: ${currentNarrative.hook}`
+        handleSendOption(
+          `I've finalized the story narrative. ${narrativeSummary}\n\nLet\u2019s build the storyboard based on this.`,
+          { narrativeApproved: true }
+        )
+      } else {
+        handleSendOption(
+          'The story narrative looks great. Let\u2019s build the storyboard based on this.',
+          { narrativeApproved: true }
+        )
+      }
+    },
+    [handleSendOption, videoNarrative]
+  )
 
   // Edit a narrative field inline
   const handleNarrativeFieldEdit = useCallback(
@@ -599,18 +612,14 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
           }
         }
 
-        // Stagger progress updates so the bar fills progressively (400ms between each)
-        for (let i = 0; i < orderedResults.length; i++) {
-          const { sceneNumber, status } = orderedResults[i]
-          if (i > 0) {
-            await new Promise((resolve) => setTimeout(resolve, 400))
-          }
-          setImageGenerationProgress((prev) => {
-            const updated = new Map(prev)
+        // Update all progress statuses at once (no stagger — avoids misleading counter)
+        setImageGenerationProgress((prev) => {
+          const updated = new Map(prev)
+          for (const { sceneNumber, status } of orderedResults) {
             updated.set(sceneNumber, status)
-            return updated
-          })
-        }
+          }
+          return updated
+        })
 
         if (dataMap.size > 0) {
           // Persist image URLs on scene objects — sceneImageData is derived via useMemo
@@ -727,6 +736,29 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     [csrfFetch, handleSceneImageReplace]
   )
 
+  // Retry all failed scene image generations
+  const retryFailedImages = useCallback(
+    async (
+      styleContext: string,
+      briefId: string,
+      styleIds?: string[],
+      brandContext?: {
+        colors?: { primary?: string; secondary?: string; accent?: string }
+        industry?: string
+        toneOfVoice?: string
+        brandDescription?: string
+      }
+    ) => {
+      if (!storyboardScenes || storyboardScenes.type !== 'storyboard') return
+      const failedScenes = storyboardScenes.scenes.filter(
+        (s) => imageGenerationProgress.get(s.sceneNumber) === 'error'
+      )
+      if (failedScenes.length === 0) return
+      await generateSceneImages(failedScenes, styleContext, briefId, styleIds, brandContext)
+    },
+    [storyboardScenes, imageGenerationProgress, generateSceneImages]
+  )
+
   return {
     storyboardScenes,
     setStoryboardScenes,
@@ -763,6 +795,7 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
     imageGenerationProgress,
     generateSceneImages,
     regenerateSceneImage,
+    retryFailedImages,
     // Video narrative
     videoNarrative,
     setVideoNarrative,

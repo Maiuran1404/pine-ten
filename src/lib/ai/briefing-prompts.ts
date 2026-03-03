@@ -475,7 +475,7 @@ Example: [VIDEO_NARRATIVE]{"concept":"The 6-second identity check that killed a 
 OUTPUT FORMAT: The [VIDEO_NARRATIVE]{valid JSON}[/VIDEO_NARRATIVE] block is the primary deliverable of your response. Ensure valid JSON with double quotes and no trailing commas.
 
 CONVERSATIONAL TEXT:
-After the [VIDEO_NARRATIVE] block, write a brief pointer directing the user to the canvas panel on the right. Example: "I've drafted your video narrative — check it out on the canvas. Edit anything directly, or tell me what to adjust."
+After the [VIDEO_NARRATIVE] block, write a brief pointer directing the user to the panel on the right. Example: "I've drafted your video narrative — check it out in the panel on the right. Edit anything directly, or tell me what to adjust."
 Do NOT ask an unrelated follow-up question about audience, goals, or platform. The only question should be about the narrative itself (e.g. "Does this angle feel right?").
 Your [QUICK_OPTIONS] MUST be narrative-specific: {"question": "How does it feel?", "options": ["Change the concept", "The CTA needs work", "Looks good, let's build scenes"]}
 Do NOT offer options about storyboard, visual style, or submission at this stage.`
@@ -500,7 +500,7 @@ QUALITY RULES for the narrative fields:
 Do NOT generate a storyboard yet. The user must approve the narrative first before building scenes.
 
 CONVERSATIONAL TEXT:
-After the [VIDEO_NARRATIVE] block, write a brief message acknowledging what the user shared and pointing them to the updated canvas. Keep it to 1-2 sentences.
+After the [VIDEO_NARRATIVE] block, write a brief message acknowledging what the user shared and pointing them to the updated panel on the right. Keep it to 1-2 sentences.
 If you still need more context, ask ONE specific follow-up question.
 Your [QUICK_OPTIONS] should be: {"question": "How about now?", "options": ["Try a different angle", "Adjust the CTA", "Looks good, let's build scenes"]}
 Do NOT offer options about moving to storyboard, visual style, or submission.`
@@ -632,12 +632,13 @@ SCENE QUALITY RULES:
 - Voiceover: real person talking, not an ad script. Short sentences. Conversational.
 - Each description: what the CAMERA SEES, not abstract ideas.
 - Final scene: concrete result (number, visual change, reaction) before CTA.
+- CRITICAL: Every scene MUST include an imageGenerationPrompt field. This field is REQUIRED, not optional. Without it the scene cannot generate a visual reference. The prompt must describe the specific subject and setting of the scene, not generic aesthetics.
 
 - CRITICAL: Use [STORYBOARD] as the marker. You MUST output [STORYBOARD]{json}[/STORYBOARD].
 OUTPUT FORMAT: Start with the [STORYBOARD] block FIRST. Ensure valid JSON.
 
 CONVERSATIONAL TEXT:
-After the [STORYBOARD] block: "Your storyboard is ready on the canvas. Click any scene to edit, or tell me what to adjust."
+After the [STORYBOARD] block: "Your storyboard is now visible in the panel on the right. Click any scene to edit, or tell me what to adjust."
 Your [QUICK_OPTIONS] should be scene-focused: {"question": "Anything to tweak?", "options": ["Scene 1 needs work", "The pacing feels off", "I'm happy with this"]}
 Do NOT ask questions. Generate the creative content now.`
         }
@@ -929,7 +930,8 @@ Reference these inspirations when recommending section structure and design appr
 
 export function buildBrandSection(ctx: BrandContext, stage?: BriefingStage): string {
   const parts: string[] = [
-    '== BRAND CONTEXT (USE THIS — do NOT ask the client about information listed here) ==',
+    '== BRAND CONTEXT (supplementary background reference) ==',
+    "This brand profile provides background context about the client's business. Always address the user's specific project description and request FIRST. Use brand context to inform your recommendations, but never override or ignore what the user explicitly asks for.",
     'When first referencing this brand data, briefly acknowledge it (e.g. "Based on your brand profile for [Company]...") so the user knows where the information came from.',
   ]
 
