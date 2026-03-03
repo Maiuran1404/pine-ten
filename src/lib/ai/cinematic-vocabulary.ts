@@ -51,11 +51,17 @@ const CAMERA_SHOT_MAP: Record<string, string> = {
 /**
  * Maps informal camera notes to professional shot specifications.
  * Checks both cameraNote and visualNote for camera-related terms.
+ * Optional overrideMap replaces the hardcoded map when provided (admin config).
  */
-export function inferShotSpecs(cameraNote?: string, visualNote?: string): string {
+export function inferShotSpecs(
+  cameraNote?: string,
+  visualNote?: string,
+  overrideMap?: Record<string, string>
+): string {
   const combined = `${cameraNote || ''} ${visualNote || ''}`.toLowerCase()
+  const map = overrideMap ?? CAMERA_SHOT_MAP
 
-  for (const [key, spec] of Object.entries(CAMERA_SHOT_MAP)) {
+  for (const [key, spec] of Object.entries(map)) {
     if (combined.includes(key)) return spec
   }
 
@@ -102,21 +108,28 @@ const COLOR_TEMP_MAP: Record<string, string> = {
 /**
  * Infers lighting direction from mood keywords, color temperature, and voiceover mood.
  * Combines multiple signals for rich lighting description.
+ * Optional override maps replace the hardcoded maps when provided (admin config).
  */
-export function inferLighting(ctx: LightingContext): string {
+export function inferLighting(
+  ctx: LightingContext,
+  overrideMoodMap?: Record<string, string>,
+  overrideColorTempMap?: Record<string, string>
+): string {
   const parts: string[] = []
+  const moodMap = overrideMoodMap ?? MOOD_LIGHTING_MAP
+  const colorTempMap = overrideColorTempMap ?? COLOR_TEMP_MAP
 
   // Color temperature base
-  if (ctx.colorTemperature && COLOR_TEMP_MAP[ctx.colorTemperature]) {
-    parts.push(COLOR_TEMP_MAP[ctx.colorTemperature])
+  if (ctx.colorTemperature && colorTempMap[ctx.colorTemperature]) {
+    parts.push(colorTempMap[ctx.colorTemperature])
   }
 
   // Mood-based lighting (first match from keywords)
   if (ctx.moodKeywords) {
     for (const keyword of ctx.moodKeywords) {
       const lower = keyword.toLowerCase()
-      if (MOOD_LIGHTING_MAP[lower]) {
-        parts.push(MOOD_LIGHTING_MAP[lower])
+      if (moodMap[lower]) {
+        parts.push(moodMap[lower])
         break // Take first match only
       }
     }
@@ -142,11 +155,13 @@ export function inferLighting(ctx: LightingContext): string {
 /**
  * Builds a color grading section from style palette colors and brand colors.
  * Style colors define the aesthetic, brand colors are accent anchors.
+ * Optional overrideIndustryMap replaces the hardcoded industry-color mapping.
  */
 export function buildColorGrading(
   styleColors: string[],
   brandColors?: { primary?: string; secondary?: string; accent?: string },
-  industry?: string
+  industry?: string,
+  overrideIndustryMap?: Record<string, string>
 ): string {
   const parts: string[] = []
 
@@ -171,16 +186,28 @@ export function buildColorGrading(
   // Industry-specific color notes
   if (industry) {
     const lower = industry.toLowerCase()
-    if (lower.includes('tech') || lower.includes('saas')) {
-      parts.push('Tech-forward color grading: clean blues, subtle gradients')
-    } else if (lower.includes('fashion') || lower.includes('luxury')) {
-      parts.push('Fashion-grade color: rich blacks, selective color pop, editorial finish')
-    } else if (lower.includes('food') || lower.includes('restaurant')) {
-      parts.push('Warm appetizing tones, saturated naturals, golden highlights')
-    } else if (lower.includes('health') || lower.includes('wellness')) {
-      parts.push('Fresh organic tones, clean whites, calming natural palette')
-    } else if (lower.includes('finance') || lower.includes('banking')) {
-      parts.push('Trust-building palette: deep navy, crisp whites, silver accents')
+
+    if (overrideIndustryMap) {
+      // Check override map for any matching key
+      for (const [key, description] of Object.entries(overrideIndustryMap)) {
+        if (lower.includes(key.toLowerCase())) {
+          parts.push(description)
+          break
+        }
+      }
+    } else {
+      // Hardcoded defaults
+      if (lower.includes('tech') || lower.includes('saas')) {
+        parts.push('Tech-forward color grading: clean blues, subtle gradients')
+      } else if (lower.includes('fashion') || lower.includes('luxury')) {
+        parts.push('Fashion-grade color: rich blacks, selective color pop, editorial finish')
+      } else if (lower.includes('food') || lower.includes('restaurant')) {
+        parts.push('Warm appetizing tones, saturated naturals, golden highlights')
+      } else if (lower.includes('health') || lower.includes('wellness')) {
+        parts.push('Fresh organic tones, clean whites, calming natural palette')
+      } else if (lower.includes('finance') || lower.includes('banking')) {
+        parts.push('Trust-building palette: deep navy, crisp whites, silver accents')
+      }
     }
   }
 
@@ -201,9 +228,10 @@ const STYLE_AXIS_MAP: Record<string, string> = {
 }
 
 /** Map a style axis to composition and aesthetic modifiers */
-export function mapStyleAxis(axis?: string): string {
+export function mapStyleAxis(axis?: string, overrideMap?: Record<string, string>): string {
   if (!axis) return ''
-  return STYLE_AXIS_MAP[axis.toLowerCase()] || ''
+  const map = overrideMap ?? STYLE_AXIS_MAP
+  return map[axis.toLowerCase()] || ''
 }
 
 // ─── Density Level ──────────────────────────────────────────────────────────
@@ -215,9 +243,10 @@ const DENSITY_MAP: Record<string, string> = {
 }
 
 /** Map density level to visual complexity */
-export function mapDensity(level?: string): string {
+export function mapDensity(level?: string, overrideMap?: Record<string, string>): string {
   if (!level) return ''
-  return DENSITY_MAP[level.toLowerCase()] || ''
+  const map = overrideMap ?? DENSITY_MAP
+  return map[level.toLowerCase()] || ''
 }
 
 // ─── Energy Level ───────────────────────────────────────────────────────────
@@ -229,9 +258,10 @@ const ENERGY_MAP: Record<string, string> = {
 }
 
 /** Map energy level to composition dynamism */
-export function mapEnergy(level?: string): string {
+export function mapEnergy(level?: string, overrideMap?: Record<string, string>): string {
   if (!level) return ''
-  return ENERGY_MAP[level.toLowerCase()] || ''
+  const map = overrideMap ?? ENERGY_MAP
+  return map[level.toLowerCase()] || ''
 }
 
 // ─── Transition Enrichment ──────────────────────────────────────────────────

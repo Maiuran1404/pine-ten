@@ -1,6 +1,7 @@
 import 'server-only'
 import { generateWithFallback } from './image-providers'
 import type { ProviderStrategy, ImageGenerationResponse } from './image-providers/types'
+import type { ImagePipelineConfig } from './image-pipeline-config'
 import { logger } from '@/lib/logger'
 
 // Re-export prompt builder from shared module (no server-only restriction)
@@ -23,6 +24,8 @@ export interface GenerateImageOptions {
   anchorImage?: { base64: string; mimeType: string }
   /** Provider strategy to use */
   strategy?: ProviderStrategy
+  /** Pipeline config overrides from admin settings */
+  config?: ImagePipelineConfig
 }
 
 export interface GenerateImageResult {
@@ -65,7 +68,7 @@ export async function generateSceneImage(
   prompt: string,
   options: GenerateImageOptions = {}
 ): Promise<GenerateImageResult> {
-  const { size = '1536x1024', referenceImages, anchorImage, strategy } = options
+  const { size = '1536x1024', referenceImages, anchorImage, strategy, config } = options
   const aspectRatio = sizeToAspectRatio(size)
 
   // Determine strategy if not explicit
@@ -78,6 +81,9 @@ export async function generateSceneImage(
     }
   }
 
+  const negativePrompt = config?.prompts.negativePrompt ?? DEFAULT_NEGATIVE_PROMPT
+  const maxRetries = config?.executionLimits.maxRetries
+
   logger.info(
     {
       strategy: resolvedStrategy,
@@ -89,13 +95,17 @@ export async function generateSceneImage(
     'Generating scene image'
   )
 
-  const result: ImageGenerationResponse = await generateWithFallback(resolvedStrategy, {
-    prompt,
-    aspectRatio,
-    referenceImages,
-    anchorImage,
-    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
-  })
+  const result: ImageGenerationResponse = await generateWithFallback(
+    resolvedStrategy,
+    {
+      prompt,
+      aspectRatio,
+      referenceImages,
+      anchorImage,
+      negativePrompt,
+    },
+    maxRetries
+  )
 
   return {
     base64: result.base64,

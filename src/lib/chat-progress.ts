@@ -90,12 +90,19 @@ export function calculateChatStageFromBriefing(briefingStage: BriefingStage): Pr
   const stageIndex = BRIEFING_CHAT_STAGES.indexOf(chatStage)
 
   const completedStages = BRIEFING_CHAT_STAGES.slice(0, stageIndex)
-  const progressPercentage = Math.round((stageIndex / (BRIEFING_CHAT_STAGES.length - 1)) * 100)
+  const basePercentage = Math.round((stageIndex / (BRIEFING_CHAT_STAGES.length - 1)) * 100)
+
+  // Add sub-stage progress within the "brief" stage so it doesn't stay at 0%
+  let subStageBonus = 0
+  if (chatStage === 'brief') {
+    const subStageMap: Record<string, number> = { EXTRACT: 0, TASK_TYPE: 3, INTENT: 7 }
+    subStageBonus = subStageMap[briefingStage] ?? 0
+  }
 
   return {
     currentStage: chatStage,
     completedStages,
-    progressPercentage: Math.min(100, progressPercentage),
+    progressPercentage: Math.min(100, basePercentage + subStageBonus),
     stageDescriptions: STAGE_DESCRIPTIONS,
   }
 }

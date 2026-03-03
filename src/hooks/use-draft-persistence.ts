@@ -30,6 +30,15 @@ import type { TaskData } from '@/components/chat/chat-interface'
  * Prevents crash recovery loops (BUG-9) where poisoned URLs from external image
  * search results persist in draft storage and cause next/image to throw on render.
  */
+const ALLOWED_IMAGE_HOSTS = [
+  'supabase.co',
+  'supabase.in',
+  'oaidalleapiprodscus.blob.core.windows.net',
+  'replicate.delivery',
+  'fal.media',
+  'getcrafted.ai',
+]
+
 function sanitizeRestoredMessages(messages: Array<Record<string, unknown>>): void {
   for (const msg of messages) {
     const sd = msg.structureData as
@@ -40,12 +49,10 @@ function sanitizeRestoredMessages(messages: Array<Record<string, unknown>>): voi
         if (scene.resolvedImageUrl) {
           try {
             const url = new URL(scene.resolvedImageUrl)
-            // Strip encrypted Google thumbnail URLs and obviously broken URLs
-            if (
-              url.hostname.includes('encrypted-tbn') ||
-              url.hostname.includes('gstatic.com') ||
-              url.protocol !== 'https:'
-            ) {
+            const isAllowed =
+              url.protocol === 'https:' &&
+              ALLOWED_IMAGE_HOSTS.some((host) => url.hostname.endsWith(host))
+            if (!isAllowed) {
               scene.resolvedImageUrl = undefined
             }
           } catch {
@@ -265,47 +272,20 @@ export function useDraftPersistence({
     setNeedsAutoContinue,
   ])
 
-  // Auto-save draft when messages change
+  // Auto-save draft when messages change (debounced to reduce localStorage writes)
   const onDraftUpdateRef = useRef(onDraftUpdate)
   useEffect(() => {
     onDraftUpdateRef.current = onDraftUpdate
   }, [onDraftUpdate])
 
+  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
     if (!isInitialized) return
     if (messages.length <= 1 && messages[0]?.id === 'welcome') return
 
-    const moodboardItemsForTitle = moodboardItems.map((item) => ({
-      id: item.id,
-      type: item.type,
-      imageUrl: item.imageUrl,
-      name: item.name,
-      metadata: item.metadata,
-      order: item.order,
-      addedAt: item.addedAt.toISOString(),
-    }))
-
-    const existingDraft = getDraft(draftId)
-    const draftCreatedAt = existingDraft?.createdAt || new Date().toISOString()
-
-    const draft: ChatDraft = {
-      id: draftId,
-      title: generateDraftTitle(messages, moodboardItemsForTitle, draftCreatedAt),
-      messages: messages.map((m) => ({
-        id: m.id,
-        role: m.role,
-        content: m.content,
-        timestamp: m.timestamp.toISOString(),
-        attachments: m.attachments,
-        quickOptions: m.quickOptions,
-        deliverableStyles: m.deliverableStyles,
-        deliverableStyleMarker: m.deliverableStyleMarker,
-        selectedStyle: m.selectedStyle,
-        taskProposal: m.taskProposal,
-        videoReferences: m.videoReferences,
-      })),
-      selectedStyles,
-      moodboardItems: moodboardItems.map((item) => ({
+    clearTimeout(draftSaveTimerRef.current)
+    draftSaveTimerRef.current = setTimeout(() => {
+      const moodboardItemsForTitle = moodboardItems.map((item) => ({
         id: item.id,
         type: item.type,
         imageUrl: item.imageUrl,
@@ -313,16 +293,51 @@ export function useDraftPersistence({
         metadata: item.metadata,
         order: item.order,
         addedAt: item.addedAt.toISOString(),
-      })),
-      briefingState: serializedBriefingState,
-      pendingTask,
-      createdAt: draftCreatedAt,
-      updatedAt: new Date().toISOString(),
-    }
+      }))
 
-    saveDraft(draft)
-    setLastSavedAt(new Date()) // eslint-disable-line react-hooks/set-state-in-effect -- intentional: updates save indicator UI after draft persistence
-    onDraftUpdateRef.current?.()
+      const existingDraft = getDraft(draftId)
+      const draftCreatedAt = existingDraft?.createdAt || new Date().toISOString()
+
+      const draft: ChatDraft = {
+        id: draftId,
+        title: generateDraftTitle(messages, moodboardItemsForTitle, draftCreatedAt),
+        messages: messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp.toISOString(),
+          attachments: m.attachments,
+          quickOptions: m.quickOptions,
+          deliverableStyles: m.deliverableStyles,
+          deliverableStyleMarker: m.deliverableStyleMarker,
+          selectedStyle: m.selectedStyle,
+          taskProposal: m.taskProposal,
+          videoReferences: m.videoReferences,
+        })),
+        selectedStyles,
+        moodboardItems: moodboardItems.map((item) => ({
+          id: item.id,
+          type: item.type,
+          imageUrl: item.imageUrl,
+          name: item.name,
+          metadata: item.metadata,
+          order: item.order,
+          addedAt: item.addedAt.toISOString(),
+        })),
+        briefingState: serializedBriefingState,
+        pendingTask,
+        createdAt: draftCreatedAt,
+        updatedAt: new Date().toISOString(),
+      }
+
+      const saved = saveDraft(draft)
+      if (saved) {
+        setLastSavedAt(new Date())
+      }
+      onDraftUpdateRef.current?.()
+    }, 2000)
+
+    return () => clearTimeout(draftSaveTimerRef.current)
   }, [
     messages,
     selectedStyles,

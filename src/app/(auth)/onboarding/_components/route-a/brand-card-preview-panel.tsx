@@ -50,7 +50,7 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="relative rounded-2xl overflow-hidden aspect-square flex flex-col"
+          className="relative rounded-2xl overflow-hidden flex flex-col"
           style={{
             background: 'var(--surface-overlay)',
             backdropFilter: 'blur(40px)',
@@ -117,9 +117,6 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                 'Your brand story appears here — edit colors, fonts, and details on the left to see changes in real-time.'}
             </p>
           </div>
-
-          {/* Spacer to push color bar and engagement to bottom */}
-          <div className="flex-1" />
 
           {/* Brand color banner */}
           <div className="flex h-2.5">

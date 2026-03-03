@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling, successResponse } from '@/lib/errors'
 import { buildScenePrompt } from '@/lib/ai/scene-prompt-builder'
 import { generateSceneImage } from '@/lib/ai/image-generation'
+import { loadImagePipelineConfig } from '@/lib/ai/image-pipeline-config'
 import type { StyleMetadata, BrandContextForPrompt } from '@/lib/ai/image-providers/types'
 import { uploadToStorage } from '@/lib/storage'
 import { fetchReferenceImagesAsBase64 } from '@/lib/ai/reference-image-utils'
@@ -51,6 +52,9 @@ export async function POST(request: NextRequest) {
   return withErrorHandling(async () => {
     const session = await requireAuth()
     const body = regenerateSchema.parse(await request.json())
+
+    // ─── Load pipeline config from DB (merged with defaults) ──────
+    const pipelineConfig = await loadImagePipelineConfig()
 
     // ─── Fetch rich style metadata ───────────────────────────────
     let styleMetadata: StyleMetadata | undefined
@@ -124,9 +128,9 @@ export async function POST(request: NextRequest) {
     if (body.customPrompt) {
       prompt = body.customPrompt
     } else if (styleMetadata) {
-      prompt = buildScenePrompt(body.scene, styleMetadata, brandContext)
+      prompt = buildScenePrompt(body.scene, styleMetadata, brandContext, undefined, pipelineConfig)
     } else {
-      prompt = buildScenePrompt(body.scene, body.styleContext)
+      prompt = buildScenePrompt(body.scene, body.styleContext, undefined, undefined, pipelineConfig)
     }
 
     logger.info(
@@ -143,10 +147,11 @@ export async function POST(request: NextRequest) {
 
     // ─── Generate ────────────────────────────────────────────────
     const result = await generateSceneImage(prompt, {
-      size: '1536x1024',
+      size: pipelineConfig.executionLimits.imageSize,
       referenceImages: anchorImage ? undefined : referenceImages,
       anchorImage,
       strategy: anchorImage ? 'consistency' : referenceImages ? 'hero' : 'standard',
+      config: pipelineConfig,
     })
 
     // Upload with correct content type

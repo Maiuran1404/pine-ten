@@ -360,10 +360,9 @@ export function useStoryboard({
   // Scene image data remaps automatically since it derives from storyboardScenes
   const handleSceneReorder = useCallback(
     (reorderedScenes: import('@/lib/ai/briefing-state-machine').StoryboardScene[]) => {
-      pushHistory(storyboardScenes)
-
       setStoryboardScenes((prev) => {
         if (!prev || prev.type !== 'storyboard') return prev
+        pushHistory(prev)
         const updated = {
           ...prev,
           scenes: reorderedScenes.map((scene, i) => ({
@@ -375,15 +374,15 @@ export function useStoryboard({
         return updated
       })
     },
-    [pushHistory, storyboardScenes]
+    [pushHistory]
   )
 
   // Edit a scene field directly (user typed a change)
   const handleSceneEdit = useCallback(
     (sceneNumber: number, field: string, value: string) => {
-      pushHistory(storyboardScenes)
       setStoryboardScenes((prev) => {
         if (!prev || prev.type !== 'storyboard') return prev
+        pushHistory(prev)
         const updated = {
           ...prev,
           scenes: prev.scenes.map((s) =>
@@ -394,7 +393,7 @@ export function useStoryboard({
         return updated
       })
     },
-    [pushHistory, storyboardScenes]
+    [pushHistory]
   )
 
   // Trigger AI regeneration of whole storyboard
@@ -485,8 +484,6 @@ export function useStoryboard({
       }
       if (changed.size > 0) {
         setChangedScenes(changed)
-        // Clear after 8 seconds (longer so users can hover to see diffs)
-        setTimeout(() => setChangedScenes(new Map()), 8000)
       }
     }
 
@@ -803,6 +800,7 @@ export function useStoryboard({
     structureType,
     structurePanelVisible,
     changedScenes,
+    dismissChangedScenes: useCallback(() => setChangedScenes(new Map()), []),
     globalStyles,
     setGlobalStyles,
     websiteFidelity,

@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 import { buildScenePrompt } from '@/lib/ai/scene-prompt-builder'
 import { generateSceneImage } from '@/lib/ai/image-generation'
+import { loadImagePipelineConfig } from '@/lib/ai/image-pipeline-config'
 import type { StyleMetadata, BrandContextForPrompt } from '@/lib/ai/image-providers/types'
 import { uploadToStorage } from '@/lib/storage'
 import { fetchReferenceImagesAsBase64 } from '@/lib/ai/reference-image-utils'
@@ -100,6 +101,9 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth()
     const body = generateSchema.parse(await request.json())
 
+    // ─── Load pipeline config from DB (merged with defaults) ──────
+    const pipelineConfig = await loadImagePipelineConfig()
+
     // ─── Step 1: Fetch ALL rich style metadata ─────────────────────
     let styleMetadata: StyleMetadata | undefined
     let referenceImages: Array<{ base64: string; mimeType: string }> | undefined
@@ -168,15 +172,27 @@ export async function POST(request: NextRequest) {
     // Generate hero frame (scene 1) first
     const heroScene = sortedScenes[0]
     const heroPrompt = styleMetadata
-      ? buildScenePrompt(heroScene, styleMetadata, brandContext, {
-          totalScenes,
-          sceneIndex: 0,
-          isHeroFrame: true,
-        })
-      : buildScenePrompt(heroScene, body.styleContext, undefined, {
-          totalScenes,
-          sceneIndex: 0,
-        })
+      ? buildScenePrompt(
+          heroScene,
+          styleMetadata,
+          brandContext,
+          {
+            totalScenes,
+            sceneIndex: 0,
+            isHeroFrame: true,
+          },
+          pipelineConfig
+        )
+      : buildScenePrompt(
+          heroScene,
+          body.styleContext,
+          undefined,
+          {
+            totalScenes,
+            sceneIndex: 0,
+          },
+          pipelineConfig
+        )
 
     let heroResult: {
       sceneNumber: number
@@ -188,9 +204,10 @@ export async function POST(request: NextRequest) {
 
     try {
       const result = await generateSceneImage(heroPrompt, {
-        size: '1536x1024',
+        size: pipelineConfig.executionLimits.imageSize,
         referenceImages,
         strategy: 'hero',
+        config: pipelineConfig,
       })
 
       // Upload hero frame immediately
@@ -245,12 +262,24 @@ export async function POST(request: NextRequest) {
       const tasks = remainingScenes.map((scene, i) => async () => {
         const sceneIndex = i + 1 // +1 because hero is index 0
         const prompt = styleMetadata
-          ? buildScenePrompt(scene, styleMetadata, brandContext, {
-              totalScenes,
-              sceneIndex,
-              isHeroFrame: false,
-            })
-          : buildScenePrompt(scene, body.styleContext, undefined, { totalScenes, sceneIndex })
+          ? buildScenePrompt(
+              scene,
+              styleMetadata,
+              brandContext,
+              {
+                totalScenes,
+                sceneIndex,
+                isHeroFrame: false,
+              },
+              pipelineConfig
+            )
+          : buildScenePrompt(
+              scene,
+              body.styleContext,
+              undefined,
+              { totalScenes, sceneIndex },
+              pipelineConfig
+            )
 
         // Cap style refs to 1 for consistency scenes — the hero anchor image is
         // prepended by FLUX.2 Pro, so total refs = hero + 1 style = 2.
@@ -258,10 +287,11 @@ export async function POST(request: NextRequest) {
         const consistencyRefs = anchorImage ? referenceImages?.slice(0, 1) : referenceImages
 
         const result = await generateSceneImage(prompt, {
-          size: '1536x1024',
+          size: pipelineConfig.executionLimits.imageSize,
           referenceImages: consistencyRefs,
           anchorImage,
           strategy: anchorImage ? 'consistency' : 'standard',
+          config: pipelineConfig,
         })
 
         // Upload to Supabase with correct content type
@@ -277,8 +307,11 @@ export async function POST(request: NextRequest) {
         return { sceneNumber: scene.sceneNumber, imageUrl }
       })
 
-      // Run with concurrency limit of 4
-      const settled = await parallelWithLimit(tasks, 4)
+      // Run with configurable concurrency limit
+      const settled = await parallelWithLimit(
+        tasks,
+        pipelineConfig.executionLimits.concurrencyLimit
+      )
 
       for (let i = 0; i < settled.length; i++) {
         const result = settled[i]

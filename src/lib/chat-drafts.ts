@@ -117,14 +117,16 @@ function getLocalDrafts(): ChatDraft[] {
   }
 }
 
-function setLocalDrafts(drafts: ChatDraft[]): void {
-  if (typeof window === 'undefined') return
+function setLocalDrafts(drafts: ChatDraft[]): boolean {
+  if (typeof window === 'undefined') return false
   try {
     localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts))
     // Defer event so subscribers don't setState during another component's render
     queueMicrotask(() => window.dispatchEvent(new CustomEvent('drafts-updated')))
+    return true
   } catch (error) {
     logger.error({ err: error }, 'Failed to save drafts to localStorage')
+    return false
   }
 }
 
@@ -173,7 +175,7 @@ export function getDraft(id: string): ChatDraft | null {
   return drafts.find((d) => d.id === id) || null
 }
 
-export function saveDraft(draft: ChatDraft): void {
+export function saveDraft(draft: ChatDraft): boolean {
   // Update local storage immediately for responsive UI
   const drafts = getLocalDrafts()
   const existingIndex = drafts.findIndex((d) => d.id === draft.id)
@@ -184,12 +186,12 @@ export function saveDraft(draft: ChatDraft): void {
     drafts.unshift(draft)
   }
 
-  setLocalDrafts(drafts.slice(0, 10))
-
   // NOTE: Server sync disabled temporarily - was causing duplicate entries
   // because server assigns new UUIDs to local draft IDs, creating multiple entries.
   // To re-enable: uncomment the line below and fix the ID reconciliation logic.
   // syncDraftToServer(draft).catch(console.error);
+
+  return setLocalDrafts(drafts.slice(0, 10))
 }
 
 export function deleteDraft(id: string): void {

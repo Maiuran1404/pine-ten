@@ -394,7 +394,14 @@ function buildStrategicPrompt(
   metadata: { title?: string; description?: string } | undefined,
   markdownContent: string | undefined,
   deepContext: string | null,
-  links: string[] | undefined
+  links: string[] | undefined,
+  firecrawlColors?: {
+    primary?: string
+    secondary?: string
+    accent?: string
+    background?: string
+    textPrimary?: string
+  }
 ): string {
   return `Analyze this website and extract strategic brand information. Visual identity (colors, fonts, typography) has already been extracted separately — focus ONLY on strategic analysis.
 
@@ -435,6 +442,12 @@ IMPORTANT: ALL output must be in English, even if the website content is in anot
 12. **Competitors** (1-5): name, website, positioning, strengths, weaknesses
 13. **Positioning**: uvp, missionStatement, positioningStatement, differentiators, targetMarket
 14. **Brand Voice & Messaging**: messagingPillars, toneDoList, toneDontList, brandPromise, keyPhrases, avoidPhrases
+15. **Color Verification**: The following colors were extracted automatically from the website CSS:
+   - Primary: ${firecrawlColors?.primary || 'none'}
+   - Secondary: ${firecrawlColors?.accent || firecrawlColors?.secondary || 'none'}
+   - Accent: ${firecrawlColors?.textPrimary || 'none'}
+   - Background: ${firecrawlColors?.background || 'none'}
+   If these colors look WRONG for this brand (e.g., the brand is well-known and these don't match its actual identity, or the colors seem like CSS framework/UI defaults rather than the real brand colors), provide corrected hex colors in the JSON. If they look correct, omit the color fields from your response.
 
 Return ONLY valid JSON:
 {
@@ -456,6 +469,10 @@ Return ONLY valid JSON:
   "signalWarmth": number,
   "signalEnergy": number,
   "brandVoiceSummary": "string (1-2 sentences)",
+  "primaryColor": "#hex (only if correcting wrong colors)",
+  "secondaryColor": "#hex or null (only if correcting)",
+  "accentColor": "#hex or null (only if correcting)",
+  "brandColors": ["#hex array (only if correcting)"],
   "audiences": [{ "name": "string", "isPrimary": true, "demographics": {}, "firmographics": {}, "psychographics": { "painPoints": [], "goals": [], "values": [] }, "behavioral": {}, "confidence": 85 }],
   "competitors": [{ "name": "string", "website": "url", "positioning": "string", "strengths": "string", "weaknesses": "string" }],
   "positioning": { "uvp": "string", "missionStatement": "string", "positioningStatement": "string", "differentiators": ["string"], "targetMarket": "string" },
@@ -891,13 +908,14 @@ Return ONLY a valid JSON object with this exact structure:
         metadata,
         markdown?.slice(0, markdownLimit),
         deepContext,
-        links
+        links,
+        branding?.colors
       )
     : textPrompt
-  // Keep max_tokens at 3000 for both paths — the strategic response still needs
-  // room for audiences (nested objects), competitors, positioning, and brandVoice.
-  // The speed savings come from skipping the screenshot and shorter input prompt.
-  const effectiveMaxTokens = 3000
+  // 4096 tokens to avoid truncation — strategic responses include audiences (nested objects),
+  // competitors, positioning, brandVoice, and optional color corrections.
+  // Previous 3000 limit caused JSON truncation errors on complex brands.
+  const effectiveMaxTokens = 4096
   logger.info(
     {
       url: normalizedUrl,
@@ -912,6 +930,7 @@ Return ONLY a valid JSON object with this exact structure:
   // When high-confidence branding is available, skip the screenshot entirely
   let useScreenshot = hasHighConfidenceBranding ? false : !!screenshot
   let brandData: BrandExtraction | null = null
+  let claudeAnalysisSucceeded = false
   let lastError: Error | null = null
 
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -964,7 +983,30 @@ Return ONLY a valid JSON object with this exact structure:
       jsonStr = jsonStr.replace(/:\s*undefined\b/g, ': null')
       // Remove trailing commas before } or ]
       jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1')
-      brandData = JSON.parse(jsonStr)
+      // Attempt to repair truncated JSON (e.g., from max_tokens cutoff)
+      // by closing any unclosed brackets/braces
+      try {
+        brandData = JSON.parse(jsonStr)
+      } catch {
+        // Count unclosed delimiters and attempt repair
+        let repaired = jsonStr
+        // Remove any trailing incomplete key-value pair (e.g., "key": "val)
+        repaired = repaired.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '')
+        // Remove trailing incomplete array element
+        repaired = repaired.replace(/,\s*\{[^}]*$/, '')
+        // Close unclosed structures
+        const openBraces =
+          (repaired.match(/\{/g) || []).length - (repaired.match(/\}/g) || []).length
+        const openBrackets =
+          (repaired.match(/\[/g) || []).length - (repaired.match(/\]/g) || []).length
+        repaired += ']'.repeat(Math.max(0, openBrackets))
+        repaired += '}'.repeat(Math.max(0, openBraces))
+        // Remove trailing commas again after repair
+        repaired = repaired.replace(/,\s*([}\]])/g, '$1')
+        brandData = JSON.parse(repaired)
+        logger.info('Repaired truncated JSON from Claude response')
+      }
+      claudeAnalysisSucceeded = true
       break // Success, exit retry loop
     } catch (error) {
       lastError = error as Error
@@ -1093,8 +1135,16 @@ Return ONLY a valid JSON object with this exact structure:
   }
 
   // If Firecrawl had good branding colors (high confidence), prefer those over Claude's guesses
-  // This gives us the best of both worlds: accurate colors from Firecrawl + audiences from Claude
-  if (firecrawlBrandData && hasBrandingColors) {
+  // UNLESS Claude provided color corrections (strategic prompt asks Claude to verify Firecrawl colors
+  // and only return corrections when they're wrong — e.g., Tesla returns blues from CSS but brand is red)
+  const claudeProvidedColorCorrections =
+    claudeAnalysisSucceeded &&
+    hasHighConfidenceBranding &&
+    brandData.primaryColor &&
+    brandData.primaryColor !== '#6366f1' && // not the default
+    brandData.primaryColor !== firecrawlBrandData?.primaryColor // actually different from Firecrawl
+
+  if (firecrawlBrandData && hasBrandingColors && !claudeProvidedColorCorrections) {
     brandData.primaryColor = firecrawlBrandData.primaryColor
     brandData.secondaryColor = firecrawlBrandData.secondaryColor
     brandData.accentColor = firecrawlBrandData.accentColor
@@ -1104,6 +1154,24 @@ Return ONLY a valid JSON object with this exact structure:
       brandData.brandColors = firecrawlBrandData.brandColors
     }
     logger.info("Using high-confidence Firecrawl colors with Claude's audience analysis")
+  } else if (claudeProvidedColorCorrections) {
+    // Claude detected Firecrawl colors were wrong and provided corrections
+    // Keep Claude's colors but fill in background/text from Firecrawl if Claude didn't provide them
+    if (firecrawlBrandData) {
+      if (!brandData.backgroundColor || brandData.backgroundColor === '#ffffff') {
+        brandData.backgroundColor = firecrawlBrandData.backgroundColor
+      }
+      if (!brandData.textColor || brandData.textColor === '#1f2937') {
+        brandData.textColor = firecrawlBrandData.textColor
+      }
+    }
+    logger.info(
+      {
+        firecrawlPrimary: firecrawlBrandData?.primaryColor,
+        claudePrimary: brandData.primaryColor,
+      },
+      "Claude corrected Firecrawl's colors — using Claude's color corrections"
+    )
   } else {
     // Only enhance with Firecrawl branding data if Claude returned default values AND Firecrawl has some confidence
     // This prevents low-confidence Firecrawl colors from overriding Claude's analysis
