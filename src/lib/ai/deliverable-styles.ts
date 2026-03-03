@@ -36,7 +36,8 @@ export async function getInitialDeliverableStyles(deliverableType: DeliverableTy
       deliverableStyleReferences.displayOrder
     )
 
-  return styles
+  // Sort by featuredOrder so Premium Cinematic (featuredOrder=1) comes first
+  return styles.sort((a, b) => a.featuredOrder - b.featuredOrder)
 }
 
 /**

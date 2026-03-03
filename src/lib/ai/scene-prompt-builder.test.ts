@@ -65,12 +65,12 @@ describe('buildScenePrompt with StyleMetadata (rich path)', () => {
     expect(result).toContain('Close-up (CU)')
   })
 
-  it('includes quality footer with photorealistic', () => {
+  it('includes quality footer', () => {
     const result = buildScenePrompt(makeScene(), makeStyleMetadata())
 
-    expect(result).toContain('Professional cinematic quality')
-    expect(result).toContain('photorealistic')
-    expect(result).toContain('no text or watermarks')
+    expect(result).toContain('Editorial cinematography')
+    expect(result).toContain('Not a stock photo')
+    expect(result).toContain('No text, no watermarks')
   })
 
   it('includes visual DNA prefix for multi-scene batches', () => {
@@ -310,8 +310,8 @@ describe('buildScenePrompt with string styleContext (legacy path)', () => {
   it('includes quality footer', () => {
     const result = buildScenePrompt(makeScene(), 'minimal')
 
-    expect(result).toContain('Professional cinematic quality')
-    expect(result).toContain('photorealistic')
+    expect(result).toContain('Editorial cinematography')
+    expect(result).toContain('Not a stock photo')
   })
 
   it('enforces 1500 character prompt length limit', () => {
@@ -373,8 +373,8 @@ describe('buildScenePrompt with partial or empty StyleMetadata', () => {
     const result = buildScenePrompt(makeScene(), style)
 
     // Should still produce a valid prompt with quality footer
-    expect(result).toContain('Professional cinematic quality')
-    expect(result).toContain('photorealistic')
+    expect(result).toContain('Editorial cinematography')
+    expect(result).toContain('Not a stock photo')
     // Should not contain style-dependent content
     expect(result).not.toContain('Dominant palette')
   })
@@ -405,7 +405,7 @@ describe('buildScenePrompt with partial or empty StyleMetadata', () => {
     const result = buildScenePrompt(makeScene(), styleNoExtras)
 
     // Should still produce a valid prompt
-    expect(result).toContain('Professional cinematic quality')
+    expect(result).toContain('Editorial cinematography')
   })
 })
 

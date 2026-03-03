@@ -682,8 +682,24 @@ function PreviewTab({
   onPreview,
   previewing,
 }: {
-  scene: Record<string, string>
-  setScene: (s: Record<string, string>) => void
+  scene: {
+    title: string
+    description: string
+    visualNote: string
+    cameraNote: string
+    voiceover: string
+    imageGenerationPrompt: string
+  }
+  setScene: React.Dispatch<
+    React.SetStateAction<{
+      title: string
+      description: string
+      visualNote: string
+      cameraNote: string
+      voiceover: string
+      imageGenerationPrompt: string
+    }>
+  >
   result: {
     assembledPrompt: string
     parts: Array<{ label: string; content: string }>

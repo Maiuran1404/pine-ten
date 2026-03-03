@@ -447,9 +447,9 @@ export function StyleSelectionPanel({
                     />
                   )}
 
-                  {/* Compact cards grid */}
+                  {/* Compact cards */}
                   {compactStyles.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2.5">
+                    <div className="flex flex-col gap-2.5">
                       {compactStyles.map((style, index) => (
                         <CompactStyleCard
                           key={style.id}

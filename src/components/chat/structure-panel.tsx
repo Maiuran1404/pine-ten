@@ -713,42 +713,8 @@ export function StructurePanel({
     )
   }
 
-  // Storyboard: show loading screen only during batch generation (not single-scene regen)
-  // isGeneratingImages is true only during generateSceneImages (batch), not regenerateSceneImage
-  if (
-    structureData?.type === 'storyboard' &&
-    isGeneratingImages &&
-    imageGenerationProgress &&
-    imageGenerationProgress.size > 0
-  ) {
-    const entries = Array.from(imageGenerationProgress.values())
-    const allDone = entries.every((s) => s === 'done' || s === 'error')
-    if (!allDone) {
-      const doneCount = entries.filter((s) => s === 'done').length
-      const generatingCount = entries.filter((s) => s === 'generating').length
-      const total = entries.length
-      const message =
-        generatingCount > 0
-          ? `Generating scene visuals (${doneCount}/${total})...`
-          : `Preparing scene images...`
-      const sceneInfo =
-        structureData.type === 'storyboard'
-          ? structureData.scenes.map((s) => ({
-              sceneNumber: s.sceneNumber,
-              title: s.title,
-            }))
-          : undefined
-      return (
-        <div className={cn('flex flex-col h-full bg-background', className)}>
-          <PlaceholderState
-            structureType="storyboard"
-            progress={{ done: doneCount, total, message }}
-            scenes={sceneInfo}
-          />
-        </div>
-      )
-    }
-  }
+  // Storyboard: show real storyboard content while images generate in background
+  // The RichStoryboardPanel handles per-scene loading states via imageGenerationProgress
 
   // Active — render the appropriate view
   return (

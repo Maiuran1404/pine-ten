@@ -7,7 +7,7 @@ import { DEFAULT_IMAGE_PIPELINE_CONFIG } from '@/lib/ai/image-pipeline-config'
 import { z } from 'zod'
 
 const previewSchema = z.object({
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
   scene: z.object({
     title: z.string().optional(),
     description: z.string().optional(),
