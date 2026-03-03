@@ -160,38 +160,42 @@ export function ChatLayout({
               <div className="flex-1 min-h-0 pb-14 lg:pb-0">{children}</div>
             </div>
 
-            {/* Desktop: Resizable split between chat and structure panel */}
-            <ResizablePanelGroup orientation="horizontal" className="hidden lg:flex h-full">
-              <ResizablePanel id="chat" defaultSize={55} minSize={35} maxSize={65}>
-                <div
-                  className={cn(
-                    'flex flex-col h-full min-w-0 relative transition-opacity duration-500',
-                    canvasActive && 'opacity-[0.92]'
-                  )}
-                >
-                  <div className="flex-1 min-h-0">{children}</div>
-                </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel id="structure" defaultSize={45} minSize={35} maxSize={65}>
-                <div
-                  className={cn(
-                    'flex flex-col h-full bg-muted/20 transition-all duration-500',
-                    canvasActive && 'ring-1 ring-crafted-sage/30'
-                  )}
-                >
-                  {showProgress && (
-                    <LabeledProgressBar
-                      currentStage={currentStage}
-                      completedStages={completedStages}
-                      progressPercentage={progressPercentage}
-                      stageDescription={stageDescription}
-                    />
-                  )}
-                  {structurePanelProps && <StructurePanel {...structurePanelProps} />}
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
+            {/* Desktop: Resizable split between chat and structure panel.
+                Wrapper div is required because ResizablePanelGroup injects
+                inline display:flex which overrides Tailwind's `hidden` class. */}
+            <div className="hidden lg:flex h-full w-full">
+              <ResizablePanelGroup orientation="horizontal" className="h-full">
+                <ResizablePanel id="chat" defaultSize={55} minSize={35} maxSize={65}>
+                  <div
+                    className={cn(
+                      'flex flex-col h-full min-w-0 relative transition-opacity duration-500',
+                      canvasActive && 'opacity-[0.92]'
+                    )}
+                  >
+                    <div className="flex-1 min-h-0">{children}</div>
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel id="structure" defaultSize={45} minSize={35} maxSize={65}>
+                  <div
+                    className={cn(
+                      'flex flex-col h-full bg-muted/20 transition-all duration-500',
+                      canvasActive && 'ring-1 ring-crafted-sage/30'
+                    )}
+                  >
+                    {showProgress && (
+                      <LabeledProgressBar
+                        currentStage={currentStage}
+                        completedStages={completedStages}
+                        progressPercentage={progressPercentage}
+                        stageDescription={stageDescription}
+                      />
+                    )}
+                    {structurePanelProps && <StructurePanel {...structurePanelProps} />}
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </div>
 
             {/* Mobile/Tablet: Structure panel bottom sheet */}
             <Sheet open={isMobileStructureOpen} onOpenChange={setIsMobileStructureOpen}>

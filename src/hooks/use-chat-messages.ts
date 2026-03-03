@@ -215,9 +215,9 @@ export function useChatMessages({
                 attachments: m.attachments,
               })),
             attachments: currentFiles && currentFiles.length > 0 ? currentFiles : undefined,
-            selectedStyles,
-            moodboardHasStyles,
-            briefingState: serializedBriefingState,
+            selectedStyles: selectedStylesRef.current,
+            moodboardHasStyles: moodboardHasStylesRef.current,
+            briefingState: serializedBriefingStateRef.current,
             latestStoryboard: latestStoryboardRef.current,
           }),
         })
@@ -244,14 +244,7 @@ export function useChatMessages({
         requestStartTimeRef.current = null
       }
     },
-    [
-      selectedStyles,
-      moodboardHasStyles,
-      serializedBriefingState,
-      processApiResponse,
-      latestStoryboardRef,
-      csrfFetch,
-    ]
+    [processApiResponse, latestStoryboardRef, csrfFetch]
   )
 
   // Send a specific message (for clickable options)
@@ -349,7 +342,7 @@ export function useChatMessages({
                 role: m.role,
                 content: m.content,
               })),
-            briefingState: serializedBriefingState,
+            briefingState: serializedBriefingStateRef.current,
             latestStoryboard: latestStoryboardRef.current,
             ...extraBody,
           }),
@@ -369,7 +362,7 @@ export function useChatMessages({
         isLoadingRef.current = false
       }
     },
-    [serializedBriefingState, processApiResponse, latestStoryboardRef, csrfFetch]
+    [processApiResponse, latestStoryboardRef, csrfFetch]
   )
 
   // Auto-continue conversation if last message was from user

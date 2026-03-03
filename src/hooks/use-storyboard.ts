@@ -520,7 +520,9 @@ export function useStoryboard({
 
       const currentNarrative = editedNarrative ?? videoNarrative
       if (currentNarrative) {
-        const narrativeSummary = `Approved narrative:\nConcept: ${currentNarrative.concept}\nNarrative: ${currentNarrative.narrative}\nHook: ${currentNarrative.hook}`
+        // Strip <<highlight markers>> so the user-visible message is clean
+        const clean = (s: string) => s.replace(/<<|>>/g, '')
+        const narrativeSummary = `Approved narrative:\nConcept: ${clean(currentNarrative.concept)}\nNarrative: ${clean(currentNarrative.narrative)}\nHook: ${clean(currentNarrative.hook)}`
         handleSendOption(
           `I've finalized the story narrative. ${narrativeSummary}\n\nLet\u2019s build the storyboard based on this.`,
           { narrativeApproved: true }

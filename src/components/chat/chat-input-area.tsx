@@ -42,11 +42,11 @@ const CATEGORY_ICON: Record<string, typeof Film> = {
 }
 
 const CATEGORY_ICON_BG: Record<string, string> = {
-  video: 'bg-crafted-green/15',
-  website: 'bg-crafted-sage/15',
-  content: 'bg-crafted-mint/20',
-  design: 'bg-crafted-green/15',
-  brand: 'bg-crafted-sage/15',
+  video: 'bg-crafted-green/12',
+  website: 'bg-crafted-sage/12',
+  content: 'bg-crafted-mint/15',
+  design: 'bg-crafted-green/12',
+  brand: 'bg-crafted-sage/12',
 }
 
 const CATEGORY_SUBTITLE: Record<string, string> = {
@@ -506,7 +506,7 @@ export const ChatInputArea = memo(function ChatInputArea({
           )}
         </div>
 
-        {/* Detected keyword entity cards — Perplexity-style */}
+        {/* Detected keyword entity cards — clean inline chips */}
         <AnimatePresence mode="popLayout">
           {detectedTags.length > 0 && (
             <motion.div
@@ -514,33 +514,36 @@ export const ChatInputArea = memo(function ChatInputArea({
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.15 }}
-              className="px-4 pb-2"
+              className="px-4 pb-3"
             >
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5">
                 {detectedTags.map((tag) => {
                   const Icon = CATEGORY_ICON[tag.category] ?? Film
                   return (
-                    <div
+                    <motion.div
                       key={tag.label}
-                      className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-xl bg-muted/60 border border-border/50"
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      className="flex items-center gap-3 pl-2 pr-4 py-2 rounded-xl bg-background border border-border/60 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]"
                     >
                       <div
                         className={cn(
-                          'w-7 h-7 rounded-lg flex items-center justify-center shrink-0',
+                          'w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0',
                           CATEGORY_ICON_BG[tag.category] ?? CATEGORY_ICON_BG.content
                         )}
                       >
-                        <Icon className="h-3.5 w-3.5 text-crafted-forest dark:text-crafted-mint" />
+                        <Icon className="h-4 w-4 text-crafted-forest dark:text-crafted-mint" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-foreground leading-tight truncate">
+                        <p className="text-[13px] font-medium text-foreground leading-snug truncate">
                           {tag.label}
                         </p>
-                        <p className="text-[10px] text-muted-foreground leading-tight">
+                        <p className="text-[11px] text-muted-foreground leading-snug">
                           {CATEGORY_SUBTITLE[tag.category] ?? tag.category}
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
                   )
                 })}
               </div>

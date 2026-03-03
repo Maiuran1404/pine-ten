@@ -194,21 +194,12 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
         briefingState.videoNarrative = narrativeParsed.data
       }
 
-      // Detect narrative approval — only at STRUCTURE stage (video narrative lives here).
-      // Without this guard, "looks good" at INSPIRATION (about a style) would
-      // retroactively satisfy the STRUCTURE gate and skip style selection.
-      if (briefingState.stage === 'STRUCTURE') {
-        const lastUserContent = messages[messages.length - 1]?.content || ''
-        const approvalPattern =
-          /\b(looks good|approve|approved|let'?s build|build the storyboard|that works|move forward)\b/i
-        if (
-          !briefingState.narrativeApproved &&
-          briefingState.videoNarrative &&
-          approvalPattern.test(lastUserContent)
-        ) {
-          briefingState.narrativeApproved = true
-        }
-      }
+      // Narrative approval is set exclusively by the client-side handleApproveNarrative
+      // (via stateOverride: { narrativeApproved: true }). The previous regex heuristic
+      // that auto-approved based on user message content (e.g. "looks good") was removed
+      // because it caused premature stage jumps — the AI could generate storyboard data
+      // in a refinement response, and the pattern matcher would approve the narrative,
+      // skipping the style selection step entirely.
     }
 
     // Parse [REGENERATE_IMAGES: X,Y] marker for explicit image regeneration

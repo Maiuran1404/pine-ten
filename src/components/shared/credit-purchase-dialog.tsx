@@ -9,10 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/shared/loading'
-import { Coins, Sparkles, Zap } from 'lucide-react'
+import { Check, Lock, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 
@@ -39,7 +37,7 @@ const creditPackages = [
     price: 1164,
     pricePerCredit: 4.66,
     originalPrice: 1225,
-    discount: '5% OFF',
+    discount: 5,
   },
   {
     id: 'credits_500',
@@ -48,7 +46,7 @@ const creditPackages = [
     price: 2205,
     pricePerCredit: 4.41,
     originalPrice: 2450,
-    discount: '10% OFF',
+    discount: 10,
   },
 ]
 
@@ -80,6 +78,7 @@ export function CreditPurchaseDialog({
   fetchCredits: shouldFetchCredits = false,
 }: CreditPurchaseDialogProps) {
   const [isLoading, setIsLoading] = useState<string | null>(null)
+  const [selectedPkg, setSelectedPkg] = useState<string | null>(null)
   const [credits, setCredits] = useState(initialCredits ?? 0)
 
   // Fetch credits from API if needed
@@ -109,6 +108,20 @@ export function CreditPurchaseDialog({
 
   const currentCredits = credits
   const creditsNeeded = Math.max(0, requiredCredits - currentCredits)
+
+  // Find recommended package (smallest that covers the need)
+  const recommendedPackage =
+    creditPackages.find((pkg) => pkg.credits >= creditsNeeded) ||
+    creditPackages[creditPackages.length - 1]
+
+  // Auto-select recommended when dialog opens
+  useEffect(() => {
+    if (open && creditsNeeded > 0) {
+      setSelectedPkg(recommendedPackage.id)
+    } else if (open) {
+      setSelectedPkg(creditPackages[0].id)
+    }
+  }, [open, creditsNeeded, recommendedPackage.id])
 
   const handlePurchase = async (packageId: string) => {
     setIsLoading(packageId)
@@ -144,104 +157,133 @@ export function CreditPurchaseDialog({
     }
   }
 
-  // Find recommended package (smallest that covers the need)
-  const recommendedPackage =
-    creditPackages.find((pkg) => pkg.credits >= creditsNeeded) ||
-    creditPackages[creditPackages.length - 1]
+  const activePkg = creditPackages.find((p) => p.id === selectedPkg) ?? creditPackages[0]
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Override sidebar offset to always center on viewport */}
-      <DialogContent className="sm:max-w-[500px] left-1/2! -translate-x-1/2!">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Coins className="h-5 w-5" />
-            Purchase Credits
-          </DialogTitle>
-          <DialogDescription>
-            {creditsNeeded > 0 ? (
-              <>
-                You need{' '}
-                <span className="font-semibold text-foreground">{creditsNeeded} more credits</span>{' '}
-                to submit this task. Your current balance is {currentCredits} credits.
-              </>
-            ) : (
-              'Select a credit package to continue creating design tasks.'
-            )}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[440px] left-1/2! -translate-x-1/2! gap-0 p-0 overflow-hidden">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4">
+          <DialogHeader className="space-y-1.5">
+            <DialogTitle className="text-lg font-semibold tracking-tight">Get credits</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              {creditsNeeded > 0 ? (
+                <>
+                  You need <span className="font-medium text-foreground">{creditsNeeded} more</span>{' '}
+                  to submit. Balance: {currentCredits} credits.
+                </>
+              ) : (
+                'Choose a package to keep creating.'
+              )}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="grid gap-3 py-4">
+        {/* Package options */}
+        <div className="px-6 pb-2 space-y-2">
           {creditPackages.map((pkg) => {
             const isRecommended = pkg.id === recommendedPackage.id && creditsNeeded > 0
+            const isSelected = selectedPkg === pkg.id
 
             return (
-              <div
+              <button
                 key={pkg.id}
+                type="button"
+                disabled={isLoading !== null}
+                onClick={() => setSelectedPkg(pkg.id)}
                 className={cn(
-                  'relative flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all hover:border-primary',
-                  isRecommended && 'border-primary bg-primary/5',
-                  pkg.popular && !isRecommended && 'border-muted-foreground/30'
+                  'relative w-full flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all text-left',
+                  'hover:border-crafted-green/40',
+                  isSelected
+                    ? 'border-crafted-green bg-crafted-green/[0.04] dark:bg-crafted-green/[0.08]'
+                    : 'border-border/60 bg-transparent'
                 )}
-                onClick={() => !isLoading && handlePurchase(pkg.id)}
               >
-                <div className="flex items-center gap-3">
+                {/* Left: radio + info */}
+                <div className="flex items-center gap-3.5">
+                  {/* Custom radio */}
                   <div
                     className={cn(
-                      'flex items-center justify-center w-10 h-10 rounded-full',
-                      isRecommended ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                      'w-[18px] h-[18px] rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-colors',
+                      isSelected
+                        ? 'border-crafted-green bg-crafted-green'
+                        : 'border-muted-foreground/25'
                     )}
                   >
-                    {isRecommended ? <Zap className="h-5 w-5" /> : <Coins className="h-5 w-5" />}
+                    {isSelected && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
                   </div>
-                  <div>
+
+                  <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{pkg.credits} credits</span>
-                      {pkg.popular && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Sparkles className="h-3 w-3 mr-1" />
+                      <span className="text-sm font-medium text-foreground">
+                        {pkg.credits} credits
+                      </span>
+                      {isRecommended && (
+                        <span className="text-[10px] font-medium uppercase tracking-wider text-crafted-green">
+                          Best fit
+                        </span>
+                      )}
+                      {pkg.popular && !isRecommended && (
+                        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                           Popular
-                        </Badge>
+                        </span>
                       )}
-                      {pkg.discount && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs text-ds-success border-ds-success"
-                        >
-                          {pkg.discount}
-                        </Badge>
-                      )}
-                      {isRecommended && <Badge className="text-xs">Recommended</Badge>}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      ${pkg.pricePerCredit.toFixed(2)}/credit
+                    <p className="text-xs text-muted-foreground">
+                      ${pkg.pricePerCredit.toFixed(2)} per credit
+                      {pkg.discount ? (
+                        <span className="ml-1.5 text-crafted-green font-medium">
+                          {pkg.discount}% off
+                        </span>
+                      ) : null}
                     </p>
                   </div>
                 </div>
 
-                <div className="text-right">
+                {/* Right: price */}
+                <div className="text-right shrink-0">
                   {pkg.originalPrice && (
-                    <span className="text-sm text-muted-foreground line-through mr-2">
+                    <span className="text-xs text-muted-foreground/50 line-through mr-1.5">
                       ${pkg.originalPrice}
                     </span>
                   )}
-                  <Button
-                    variant={isRecommended ? 'default' : 'outline'}
-                    size="sm"
-                    disabled={isLoading !== null}
-                    className="cursor-pointer"
-                  >
-                    {isLoading === pkg.id ? <LoadingSpinner size="sm" /> : `$${pkg.price}`}
-                  </Button>
+                  <span className="text-sm font-semibold text-foreground">${pkg.price}</span>
                 </div>
-              </div>
+              </button>
             )
           })}
         </div>
 
-        <p className="text-xs text-muted-foreground text-center">
-          Secure payment powered by Stripe. Credits never expire.
-        </p>
+        {/* CTA + footer */}
+        <div className="px-6 pt-4 pb-5 space-y-3">
+          <button
+            type="button"
+            disabled={isLoading !== null || !selectedPkg}
+            onClick={() => selectedPkg && handlePurchase(selectedPkg)}
+            className={cn(
+              'w-full flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-medium transition-all',
+              'bg-crafted-green hover:bg-crafted-green-light text-white',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+          >
+            {isLoading ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <>
+                Continue to payment
+                <ArrowRight className="h-3.5 w-3.5" />
+              </>
+            )}
+          </button>
+
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/50">
+            <Lock className="h-3 w-3" />
+            <span>
+              Secured by Stripe &middot; ${activePkg.price} for {activePkg.credits} credits
+            </span>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )

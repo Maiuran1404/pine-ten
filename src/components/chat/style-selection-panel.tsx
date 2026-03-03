@@ -9,6 +9,7 @@ import type { DeliverableStyle } from './types'
 
 interface StyleSelectionPanelProps {
   styles: DeliverableStyle[]
+  confirmedStyleIds?: string[]
   onConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void
   onShowMore?: (styleAxis: string) => void
   onShowDifferent?: () => void
@@ -302,6 +303,7 @@ const slideVariants = {
 
 export function StyleSelectionPanel({
   styles,
+  confirmedStyleIds,
   onConfirmSelection,
   onShowDifferent,
   isLoading,
@@ -310,6 +312,14 @@ export function StyleSelectionPanel({
   const [selectedStyle, setSelectedStyle] = useState<DeliverableStyle | null>(null)
   const [page, setPage] = useState(0)
   const [direction, setDirection] = useState(1)
+
+  // A style is "selected" if the user just clicked it (local state) OR if
+  // it was previously confirmed and persisted in the moodboard.
+  const isStyleSelected = useCallback(
+    (styleId: string) =>
+      selectedStyle?.id === styleId || (confirmedStyleIds?.includes(styleId) ?? false),
+    [selectedStyle, confirmedStyleIds]
+  )
 
   const handleCardClick = useCallback(
     (style: DeliverableStyle) => {
@@ -430,7 +440,7 @@ export function StyleSelectionPanel({
                   {heroStyle && (
                     <FeaturedStyleCard
                       style={heroStyle}
-                      isSelected={selectedStyle?.id === heroStyle.id}
+                      isSelected={isStyleSelected(heroStyle.id)}
                       isBestMatch={heroStyle.id === bestMatchId}
                       disabled={isLoading}
                       onClick={() => handleCardClick(heroStyle)}
@@ -445,7 +455,7 @@ export function StyleSelectionPanel({
                           key={style.id}
                           style={style}
                           index={index}
-                          isSelected={selectedStyle?.id === style.id}
+                          isSelected={isStyleSelected(style.id)}
                           disabled={isLoading}
                           onClick={() => handleCardClick(style)}
                         />

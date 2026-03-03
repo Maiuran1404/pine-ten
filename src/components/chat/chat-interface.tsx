@@ -360,18 +360,41 @@ export function ChatInterface({
     viewStructureRef.current?.()
   }, [])
 
-  // Intercept submission-intent quick option chips so they trigger task summary
-  // instead of sending as a chat message
+  // Intercept quick option chips that map to specific UI actions
+  // instead of sending as a plain chat message
   const handleQuickOptionClick = useCallback(
     (option: string) => {
+      const lower = option.toLowerCase()
+
+      // Submission intent → trigger task summary
       const submissionPhrases = ['submit as-is', 'done, submit now']
-      if (submissionPhrases.includes(option.toLowerCase())) {
+      if (submissionPhrases.includes(lower)) {
         handleRequestTaskSummary()
         return
       }
+
+      // Narrative approval intent → trigger handleApproveNarrative (same as
+      // clicking "Continue to Storyboard" button in the narrative panel)
+      if (
+        videoNarrative &&
+        !narrativeApproved &&
+        /\b(looks good|approve|approved|let'?s build|build the storyboard|that works|move forward|continue)\b/i.test(
+          lower
+        )
+      ) {
+        handleApproveNarrative(videoNarrative)
+        return
+      }
+
       handleSendOption(option)
     },
-    [handleSendOption, handleRequestTaskSummary]
+    [
+      handleSendOption,
+      handleRequestTaskSummary,
+      videoNarrative,
+      narrativeApproved,
+      handleApproveNarrative,
+    ]
   )
 
   // Build structure panel props as a single passthrough object
@@ -434,6 +457,7 @@ export function ChatInterface({
       isGeneratingImages,
       onRegenerateImage: handleRegenerateImage,
       styleSelectionStyles: latestDeliverableStyles,
+      confirmedStyleIds: moodboardStyleIds,
       onStyleConfirmSelection: handleConfirmStyleSelection,
       onStyleShowMore: handleShowMoreStyles,
       onStyleShowDifferent: handleShowDifferentStyles,
@@ -465,6 +489,7 @@ export function ChatInterface({
       imageGenerationProgress,
       isGeneratingImages,
       latestDeliverableStyles,
+      moodboardStyleIds,
     ]
   )
 

@@ -519,6 +519,18 @@ export function NarrativePanel({
               backgroundSize: '20px 20px',
             }}
           >
+            {/* Shimmer overlay while AI is updating the narrative */}
+            {isLoading && !editingField && (
+              <div
+                className="absolute inset-0 z-10 pointer-events-none rounded-xl"
+                style={{
+                  background:
+                    'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--crafted-sage) 6%, transparent) 40%, color-mix(in srgb, var(--crafted-sage) 14%, transparent) 50%, color-mix(in srgb, var(--crafted-sage) 6%, transparent) 60%, transparent 100%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 1.8s ease-in-out infinite',
+                }}
+              />
+            )}
             <div className="p-5 space-y-2">
               {/* Concept — headline (click to edit) */}
               {editingField === 'concept' ? (
@@ -655,17 +667,8 @@ export function NarrativePanel({
                 onClick={() => onApprove(hasEdited ? narrative : undefined)}
                 disabled={isLoading}
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Building storyboard...
-                  </>
-                ) : (
-                  <>
-                    Continue to Storyboard
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
+                <ArrowRight className="h-4 w-4" />
+                Continue to Storyboard
               </Button>
             </div>
           )}

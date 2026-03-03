@@ -116,6 +116,7 @@ export interface StructurePanelProps {
   onRegenerateImage?: (scene: StoryboardScene) => void
   // Style selection props (shown during INSPIRATION stage)
   styleSelectionStyles?: DeliverableStyle[]
+  confirmedStyleIds?: string[]
   onStyleConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void
   onStyleShowMore?: (styleAxis: string) => void
   onStyleShowDifferent?: () => void
@@ -513,6 +514,7 @@ export function StructurePanel({
   isGeneratingImages,
   onRegenerateImage,
   styleSelectionStyles,
+  confirmedStyleIds,
   onStyleConfirmSelection,
   onStyleShowMore,
   onStyleShowDifferent,
@@ -545,6 +547,7 @@ export function StructurePanel({
     return (
       <StyleSelectionPanel
         styles={styleSelectionStyles ?? []}
+        confirmedStyleIds={confirmedStyleIds}
         onConfirmSelection={wrappedStyleConfirm}
         onShowMore={onStyleShowMore}
         onShowDifferent={onStyleShowDifferent}
@@ -586,85 +589,10 @@ export function StructurePanel({
   }
 
   // Video narrative phase: show NarrativePanel until narrative is approved,
-  // then show loading skeleton while storyboard is being generated
-  if (structureType === 'storyboard' && videoNarrative && !structureData) {
-    // Once narrative is approved, show storyboard loading skeleton (or error recovery)
-    if (narrativeApproved) {
-      // If storyboard generation failed, show error + retry UI
-      if (lastSendError && onRetryGeneration) {
-        return (
-          <div className={cn('flex flex-col h-full bg-background', className)}>
-            <div className="shrink-0 px-4 py-3 border-b border-border/40">
-              <div className="flex items-center gap-2">
-                <Film className="h-4 w-4 text-crafted-green" />
-                <span className="text-sm font-semibold text-foreground">Storyboard</span>
-              </div>
-            </div>
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                <Film className="h-6 w-6 text-destructive" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">Storyboard generation failed</p>
-                <p className="text-xs text-muted-foreground">{lastSendError}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onEditNarrative}
-                  disabled={!onEditNarrative}
-                  className="gap-1.5"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit Narrative
-                </Button>
-                <Button size="sm" onClick={onRetryGeneration} className="gap-1.5">
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Retry
-                </Button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-      // If chat is not loading and no error, the auto-trigger may have failed silently
-      // Show a generate button so the user can manually kick off storyboard generation
-      if (!isChatLoading && !isRegenerating && onRetryGeneration) {
-        return (
-          <div className={cn('flex flex-col h-full bg-background', className)}>
-            <div className="shrink-0 px-4 py-3 border-b border-border/40">
-              <div className="flex items-center gap-2">
-                <Film className="h-4 w-4 text-crafted-green" />
-                <span className="text-sm font-semibold text-foreground">Storyboard</span>
-              </div>
-            </div>
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-crafted-green/10 flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-crafted-green" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">
-                  Ready to build your storyboard
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Your narrative is approved. Generate the storyboard to continue.
-                </p>
-              </div>
-              <Button size="sm" onClick={onRetryGeneration} className="gap-1.5">
-                <Sparkles className="h-3.5 w-3.5" />
-                Generate Storyboard
-              </Button>
-            </div>
-          </div>
-        )
-      }
-      return (
-        <div className={cn('flex flex-col h-full bg-background', className)}>
-          <PlaceholderState structureType="storyboard" />
-        </div>
-      )
-    }
+  // then show loading skeleton while storyboard is being generated.
+  // Guard on !narrativeApproved (not !structureData) so that premature AI storyboard
+  // generation doesn't bypass the narrative review and style selection steps.
+  if (structureType === 'storyboard' && videoNarrative && !narrativeApproved) {
     // Narrative not yet approved — show the narrative panel for review
     if (onApproveNarrative && onNarrativeFieldEdit) {
       return (
@@ -679,6 +607,82 @@ export function StructurePanel({
         </div>
       )
     }
+  }
+
+  // Video: narrative approved but storyboard not yet generated — show loading/error/retry
+  if (structureType === 'storyboard' && videoNarrative && narrativeApproved && !structureData) {
+    // If storyboard generation failed, show error + retry UI
+    if (lastSendError && onRetryGeneration) {
+      return (
+        <div className={cn('flex flex-col h-full bg-background', className)}>
+          <div className="shrink-0 px-4 py-3 border-b border-border/40">
+            <div className="flex items-center gap-2">
+              <Film className="h-4 w-4 text-crafted-green" />
+              <span className="text-sm font-semibold text-foreground">Storyboard</span>
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <Film className="h-6 w-6 text-destructive" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Storyboard generation failed</p>
+              <p className="text-xs text-muted-foreground">{lastSendError}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onEditNarrative}
+                disabled={!onEditNarrative}
+                className="gap-1.5"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit Narrative
+              </Button>
+              <Button size="sm" onClick={onRetryGeneration} className="gap-1.5">
+                <RefreshCw className="h-3.5 w-3.5" />
+                Retry
+              </Button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    // If chat is not loading and no error, the auto-trigger may have failed silently
+    // Show a generate button so the user can manually kick off storyboard generation
+    if (!isChatLoading && !isRegenerating && onRetryGeneration) {
+      return (
+        <div className={cn('flex flex-col h-full bg-background', className)}>
+          <div className="shrink-0 px-4 py-3 border-b border-border/40">
+            <div className="flex items-center gap-2">
+              <Film className="h-4 w-4 text-crafted-green" />
+              <span className="text-sm font-semibold text-foreground">Storyboard</span>
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-crafted-green/10 flex items-center justify-center">
+              <Sparkles className="h-6 w-6 text-crafted-green" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Ready to build your storyboard</p>
+              <p className="text-xs text-muted-foreground">
+                Your narrative is approved. Generate the storyboard to continue.
+              </p>
+            </div>
+            <Button size="sm" onClick={onRetryGeneration} className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Generate Storyboard
+            </Button>
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div className={cn('flex flex-col h-full bg-background', className)}>
+        <PlaceholderState structureType="storyboard" />
+      </div>
+    )
   }
 
   // Placeholder — type known but no data yet
