@@ -743,11 +743,16 @@ export function useChatInterfaceData({
       return
     }
     if (!structure || structure.type !== 'storyboard') return
-    if (imageGenTriggeredRef.current) return
     if (storyboard.isGeneratingImages) return
 
     // Check if scenes already have images (e.g. from draft restore)
     const scenesNeedingImages = structure.scenes.filter((s) => !s.resolvedImageUrl)
+
+    // If ALL scenes need images, this is a fresh/regenerated storyboard — reset trigger
+    if (scenesNeedingImages.length > 0 && scenesNeedingImages.length === structure.scenes.length) {
+      imageGenTriggeredRef.current = false
+    }
+    if (imageGenTriggeredRef.current) return
     if (scenesNeedingImages.length === 0) return
 
     // Extract style context from visual direction — filter out synthetic placeholders

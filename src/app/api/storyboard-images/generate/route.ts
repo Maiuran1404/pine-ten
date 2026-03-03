@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       const allUrls = [...new Set(cachedUrls.length > 0 ? cachedUrls : originalUrls)]
 
       if (allUrls.length > 0) {
-        referenceImages = await fetchReferenceImagesAsBase64(allUrls, 9) // FLUX.2 Pro supports up to 9
+        referenceImages = await fetchReferenceImagesAsBase64(allUrls, 4) // Cap at 4 to avoid overwhelming scene content with style
         logger.info(
           { refImageCount: referenceImages.length, cached: cachedUrls.length > 0 },
           'Fetched style reference images for storyboard'
@@ -254,6 +254,7 @@ export async function POST(request: NextRequest) {
 
         const result = await generateSceneImage(prompt, {
           size: '1536x1024',
+          referenceImages,
           anchorImage,
           strategy: anchorImage ? 'consistency' : 'standard',
         })

@@ -19,8 +19,8 @@ import { logger } from '@/lib/logger'
 const PROVIDER_CHAINS: Record<ProviderStrategy, ImageProvider[]> = {
   // Hero frame: best quality, supports multi-reference
   hero: [flux2ProProvider, imagen4FastProvider, imagen3Provider],
-  // Consistency scenes: anchor-based first, then quality fallbacks
-  consistency: [fluxKontextProvider, flux2ProProvider, imagen4FastProvider, imagen3Provider],
+  // Consistency scenes: FLUX.2 Pro primary for visual diversity, Kontext as fallback
+  consistency: [flux2ProProvider, fluxKontextProvider, imagen4FastProvider, imagen3Provider],
   // Single scene regeneration without anchor
   standard: [flux2ProProvider, imagen4FastProvider, imagen3Provider],
   // Cheapest/fastest path
@@ -38,7 +38,7 @@ export function getProviderChain(strategy: ProviderStrategy): ImageProvider[] {
  */
 function simplifyPrompt(prompt: string): string {
   const lines = prompt.split('\n')
-  const essentialSections = ['SCENE CONTENT', 'STYLE DIRECTION', 'QUALITY DIRECTIVE']
+  const essentialSections = ['SUBJECT', 'SCENE CONTENT', 'STYLE DIRECTION', 'QUALITY DIRECTIVE']
   const simplified: string[] = []
   let currentSection = ''
   let includeSection = true

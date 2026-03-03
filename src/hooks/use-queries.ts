@@ -25,6 +25,9 @@ export const queryKeys = {
     clients: () => [...queryKeys.admin.all, 'clients'] as const,
     freelancers: () => [...queryKeys.admin.all, 'freelancers'] as const,
     tasks: () => [...queryKeys.admin.all, 'tasks'] as const,
+    chatLogs: (filters?: Record<string, string>) =>
+      [...queryKeys.admin.all, 'chat-logs', filters] as const,
+    chatLogDetail: (id: string) => [...queryKeys.admin.all, 'chat-log-detail', id] as const,
   },
   // Freelancer queries
   freelancer: {
@@ -191,6 +194,48 @@ export function useAdminFreelancers() {
   return useQuery({
     queryKey: queryKeys.admin.freelancers(),
     queryFn: () => fetcher<{ freelancers: unknown[] }>('/api/admin/freelancers'),
+  })
+}
+
+// Chat log hooks
+import type { ChatLogListItem, ChatLogDetail } from '@/types/admin-chat-logs'
+
+interface ChatLogsResponse {
+  logs: ChatLogListItem[]
+  total: number
+  page: number
+  limit: number
+  stats: {
+    total: number
+    drafts: number
+    tasks: number
+    avgMessages: number
+  }
+}
+
+export function useChatLogs(filters?: Record<string, string>) {
+  const params = new URLSearchParams()
+  if (filters) {
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) params.set(key, value)
+    }
+  }
+  const queryString = params.toString()
+  const url = `/api/admin/chat-logs${queryString ? `?${queryString}` : ''}`
+
+  return useQuery({
+    queryKey: queryKeys.admin.chatLogs(filters),
+    queryFn: () => fetcher<ChatLogsResponse>(url),
+    staleTime: 30 * 1000, // 30s
+  })
+}
+
+export function useChatLogDetail(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.admin.chatLogDetail(id || ''),
+    queryFn: () => fetcher<ChatLogDetail>(`/api/admin/chat-logs/${id}`),
+    enabled: !!id,
+    staleTime: 60 * 1000, // 1min
   })
 }
 

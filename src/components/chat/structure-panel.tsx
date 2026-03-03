@@ -342,7 +342,7 @@ function PlaceholderState({
 
         {/* Film strip scene slots (storyboard only) — shows actual scene count */}
         {structureType === 'storyboard' && sceneSlots > 0 && (
-          <div className="flex flex-wrap justify-center gap-2 mt-2 max-w-[320px]">
+          <div className="flex justify-center gap-2 mt-2">
             {Array.from({ length: sceneSlots }, (_, i) => {
               const sceneNum = i + 1
               const isDone = progress ? sceneNum <= progress.done : false

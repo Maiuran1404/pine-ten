@@ -127,11 +127,13 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: 'crafted',
-    // Share cookies across subdomains so OAuth callbacks (which go through baseURL/localhost)
-    // can set session cookies accessible from all subdomains (app/artist/superadmin)
+    // Production: share cookies across subdomains (domain=.getcrafted.ai)
+    // Dev: disabled — browsers treat `localhost` as a public suffix (TLD), so
+    // domain=localhost cookies get rejected from superadmin.localhost / app.localhost.
+    // Without a domain attr, cookies bind to the exact origin which works fine.
     crossSubDomainCookies: {
-      enabled: true,
-      domain: isProduction ? `.${baseDomain}` : 'localhost',
+      enabled: isProduction,
+      domain: `.${baseDomain}`,
     },
     defaultCookieAttributes: {
       sameSite: 'lax',

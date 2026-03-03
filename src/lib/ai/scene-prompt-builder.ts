@@ -6,18 +6,19 @@
 // No `server-only` import so it can be used in client components.
 //
 // Prompt structure (newline-separated labeled sections):
-//  1. VISUAL CONTINUITY  — batch non-hero only
-//  2. STYLE DIRECTION    — from StyleMetadata.promptGuides
-//  3. STYLE CHARACTER    — styleAxis + density + energy + visualElements
-//  4. COLOR PALETTE      — merged style colorSamples + brand colors
-//  5. ATMOSPHERE         — moodKeywords + colorTemperature -> lighting + mood
-//  6. SCENE CONTENT      — AI's imageGenerationPrompt OR assembled fields
-// 6b. CASTING            — default demographic guidance for depicted people
-//  7. CAMERA             — enriched shot type + lens spec
-//  8. LIGHTING           — inferred from mood + color temp
-//  9. MOOD               — voiceover as atmospheric direction (NOT text)
-// 10. TRANSITION         — enriched transition continuity
-// 11. QUALITY DIRECTIVE  — film quality benchmark
+//  1. SUBJECT            — concrete subject anchor extracted from scene fields
+//  2. SCENE CONTENT      — AI's imageGenerationPrompt OR assembled fields
+//  3. CASTING            — default demographic guidance for depicted people
+//  4. VISUAL CONTINUITY  — batch non-hero only
+//  5. STYLE DIRECTION    — from StyleMetadata.promptGuides (as modifier)
+//  6. STYLE CHARACTER    — styleAxis + density + energy + visualElements
+//  7. COLOR PALETTE      — merged style colorSamples + brand colors
+//  8. ATMOSPHERE         — moodKeywords + colorTemperature -> lighting + mood
+//  9. CAMERA             — enriched shot type + lens spec
+// 10. LIGHTING           — inferred from mood + color temp
+// 11. MOOD               — voiceover as atmospheric direction (NOT text)
+// 12. TRANSITION         — enriched transition continuity
+// 13. QUALITY DIRECTIVE  — film quality benchmark
 // =============================================================================
 
 import type { StyleMetadata, BrandContextForPrompt } from './image-providers/types'
@@ -51,6 +52,27 @@ export interface BatchContext {
 }
 
 /**
+ * Extract a concrete subject anchor from scene fields.
+ * Prioritizes `imageGenerationPrompt` first sentence, then assembles from
+ * title + visualNote + description. Capped at 150 characters.
+ */
+export function extractSubjectAnchor(scene: ScenePromptInput): string | undefined {
+  if (scene.imageGenerationPrompt) {
+    // Take the first sentence (up to first period, or the whole thing if no period)
+    const firstSentence = scene.imageGenerationPrompt.split(/\.\s/)[0]
+    return firstSentence.slice(0, 150)
+  }
+
+  const parts: string[] = []
+  if (scene.title) parts.push(scene.title)
+  if (scene.visualNote) parts.push(scene.visualNote)
+  if (scene.description) parts.push(scene.description)
+
+  if (parts.length === 0) return undefined
+  return parts.join(' — ').slice(0, 150)
+}
+
+/**
  * Build a rich cinematic image generation prompt from scene data,
  * style metadata, and brand context.
  *
@@ -78,24 +100,63 @@ export function buildScenePrompt(
   const style = styleContextOrMetadata
   const sections: string[] = []
 
-  // 1. VISUAL CONTINUITY — non-hero batch scenes reference the hero frame
-  if (batchContext && batchContext.totalScenes > 1 && !batchContext.isHeroFrame) {
+  // 1. SUBJECT — concrete subject anchor (front-loaded for FLUX.2 Pro attention)
+  const subjectAnchor = extractSubjectAnchor(scene)
+  if (subjectAnchor) {
     sections.push(
-      `VISUAL CONTINUITY: This is scene ${batchContext.sceneIndex + 1} of ${batchContext.totalScenes}. ` +
-        'Match the hero frame (scene 1) color grading, lighting style, and visual treatment exactly. ' +
-        'Maintain unified palette, mood, and cinematic style throughout all frames.'
+      `SUBJECT: ${subjectAnchor}. ` +
+        'This is the PRIMARY subject of the image. All style, lighting, and composition must serve this subject. ' +
+        'Do NOT replace this subject with generic objects, still-life arrangements, or abstract compositions.'
     )
   }
 
-  // 2. STYLE DIRECTION — from promptGuides (expert-crafted visual direction)
-  if (style.promptGuides.length > 0) {
-    const guides = style.promptGuides.filter(Boolean).join('. ')
-    if (guides) {
-      sections.push(`STYLE DIRECTION: ${guides}`)
+  // 2. SCENE CONTENT — moved up to front-load narrative before style
+  if (scene.imageGenerationPrompt) {
+    sections.push(`SCENE CONTENT: ${scene.imageGenerationPrompt}`)
+  }
+
+  if (!scene.imageGenerationPrompt) {
+    const contentParts: string[] = []
+    if (scene.title) {
+      const prefix = scene.sceneNumber ? `Scene ${scene.sceneNumber}` : 'Scene'
+      contentParts.push(`${prefix}: ${scene.title}`)
+    }
+    if (scene.visualNote) contentParts.push(scene.visualNote)
+    if (scene.description) contentParts.push(scene.description)
+    if (contentParts.length > 0) {
+      sections.push(`SCENE CONTENT: ${contentParts.join('. ')}`)
     }
   }
 
-  // 3. STYLE CHARACTER — styleAxis + density + energy + visualElements
+  // 3. CASTING — default demographic guidance for people in scenes
+  sections.push(
+    'CASTING: When depicting people, show diverse professionals aged 25-35 with modern, ' +
+      'polished appearances. Favor contemporary styling and natural expressions.'
+  )
+
+  // 4. VISUAL CONTINUITY — non-hero batch scenes reference the hero frame
+  if (batchContext && batchContext.totalScenes > 1 && !batchContext.isHeroFrame) {
+    sections.push(
+      `VISUAL CONTINUITY: This is scene ${batchContext.sceneIndex + 1} of ${batchContext.totalScenes}. ` +
+        'Maintain the same color palette, lighting temperature, and cinematic grade as the hero frame (scene 1), ' +
+        'but create a distinctly different composition, camera angle, and subject arrangement for this scene.\n\n' +
+        'SCENE DISTINCTION: Each scene must have its own unique framing, perspective, and focal subject. ' +
+        'Vary the camera distance, angle, and environment between scenes to create visual storytelling progression.'
+    )
+  }
+
+  // 5. STYLE DIRECTION — from promptGuides, applied as modifier to the subject above
+  if (style.promptGuides.length > 0) {
+    const guides = style.promptGuides.filter(Boolean).join('. ')
+    if (guides) {
+      sections.push(
+        `STYLE DIRECTION: Apply the following style AS A MODIFIER to the subject above — ` +
+          `do not let style override the scene's narrative content. ${guides}`
+      )
+    }
+  }
+
+  // 6. STYLE CHARACTER — styleAxis + density + energy + visualElements
   const characterParts: string[] = []
   for (const axis of style.styleAxes) {
     const mapped = mapStyleAxis(axis)
@@ -112,7 +173,7 @@ export function buildScenePrompt(
     sections.push(`STYLE CHARACTER: ${characterParts.join('. ')}`)
   }
 
-  // 4. COLOR PALETTE — merged style colorSamples + brand colors
+  // 7. COLOR PALETTE — merged style colorSamples + brand colors
   const colorGrading = buildColorGrading(
     style.colorPalette,
     brandContext?.colors,
@@ -122,7 +183,7 @@ export function buildScenePrompt(
     sections.push(`COLOR PALETTE: ${colorGrading}`)
   }
 
-  // 5. ATMOSPHERE — moodKeywords + colorTemperature -> mood direction
+  // 8. ATMOSPHERE — moodKeywords + colorTemperature -> mood direction
   if (style.moodKeywords.length > 0) {
     const moodStr = style.moodKeywords.join(', ')
     const tempStr = style.colorTemperature
@@ -131,36 +192,11 @@ export function buildScenePrompt(
     sections.push(`ATMOSPHERE: ${moodStr} mood${tempStr}`)
   }
 
-  // 6. SCENE CONTENT
-  if (scene.imageGenerationPrompt) {
-    sections.push(`SCENE CONTENT: ${scene.imageGenerationPrompt}`)
-  }
-
-  // 6b. CASTING — default demographic guidance for people in scenes
-  sections.push(
-    'CASTING: When depicting people, default to young adults (20-40 years old) with natural, ' +
-      'contemporary appearances unless the scene explicitly specifies otherwise. Avoid elderly ' +
-      'or overly mature subjects unless the narrative requires it.'
-  )
-
-  if (!scene.imageGenerationPrompt) {
-    const contentParts: string[] = []
-    if (scene.title) {
-      const prefix = scene.sceneNumber ? `Scene ${scene.sceneNumber}` : 'Scene'
-      contentParts.push(`${prefix}: ${scene.title}`)
-    }
-    if (scene.visualNote) contentParts.push(scene.visualNote)
-    if (scene.description) contentParts.push(scene.description)
-    if (contentParts.length > 0) {
-      sections.push(`SCENE CONTENT: ${contentParts.join('. ')}`)
-    }
-  }
-
-  // 7. CAMERA — enriched shot type + lens spec
+  // 9. CAMERA — enriched shot type + lens spec
   const shotSpec = inferShotSpecs(scene.cameraNote, scene.visualNote)
   sections.push(`CAMERA: ${shotSpec}`)
 
-  // 8. LIGHTING — inferred from moodKeywords + colorTemperature + voiceover
+  // 10. LIGHTING — inferred from moodKeywords + colorTemperature + voiceover
   const lighting = inferLighting({
     moodKeywords: style.moodKeywords,
     voiceover: scene.voiceover,
@@ -168,23 +204,26 @@ export function buildScenePrompt(
   })
   sections.push(`LIGHTING: ${lighting}`)
 
-  // 9. MOOD — voiceover as atmospheric direction (NOT rendered as text)
+  // 11. MOOD — voiceover as atmospheric direction (NOT rendered as text)
   if (scene.voiceover) {
     sections.push(
-      `MOOD: Convey this feeling visually (do NOT render as text): "${scene.voiceover}"`
+      `MOOD: Convey the following emotional tone purely through visual composition, color, and lighting. ` +
+        `Do NOT render any words, letters, or readable text from this content: "${scene.voiceover}"`
     )
   }
 
-  // 10. TRANSITION
+  // 12. TRANSITION
   if (scene.transition) {
     const enriched = enrichTransition(scene.transition)
     sections.push(`TRANSITION: ${enriched}`)
   }
 
-  // 11. QUALITY DIRECTIVE
+  // 13. QUALITY DIRECTIVE
   sections.push(
-    'QUALITY DIRECTIVE: Shot on ARRI Alexa 35. 4K. Professional production quality, photorealistic. ' +
-      'No text, watermarks, logos, UI elements, or overlaid graphics in the image.'
+    'CRITICAL RULE: This image must contain absolutely zero text, zero letters, zero words, zero numbers, zero typography of any kind. ' +
+      'Do not render any readable characters, captions, subtitles, titles, buttons, labels, watermarks, or overlay text.\n\n' +
+      'QUALITY DIRECTIVE: Shot on ARRI Alexa 35. 4K. Professional production quality, photorealistic. ' +
+      'Pure visual imagery only — no text, watermarks, logos, UI elements, call-to-action buttons, or overlaid graphics.'
   )
 
   // Join with newlines (models parse labeled sections better with line breaks)
@@ -203,24 +242,15 @@ function buildLegacyPrompt(
 ): string {
   const parts: string[] = []
 
-  if (batchContext && batchContext.totalScenes > 1) {
-    parts.push(
-      `VISUAL CONSISTENCY: This is scene ${batchContext.sceneIndex + 1} of ${batchContext.totalScenes} in a single storyboard. Maintain consistent color grading, lighting style, and visual treatment across all frames.`
-    )
+  // Subject anchor first — front-load narrative content
+  const subjectAnchor = extractSubjectAnchor(scene)
+  if (subjectAnchor) {
+    parts.push(`SUBJECT: ${subjectAnchor}. This is the PRIMARY subject of the image.`)
   }
 
-  if (styleContext) {
-    parts.push(`STYLE DIRECTION: ${styleContext}`)
-  }
-
-  // CASTING — default demographic guidance
-  parts.push(
-    'CASTING: When depicting people, default to young adults (20-40 years old) with natural, ' +
-      'contemporary appearances unless the scene explicitly specifies otherwise.'
-  )
-
+  // Scene content before style
   if (scene.imageGenerationPrompt) {
-    parts.push(scene.imageGenerationPrompt)
+    parts.push(`SCENE CONTENT: ${scene.imageGenerationPrompt}`)
   } else {
     if (scene.title) {
       const prefix = scene.sceneNumber ? `Scene ${scene.sceneNumber}` : 'Scene'
@@ -240,6 +270,24 @@ function buildLegacyPrompt(
     if (scene.transition) {
       parts.push(`Transition: ${enrichTransition(scene.transition)}`)
     }
+  }
+
+  // CASTING — default demographic guidance
+  parts.push(
+    'CASTING: When depicting people, show diverse professionals aged 25-35 with modern, ' +
+      'polished appearances. Favor contemporary styling and natural expressions.'
+  )
+
+  // Visual consistency after content
+  if (batchContext && batchContext.totalScenes > 1) {
+    parts.push(
+      `VISUAL CONSISTENCY: This is scene ${batchContext.sceneIndex + 1} of ${batchContext.totalScenes} in a single storyboard. Maintain consistent color grading, lighting style, and visual treatment across all frames.`
+    )
+  }
+
+  // Style as modifier, not primary direction
+  if (styleContext) {
+    parts.push(`STYLE DIRECTION: Apply as modifier to the subject above — ${styleContext}`)
   }
 
   parts.push(

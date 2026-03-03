@@ -48,7 +48,7 @@ function sizeToAspectRatio(size: string): '3:2' | '1:1' | '2:3' {
 
 /** Default negative prompt to filter common image generation artifacts */
 const DEFAULT_NEGATIVE_PROMPT =
-  'text, watermark, logo, blurry, distorted, low quality, UI elements, buttons, interface, screenshot, words, letters, captions, subtitles'
+  'text, watermark, logo, blurry, distorted, low quality, UI elements, buttons, interface, screenshot, words, letters, captions, subtitles, title cards, typography, readable text, overlay text, call to action, CTA button, free trial, sign up, subscribe'
 
 /**
  * Generate a single scene image using the provider chain.

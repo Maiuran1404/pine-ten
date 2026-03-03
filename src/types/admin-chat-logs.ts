@@ -53,3 +53,47 @@ export interface ChatLogStats {
   tasks: number
   pendingTasks: number
 }
+
+// List-level additions (lightweight, for left panel)
+export interface ChatLogListItem extends ChatLog {
+  currentStage: string | null
+  deliverableCategory: string | null
+  stagesReached: string[]
+  messageCount: number
+  hasMoodboard: boolean
+  hasStructure: boolean
+  imageCount: number
+}
+
+// Detail-level types (fetched on-demand for right panel)
+export interface MoodboardItemData {
+  id: string
+  type: 'style' | 'color' | 'image' | 'upload'
+  imageUrl: string
+  name: string
+  metadata?: {
+    styleAxis?: string
+    deliverableType?: string
+    colorSamples?: string[]
+    styleId?: string
+  }
+}
+
+export interface TaskMetadata {
+  id: string
+  status: string
+  complexity: string | null
+  urgency: string | null
+  creditsUsed: number
+  categoryName: string | null
+  deadline: string | null
+  assignedAt: string | null
+  completedAt: string | null
+}
+
+export interface ChatLogDetail extends ChatLog {
+  briefingState: Record<string, unknown> | null
+  structureData: Record<string, unknown> | null
+  moodboardItems: MoodboardItemData[]
+  taskMetadata: TaskMetadata | null
+}

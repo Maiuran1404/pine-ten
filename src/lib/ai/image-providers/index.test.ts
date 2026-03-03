@@ -95,11 +95,11 @@ describe('getProviderChain', () => {
     expect(names).toEqual(['flux2-pro', 'imagen4-fast', 'imagen3'])
   })
 
-  it('returns [flux-kontext, flux2-pro, imagen4-fast, imagen3] for "consistency" strategy', () => {
+  it('returns [flux2-pro, flux-kontext, imagen4-fast, imagen3] for "consistency" strategy', () => {
     const chain = getProviderChain('consistency')
     const names = chain.map((p) => p.name)
 
-    expect(names).toEqual(['flux-kontext', 'flux2-pro', 'imagen4-fast', 'imagen3'])
+    expect(names).toEqual(['flux2-pro', 'flux-kontext', 'imagen4-fast', 'imagen3'])
   })
 
   it('returns [flux2-pro, imagen4-fast, imagen3] for "standard" strategy', () => {
@@ -261,24 +261,25 @@ describe('generateWithFallback — Kontext skipped without anchor image', () => 
     expect(result.provider).toBe('flux2-pro')
   })
 
-  it('uses flux-kontext when anchorImage IS provided', async () => {
+  it('uses flux2-pro first in consistency chain even when anchorImage IS provided', async () => {
     const successResult = {
-      base64: 'kontextbase64',
+      base64: 'flux2base64',
       format: 'jpeg',
-      provider: 'flux-kontext',
-      latencyMs: 200,
+      provider: 'flux2-pro',
+      latencyMs: 120,
     }
-    vi.mocked(mockFluxKontext.generate).mockResolvedValue(successResult as never)
+    vi.mocked(mockFlux2Pro.generate).mockResolvedValue(successResult as never)
 
     const request = makeRequest({
       anchorImage: { base64: 'anchorbase64', mimeType: 'image/jpeg' },
     })
     const result = await generateWithFallback('consistency', request)
 
-    expect(mockFluxKontext.generate).toHaveBeenCalledOnce()
-    expect(result.provider).toBe('flux-kontext')
-    // flux2-pro should not have been called
-    expect(mockFlux2Pro.generate).not.toHaveBeenCalled()
+    // flux2-pro is now first in the consistency chain for visual diversity
+    expect(mockFlux2Pro.generate).toHaveBeenCalledOnce()
+    expect(result.provider).toBe('flux2-pro')
+    // flux-kontext should not have been called (flux2-pro succeeded)
+    expect(mockFluxKontext.generate).not.toHaveBeenCalled()
   })
 })
 
@@ -332,7 +333,7 @@ describe('generateWithFallback — prompt variation on retry', () => {
   it('simplifies to essential sections on attempt 3', async () => {
     const captured: string[] = []
     const prompt =
-      'SCENE CONTENT: product shot\n\nSTYLE DIRECTION: minimal\n\nATMOSPHERE: dramatic\n\nQUALITY DIRECTIVE: Shot on ARRI Alexa 35. 4K. photorealistic'
+      'SUBJECT: identity scan device\n\nSCENE CONTENT: product shot\n\nSTYLE DIRECTION: minimal\n\nATMOSPHERE: dramatic\n\nQUALITY DIRECTIVE: Shot on ARRI Alexa 35. 4K. photorealistic'
 
     mockFlux2Pro.generate = vi.fn(async (req: Record<string, unknown>) => {
       captured.push(req.prompt as string)
@@ -342,8 +343,9 @@ describe('generateWithFallback — prompt variation on retry', () => {
     await expect(generateWithFallback('hero', { prompt, aspectRatio: '3:2' }, 3)).rejects.toThrow()
 
     expect(captured).toHaveLength(3)
-    // Attempt 3 — simplified: only SCENE CONTENT, STYLE DIRECTION, and QUALITY DIRECTIVE survive
+    // Attempt 3 — simplified: SUBJECT, SCENE CONTENT, STYLE DIRECTION, and QUALITY DIRECTIVE survive
     const attempt3 = captured[2]
+    expect(attempt3).toContain('SUBJECT')
     expect(attempt3).toContain('SCENE CONTENT')
     expect(attempt3).toContain('STYLE DIRECTION')
     expect(attempt3).toContain('QUALITY DIRECTIVE')

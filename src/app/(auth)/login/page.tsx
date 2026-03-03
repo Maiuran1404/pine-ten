@@ -185,6 +185,10 @@ function LoginContent() {
       }
 
       toast.success('Welcome back!')
+      // Hard navigate to force fresh session cookie read on the new page.
+      // router.replace() does soft navigation where stale useSession() state
+      // can cause the admin layout to think the user isn't authenticated.
+      window.location.assign(getRedirectUrl())
     } catch {
       toast.error('An error occurred. Please try again.')
       setIsLoading(false)

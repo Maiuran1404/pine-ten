@@ -578,13 +578,13 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
         const results: Array<{ sceneNumber: number; imageUrl: string | null; status: string }> =
           data.data?.results ?? []
 
-        // Update progress and scene image data
+        // Build result maps
         const dataMap = new Map<number, SceneImageData>()
-        const progressUpdate = new Map<number, SceneGenerationStatus>()
+        const orderedResults: Array<{ sceneNumber: number; status: SceneGenerationStatus }> = []
 
         for (const result of results) {
           if (result.status === 'success' && result.imageUrl) {
-            progressUpdate.set(result.sceneNumber, 'done')
+            orderedResults.push({ sceneNumber: result.sceneNumber, status: 'done' })
             dataMap.set(result.sceneNumber, {
               primaryUrl: result.imageUrl,
               primarySource: 'ai-generated',
@@ -595,17 +595,22 @@ export function useStoryboard({ inputRef, handleSendOption, briefingState }: Use
               },
             })
           } else {
-            progressUpdate.set(result.sceneNumber, 'error')
+            orderedResults.push({ sceneNumber: result.sceneNumber, status: 'error' })
           }
         }
 
-        setImageGenerationProgress((prev) => {
-          const updated = new Map(prev)
-          for (const [key, value] of progressUpdate) {
-            updated.set(key, value)
+        // Stagger progress updates so the bar fills progressively (400ms between each)
+        for (let i = 0; i < orderedResults.length; i++) {
+          const { sceneNumber, status } = orderedResults[i]
+          if (i > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 400))
           }
-          return updated
-        })
+          setImageGenerationProgress((prev) => {
+            const updated = new Map(prev)
+            updated.set(sceneNumber, status)
+            return updated
+          })
+        }
 
         if (dataMap.size > 0) {
           // Persist image URLs on scene objects — sceneImageData is derived via useMemo

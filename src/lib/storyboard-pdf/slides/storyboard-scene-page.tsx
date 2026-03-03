@@ -98,14 +98,14 @@ function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
         </div>
       </div>
 
-      {/* Vertical layout: image on top, text below */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* Image row */}
-        <div style={{ width: '100%' }}>
+      {/* Horizontal layout: image left, text right */}
+      <div style={{ display: 'flex', flexDirection: 'row', gap: 20 }}>
+        {/* Image column — left */}
+        <div style={{ width: '42%', flexShrink: 0 }}>
           <div
             style={{
               width: '100%',
-              height: 200,
+              height: 190,
               borderRadius: 10,
               overflow: 'hidden',
               position: 'relative',
@@ -172,17 +172,18 @@ function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
           </div>
         </div>
 
-        {/* Text row — script, visual direction, description, camera */}
+        {/* Text column — right: script, visual direction, description, camera */}
         <div
           style={{
+            flex: 1,
             display: 'flex',
-            flexWrap: 'wrap',
-            gap: 12,
-            columnGap: 32,
+            flexDirection: 'column',
+            gap: 8,
+            minWidth: 0,
           }}
         >
           {scene.voiceover && (
-            <div style={{ flex: '1 1 45%', minWidth: 200 }}>
+            <div>
               <SectionLabel>Script / Voiceover</SectionLabel>
               <div
                 style={{
@@ -192,13 +193,13 @@ function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
                   fontWeight: 400,
                 }}
               >
-                &ldquo;{truncate(scene.voiceover, 200)}&rdquo;
+                &ldquo;{truncate(scene.voiceover, 160)}&rdquo;
               </div>
             </div>
           )}
 
           {scene.visualNote && (
-            <div style={{ flex: '1 1 45%', minWidth: 200 }}>
+            <div>
               <SectionLabel>Visual Direction</SectionLabel>
               <div
                 style={{
@@ -208,13 +209,13 @@ function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
                   fontWeight: 400,
                 }}
               >
-                {truncate(scene.visualNote, 180)}
+                {truncate(scene.visualNote, 140)}
               </div>
             </div>
           )}
 
           {scene.description && (
-            <div style={{ flex: '1 1 45%', minWidth: 200 }}>
+            <div>
               <SectionLabel>Description</SectionLabel>
               <div
                 style={{
@@ -224,13 +225,13 @@ function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
                   fontWeight: 400,
                 }}
               >
-                {truncate(scene.description, 180)}
+                {truncate(scene.description, 140)}
               </div>
             </div>
           )}
 
           {scene.cameraNote && (
-            <div style={{ flex: '1 1 45%', minWidth: 200 }}>
+            <div>
               <SectionLabel>Camera</SectionLabel>
               <div
                 style={{
@@ -240,7 +241,7 @@ function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
                   fontWeight: 400,
                 }}
               >
-                {truncate(scene.cameraNote, 120)}
+                {truncate(scene.cameraNote, 100)}
               </div>
             </div>
           )}

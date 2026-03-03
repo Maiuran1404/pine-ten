@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildScenePrompt } from './scene-prompt-builder'
+import { buildScenePrompt, extractSubjectAnchor } from './scene-prompt-builder'
 import type { StyleMetadata, BrandContextForPrompt } from './image-providers/types'
 import type { ScenePromptInput, BatchContext } from './scene-prompt-builder'
 
@@ -39,7 +39,7 @@ function makeScene(overrides: Partial<ScenePromptInput> = {}): ScenePromptInput 
 // =============================================================================
 
 describe('buildScenePrompt with StyleMetadata (rich path)', () => {
-  it('includes all 11 sections in the output', () => {
+  it('includes all sections in the output', () => {
     const scene = makeScene()
     const style = makeStyleMetadata()
     const brand: BrandContextForPrompt = {
@@ -50,28 +50,47 @@ describe('buildScenePrompt with StyleMetadata (rich path)', () => {
 
     const result = buildScenePrompt(scene, style, brand, batch)
 
-    // 1. No VISUAL CONTINUITY for hero frame
-    expect(result).not.toContain('VISUAL CONTINUITY')
-    // 2. STYLE DIRECTION
-    expect(result).toContain('STYLE DIRECTION')
-    // 3. STYLE CHARACTER
-    expect(result).toContain('STYLE CHARACTER')
-    // 4. COLOR PALETTE
-    expect(result).toContain('COLOR PALETTE')
-    // 5. ATMOSPHERE
-    expect(result).toContain('ATMOSPHERE')
-    // 6. SCENE CONTENT
+    // 1. SUBJECT — front-loaded narrative anchor
+    expect(result).toContain('SUBJECT')
+    expect(result).toContain('PRIMARY subject')
+    // 2. SCENE CONTENT — moved before style
     expect(result).toContain('SCENE CONTENT')
-    // 7. CAMERA
+    // 3. CASTING
+    expect(result).toContain('CASTING')
+    // 4. No VISUAL CONTINUITY for hero frame
+    expect(result).not.toContain('VISUAL CONTINUITY')
+    // 5. STYLE DIRECTION — as modifier
+    expect(result).toContain('STYLE DIRECTION')
+    expect(result).toContain('AS A MODIFIER')
+    // 6. STYLE CHARACTER
+    expect(result).toContain('STYLE CHARACTER')
+    // 7. COLOR PALETTE
+    expect(result).toContain('COLOR PALETTE')
+    // 8. ATMOSPHERE
+    expect(result).toContain('ATMOSPHERE')
+    // 9. CAMERA
     expect(result).toContain('CAMERA')
-    // 8. LIGHTING
+    // 10. LIGHTING
     expect(result).toContain('LIGHTING')
-    // 9. MOOD
+    // 11. MOOD
     expect(result).toContain('MOOD')
-    // 10. TRANSITION
+    // 12. TRANSITION
     expect(result).toContain('TRANSITION')
-    // 11. QUALITY DIRECTIVE
+    // 13. QUALITY DIRECTIVE
     expect(result).toContain('QUALITY DIRECTIVE')
+  })
+
+  it('places SUBJECT and SCENE CONTENT before STYLE DIRECTION', () => {
+    const scene = makeScene({ imageGenerationPrompt: 'A smartphone showing identity scan' })
+    const style = makeStyleMetadata()
+    const result = buildScenePrompt(scene, style)
+
+    const subjectPos = result.indexOf('SUBJECT:')
+    const sceneContentPos = result.indexOf('SCENE CONTENT:')
+    const stylePos = result.indexOf('STYLE DIRECTION:')
+
+    expect(subjectPos).toBeLessThan(sceneContentPos)
+    expect(sceneContentPos).toBeLessThan(stylePos)
   })
 
   it('includes VISUAL CONTINUITY for non-hero batch frames', () => {
@@ -272,7 +291,7 @@ describe('buildScenePrompt with StyleMetadata (rich path)', () => {
 
     expect(result).toContain('MOOD:')
     expect(result).toContain('In the stillness, everything is possible')
-    expect(result).toContain('do NOT render as text')
+    expect(result).toContain('Do NOT render any words, letters, or readable text')
   })
 
   it('omits MOOD section when no voiceover', () => {
@@ -303,7 +322,7 @@ describe('buildScenePrompt with StyleMetadata (rich path)', () => {
     expect(result).toContain('QUALITY DIRECTIVE')
     expect(result).toContain('ARRI Alexa 35')
     expect(result).toContain('photorealistic')
-    expect(result).toContain('No text, watermarks')
+    expect(result).toContain('no text, watermarks')
   })
 
   it('enforces 8000 character prompt length limit', () => {
@@ -328,19 +347,28 @@ describe('buildScenePrompt with StyleMetadata (rich path)', () => {
 // =============================================================================
 
 describe('buildScenePrompt with string styleContext (legacy path)', () => {
-  it('includes STYLE DIRECTION from the string', () => {
+  it('includes STYLE DIRECTION from the string as modifier', () => {
     const result = buildScenePrompt(makeScene(), 'Bold editorial aesthetic with high contrast')
 
-    expect(result).toContain('STYLE DIRECTION: Bold editorial aesthetic with high contrast')
+    expect(result).toContain('STYLE DIRECTION: Apply as modifier to the subject above')
+    expect(result).toContain('Bold editorial aesthetic with high contrast')
   })
 
-  it('includes the imageGenerationPrompt directly when provided', () => {
+  it('includes SUBJECT anchor from scene fields', () => {
+    const result = buildScenePrompt(makeScene(), 'cinematic style')
+
+    expect(result).toContain('SUBJECT:')
+    expect(result).toContain('Opening Scene')
+    expect(result).toContain('PRIMARY subject')
+  })
+
+  it('includes the imageGenerationPrompt in SCENE CONTENT when provided', () => {
     const scene = makeScene({
       imageGenerationPrompt: 'Product hero shot on white background',
     })
     const result = buildScenePrompt(scene, 'minimal style')
 
-    expect(result).toContain('Product hero shot on white background')
+    expect(result).toContain('SCENE CONTENT: Product hero shot on white background')
     // The scene title should NOT appear because imageGenerationPrompt takes over
     expect(result).not.toContain('Scene 1: Opening Scene')
   })
@@ -453,14 +481,14 @@ describe('buildScenePrompt — hero vs non-hero batch context', () => {
     expect(result).toContain('scene 3 of 5')
   })
 
-  it('non-hero frame instructs to match hero frame exactly', () => {
+  it('non-hero frame maintains palette consistency but emphasizes scene distinction', () => {
     const batch: BatchContext = { totalScenes: 3, sceneIndex: 1, isHeroFrame: false }
     const result = buildScenePrompt(makeScene(), makeStyleMetadata(), undefined, batch)
 
-    expect(result).toContain('Match the hero frame (scene 1)')
-    expect(result).toContain('color grading')
-    expect(result).toContain('lighting style')
-    expect(result).toContain('visual treatment exactly')
+    expect(result).toContain('hero frame (scene 1)')
+    expect(result).toContain('color palette')
+    expect(result).toContain('distinctly different composition')
+    expect(result).toContain('SCENE DISTINCTION')
   })
 })
 
@@ -517,5 +545,57 @@ describe('buildScenePrompt with partial or empty StyleMetadata', () => {
     const result = buildScenePrompt(makeScene(), styleNoExtras)
 
     expect(result).not.toContain('STYLE CHARACTER')
+  })
+})
+
+// =============================================================================
+// extractSubjectAnchor
+// =============================================================================
+
+describe('extractSubjectAnchor', () => {
+  it('extracts first sentence from imageGenerationPrompt', () => {
+    const result = extractSubjectAnchor({
+      imageGenerationPrompt:
+        'Smartphone showing failed identity scan with red error overlay. Dark moody office setting.',
+    })
+
+    expect(result).toBe('Smartphone showing failed identity scan with red error overlay')
+  })
+
+  it('uses full imageGenerationPrompt when no period-space found', () => {
+    const result = extractSubjectAnchor({
+      imageGenerationPrompt: 'Close-up of a laptop with glowing screen',
+    })
+
+    expect(result).toBe('Close-up of a laptop with glowing screen')
+  })
+
+  it('caps at 150 characters', () => {
+    const longPrompt = 'A'.repeat(200)
+    const result = extractSubjectAnchor({ imageGenerationPrompt: longPrompt })
+
+    expect(result).toHaveLength(150)
+  })
+
+  it('assembles from title + visualNote + description when no imageGenerationPrompt', () => {
+    const result = extractSubjectAnchor({
+      title: 'Identity Scan',
+      visualNote: 'Dark office with blue glow',
+      description: 'User frustrated with failed verification',
+    })
+
+    expect(result).toBe(
+      'Identity Scan — Dark office with blue glow — User frustrated with failed verification'
+    )
+  })
+
+  it('returns undefined when no scene fields are provided', () => {
+    const result = extractSubjectAnchor({})
+    expect(result).toBeUndefined()
+  })
+
+  it('uses only available fields when some are missing', () => {
+    const result = extractSubjectAnchor({ title: 'Product Launch' })
+    expect(result).toBe('Product Launch')
   })
 })
