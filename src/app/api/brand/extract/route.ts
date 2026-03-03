@@ -471,21 +471,15 @@ export async function POST(request: NextRequest) {
     async () => {
       await requireAuth()
 
-      // Peek at body to determine timeout (deep mode needs more time for agent navigation)
-      const clonedRequest = request.clone()
-      let isDeep = false
-      try {
-        const body = await clonedRequest.json()
-        isDeep = body?.deep === true
-      } catch {
-        // Ignore parse errors, will be caught in extractBrand
-      }
+      // Parse body once; pass the validated object to extractBrand
+      const rawBody = await request.json()
+      const body = extractBrandRequestSchema.parse(rawBody)
 
-      const timeoutMs = isDeep ? DEEP_EXTRACTION_TIMEOUT_MS : EXTRACTION_TIMEOUT_MS
+      const timeoutMs = body.deep ? DEEP_EXTRACTION_TIMEOUT_MS : EXTRACTION_TIMEOUT_MS
 
       // Guard against hung requests — fail gracefully before platform timeout
       const result = await Promise.race([
-        extractBrand(request),
+        extractBrand(body),
         new Promise<never>((_, reject) =>
           setTimeout(
             () => reject(Errors.badRequest('Brand extraction timed out. Please try again.')),
@@ -528,9 +522,8 @@ Return a structured summary with sections: HOMEPAGE, ABOUT, PRICING, CAREERS, CO
   }
 }
 
-async function extractBrand(request: NextRequest) {
-  const body = await request.json()
-  const { websiteUrl, deep } = extractBrandRequestSchema.parse(body)
+async function extractBrand(body: ReturnType<typeof extractBrandRequestSchema.parse>) {
+  const { websiteUrl, deep } = body
 
   // Normalize URL
   let normalizedUrl = websiteUrl.trim()
