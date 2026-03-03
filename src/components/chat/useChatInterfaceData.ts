@@ -659,7 +659,7 @@ export function useChatInterfaceData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_briefingState?.structure, storyboard.storyboardScenes])
 
-  // ─── Stability: restore video narrative from briefing state ──
+  // ─── Stability: restore video narrative + storyboard review from briefing state ──
   useEffect(() => {
     if (_briefingState?.videoNarrative && !storyboard.videoNarrative) {
       storyboard.setVideoNarrative(_briefingState.videoNarrative)
@@ -667,8 +667,15 @@ export function useChatInterfaceData({
     if (_briefingState?.narrativeApproved && !storyboard.narrativeApproved) {
       storyboard.setNarrativeApproved(true)
     }
+    if (_briefingState?.storyboardReviewed && !storyboard.storyboardReviewed) {
+      storyboard.setStoryboardReviewed(true)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_briefingState?.videoNarrative, _briefingState?.narrativeApproved])
+  }, [
+    _briefingState?.videoNarrative,
+    _briefingState?.narrativeApproved,
+    _briefingState?.storyboardReviewed,
+  ])
 
   // ─── Auto-trigger storyboard generation at ELABORATE entry ──────
   // When the state machine advances to ELABORATE for a video project (after style
@@ -930,11 +937,18 @@ export function useChatInterfaceData({
     if (chatMessages.isLoading || msgs.length === 0) return
     const stage = _briefingState?.stage
 
-    const shouldConstruct =
+    const baseReady =
       stage === 'SUBMIT' ||
       (stage === 'REVIEW' &&
         msgs[msgs.length - 1]?.role === 'assistant' &&
         hasReadyIndicator(msgs[msgs.length - 1].content))
+
+    // For video projects, also require storyboard reviewed + images done
+    const videoReady =
+      _briefingState?.deliverableCategory !== 'video' ||
+      (_briefingState?.storyboardReviewed === true && !storyboard.isGeneratingImages)
+
+    const shouldConstruct = baseReady && videoReady
 
     if (!shouldConstruct) return
 
@@ -959,6 +973,9 @@ export function useChatInterfaceData({
   }, [
     _briefingState?.stage,
     _briefingState?.brief,
+    _briefingState?.deliverableCategory,
+    _briefingState?.storyboardReviewed,
+    storyboard.isGeneratingImages,
     chatMessages.isLoading,
     chatMessages.messages.length,
   ])
@@ -1287,7 +1304,9 @@ export function useChatInterfaceData({
     // Video narrative
     videoNarrative: storyboard.videoNarrative,
     narrativeApproved: storyboard.narrativeApproved,
+    storyboardReviewed: storyboard.storyboardReviewed,
     handleApproveNarrative: storyboard.handleApproveNarrative,
+    handleApproveStoryboard: storyboard.handleApproveStoryboard,
     handleNarrativeFieldEdit: storyboard.handleNarrativeFieldEdit,
     handleRegenerateNarrative: storyboard.handleRegenerateNarrative,
     handleRetryGeneration,

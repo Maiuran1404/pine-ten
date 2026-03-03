@@ -1,24 +1,16 @@
 // =============================================================================
-// SCENE PROMPT BUILDER — builds rich cinematic image generation prompts from
+// SCENE PROMPT BUILDER — builds concise, focused image generation prompts from
 // scene data + style metadata + brand context. Used by both production API
 // routes and admin storyboard image tool.
 //
 // No `server-only` import so it can be used in client components.
 //
-// Prompt structure (newline-separated labeled sections):
-//  1. SUBJECT            — concrete subject anchor extracted from scene fields
-//  2. SCENE CONTENT      — AI's imageGenerationPrompt OR assembled fields
-//  3. CASTING            — default demographic guidance for depicted people
-//  4. VISUAL CONTINUITY  — batch non-hero only
-//  5. STYLE DIRECTION    — from StyleMetadata.promptGuides (as modifier)
-//  6. STYLE CHARACTER    — styleAxis + density + energy + visualElements
-//  7. COLOR PALETTE      — merged style colorSamples + brand colors
-//  8. ATMOSPHERE         — moodKeywords + colorTemperature -> lighting + mood
-//  9. CAMERA             — enriched shot type + lens spec
-// 10. LIGHTING           — inferred from mood + color temp
-// 11. MOOD               — voiceover as atmospheric direction (NOT text)
-// 12. TRANSITION         — enriched transition continuity
-// 13. QUALITY DIRECTIVE  — film quality benchmark
+// Prompt structure (5 parts, ~500-1000 chars total):
+//  1. VISUAL DNA PREFIX  — batch-wide consistency anchor (same for all scenes)
+//  2. SUBJECT + CONTENT  — concrete scene description (1-2 sentences)
+//  3. STYLE + CAMERA     — style modifiers, camera, lighting (1-2 lines)
+//  4. COLOR PALETTE      — hex palette (1 line, if available)
+//  5. QUALITY FOOTER     — production quality + minimal negative embedding
 // =============================================================================
 
 import type { StyleMetadata, BrandContextForPrompt } from './image-providers/types'
@@ -29,7 +21,6 @@ import {
   mapStyleAxis,
   mapDensity,
   mapEnergy,
-  enrichTransition,
 } from './cinematic-vocabulary'
 
 export interface ScenePromptInput {
@@ -73,15 +64,11 @@ export function extractSubjectAnchor(scene: ScenePromptInput): string | undefine
 }
 
 /**
- * Build a rich cinematic image generation prompt from scene data,
+ * Build a concise, focused image generation prompt from scene data,
  * style metadata, and brand context.
  *
- * When `StyleMetadata` is provided, leverages all available rich data:
- * - promptGuides as primary style anchors
- * - colorSamples as explicit hex palette
- * - moodKeywords for lighting and atmosphere
- * - styleAxis/density/energy for composition
- * - visualElements for technique guidance
+ * Designed for FLUX.2 Pro which responds best to ~500-1000 char prompts
+ * with positive descriptive language (not instruction-heavy "DO NOT" rules).
  *
  * Falls back to legacy flat-string behavior when StyleMetadata is absent
  * (backward compatible with existing callers passing styleContext string).
@@ -98,137 +85,123 @@ export function buildScenePrompt(
   }
 
   const style = styleContextOrMetadata
-  const sections: string[] = []
+  const parts: string[] = []
 
-  // 1. SUBJECT — concrete subject anchor (front-loaded for FLUX.2 Pro attention)
-  const subjectAnchor = extractSubjectAnchor(scene)
-  if (subjectAnchor) {
-    sections.push(
-      `SUBJECT: ${subjectAnchor}. ` +
-        'This is the PRIMARY subject of the image. All style, lighting, and composition must serve this subject. ' +
-        'Do NOT replace this subject with generic objects, still-life arrangements, or abstract compositions.'
-    )
+  // ── 1. VISUAL DNA PREFIX — same for all scenes in a batch ──
+  const dnaPrefix = buildVisualDnaPrefix(style, batchContext)
+  if (dnaPrefix) {
+    parts.push(dnaPrefix)
   }
 
-  // 2. SCENE CONTENT — moved up to front-load narrative before style
+  // ── 2. SUBJECT + CONTENT — the actual scene (1-2 sentences) ──
   if (scene.imageGenerationPrompt) {
-    sections.push(`SCENE CONTENT: ${scene.imageGenerationPrompt}`)
-  }
-
-  if (!scene.imageGenerationPrompt) {
+    parts.push(scene.imageGenerationPrompt)
+  } else {
     const contentParts: string[] = []
-    if (scene.title) {
-      const prefix = scene.sceneNumber ? `Scene ${scene.sceneNumber}` : 'Scene'
-      contentParts.push(`${prefix}: ${scene.title}`)
-    }
+    if (scene.title) contentParts.push(scene.title)
     if (scene.visualNote) contentParts.push(scene.visualNote)
     if (scene.description) contentParts.push(scene.description)
     if (contentParts.length > 0) {
-      sections.push(`SCENE CONTENT: ${contentParts.join('. ')}`)
+      parts.push(contentParts.join('. '))
     }
   }
 
-  // 3. CASTING — default demographic guidance for people in scenes
-  sections.push(
-    'CASTING: When depicting people, show diverse professionals aged 25-35 with modern, ' +
-      'polished appearances. Favor contemporary styling and natural expressions.'
-  )
-
-  // 4. VISUAL CONTINUITY — non-hero batch scenes reference the hero frame
-  if (batchContext && batchContext.totalScenes > 1 && !batchContext.isHeroFrame) {
-    sections.push(
-      `VISUAL CONTINUITY: This is scene ${batchContext.sceneIndex + 1} of ${batchContext.totalScenes}. ` +
-        'Maintain the same color palette, lighting temperature, and cinematic grade as the hero frame (scene 1), ' +
-        'but create a distinctly different composition, camera angle, and subject arrangement for this scene.\n\n' +
-        'SCENE DISTINCTION: Each scene must have its own unique framing, perspective, and focal subject. ' +
-        'Vary the camera distance, angle, and environment between scenes to create visual storytelling progression.'
-    )
+  // ── 3. STYLE + CAMERA + LIGHTING — merged into 1-2 concise lines ──
+  const styleLine = buildStyleLine(style, scene)
+  if (styleLine) {
+    parts.push(styleLine)
   }
 
-  // 5. STYLE DIRECTION — from promptGuides, applied as modifier to the subject above
-  if (style.promptGuides.length > 0) {
-    const guides = style.promptGuides.filter(Boolean).join('. ')
-    if (guides) {
-      sections.push(
-        `STYLE DIRECTION: Apply the following style AS A MODIFIER to the subject above — ` +
-          `do not let style override the scene's narrative content. ${guides}`
-      )
-    }
-  }
-
-  // 6. STYLE CHARACTER — styleAxis + density + energy + visualElements
-  const characterParts: string[] = []
-  for (const axis of style.styleAxes) {
-    const mapped = mapStyleAxis(axis)
-    if (mapped) characterParts.push(mapped)
-  }
-  const density = mapDensity(style.densityLevel)
-  if (density) characterParts.push(density)
-  const energy = mapEnergy(style.energyLevel)
-  if (energy) characterParts.push(energy)
-  if (style.visualElements.length > 0) {
-    characterParts.push(`Visual approach: ${style.visualElements.join(', ')}`)
-  }
-  if (characterParts.length > 0) {
-    sections.push(`STYLE CHARACTER: ${characterParts.join('. ')}`)
-  }
-
-  // 7. COLOR PALETTE — merged style colorSamples + brand colors
+  // ── 4. COLOR PALETTE — 1 line if available ──
   const colorGrading = buildColorGrading(
     style.colorPalette,
     brandContext?.colors,
     brandContext?.industry
   )
   if (colorGrading) {
-    sections.push(`COLOR PALETTE: ${colorGrading}`)
+    parts.push(colorGrading)
   }
 
-  // 8. ATMOSPHERE — moodKeywords + colorTemperature -> mood direction
+  // ── 5. QUALITY FOOTER ──
+  parts.push('Professional cinematic quality, photorealistic, no text or watermarks.')
+
+  // Target ~500-1000 chars — cap at 1500 for safety
+  return parts.join('\n').slice(0, 1500)
+}
+
+/**
+ * Build the visual DNA prefix that anchors all scenes in a batch
+ * to the same visual style. This is the key consistency mechanism
+ * in the prompt (complementing the hero anchor image in FLUX.2 Pro).
+ */
+function buildVisualDnaPrefix(style: StyleMetadata, batchContext?: BatchContext): string {
+  const dnaParts: string[] = []
+
+  // Batch consistency anchor
+  if (batchContext && batchContext.totalScenes > 1) {
+    dnaParts.push(
+      'Consistent cinematic series — same color grading, same photographic style, same film stock.'
+    )
+  }
+
+  // Style keywords from axes (compact)
+  const styleKeywords: string[] = []
+  for (const axis of style.styleAxes) {
+    const mapped = mapStyleAxis(axis)
+    if (mapped) {
+      // Extract just the first clause (before the comma) for brevity
+      const short = mapped.split(',')[0]
+      styleKeywords.push(short)
+    }
+  }
+  const density = mapDensity(style.densityLevel)
+  if (density) styleKeywords.push(density.split(',')[0])
+  const energy = mapEnergy(style.energyLevel)
+  if (energy) styleKeywords.push(energy.split(',')[0])
+
+  if (styleKeywords.length > 0) {
+    dnaParts.push(styleKeywords.join(', ') + '.')
+  }
+
+  // Mood keywords (compact)
   if (style.moodKeywords.length > 0) {
-    const moodStr = style.moodKeywords.join(', ')
-    const tempStr = style.colorTemperature
-      ? `. ${style.colorTemperature.charAt(0).toUpperCase() + style.colorTemperature.slice(1)}-toned atmosphere.`
-      : '.'
-    sections.push(`ATMOSPHERE: ${moodStr} mood${tempStr}`)
+    dnaParts.push(style.moodKeywords.join(', ') + ' mood.')
   }
 
-  // 9. CAMERA — enriched shot type + lens spec
-  const shotSpec = inferShotSpecs(scene.cameraNote, scene.visualNote)
-  sections.push(`CAMERA: ${shotSpec}`)
+  return dnaParts.join(' ')
+}
 
-  // 10. LIGHTING — inferred from moodKeywords + colorTemperature + voiceover
+/**
+ * Build a compact style + camera + lighting line.
+ * Merges what were previously 4+ separate sections into 1-2 lines.
+ */
+function buildStyleLine(style: StyleMetadata, scene: ScenePromptInput): string {
+  const lineParts: string[] = []
+
+  // Style guides (take first one, truncated)
+  if (style.promptGuides.length > 0) {
+    const guide = style.promptGuides[0]
+    if (guide) lineParts.push(guide.slice(0, 200))
+  }
+
+  // Visual elements (compact list)
+  if (style.visualElements.length > 0) {
+    lineParts.push(style.visualElements.slice(0, 4).join(', '))
+  }
+
+  // Camera
+  const shotSpec = inferShotSpecs(scene.cameraNote, scene.visualNote)
+  lineParts.push(shotSpec)
+
+  // Lighting (compact)
   const lighting = inferLighting({
     moodKeywords: style.moodKeywords,
     voiceover: scene.voiceover,
     colorTemperature: style.colorTemperature,
   })
-  sections.push(`LIGHTING: ${lighting}`)
+  lineParts.push(lighting)
 
-  // 11. MOOD — voiceover as atmospheric direction (NOT rendered as text)
-  if (scene.voiceover) {
-    sections.push(
-      `MOOD: Convey the following emotional tone purely through visual composition, color, and lighting. ` +
-        `Do NOT render any words, letters, or readable text from this content: "${scene.voiceover}"`
-    )
-  }
-
-  // 12. TRANSITION
-  if (scene.transition) {
-    const enriched = enrichTransition(scene.transition)
-    sections.push(`TRANSITION: ${enriched}`)
-  }
-
-  // 13. QUALITY DIRECTIVE
-  sections.push(
-    'CRITICAL RULE: This image must contain absolutely zero text, zero letters, zero words, zero numbers, zero typography of any kind. ' +
-      'Do not render any readable characters, captions, subtitles, titles, buttons, labels, watermarks, or overlay text.\n\n' +
-      'QUALITY DIRECTIVE: Shot on ARRI Alexa 35. 4K. Professional production quality, photorealistic. ' +
-      'Pure visual imagery only — no text, watermarks, logos, UI elements, call-to-action buttons, or overlaid graphics.'
-  )
-
-  // Join with newlines (models parse labeled sections better with line breaks)
-  // FLUX.2 Pro handles long prompts well — 8000 char limit
-  return sections.join('\n\n').slice(0, 8000)
+  return lineParts.join('. ')
 }
 
 /**
@@ -242,57 +215,40 @@ function buildLegacyPrompt(
 ): string {
   const parts: string[] = []
 
-  // Subject anchor first — front-load narrative content
-  const subjectAnchor = extractSubjectAnchor(scene)
-  if (subjectAnchor) {
-    parts.push(`SUBJECT: ${subjectAnchor}. This is the PRIMARY subject of the image.`)
-  }
-
-  // Scene content before style
-  if (scene.imageGenerationPrompt) {
-    parts.push(`SCENE CONTENT: ${scene.imageGenerationPrompt}`)
-  } else {
-    if (scene.title) {
-      const prefix = scene.sceneNumber ? `Scene ${scene.sceneNumber}` : 'Scene'
-      parts.push(`${prefix}: ${scene.title}`)
-    }
-    if (scene.visualNote) parts.push(scene.visualNote)
-    if (scene.description) parts.push(scene.description)
-
-    const shotSpec = inferShotSpecs(scene.cameraNote, scene.visualNote)
-    parts.push(`Camera: ${shotSpec}`)
-
-    if (scene.voiceover) {
-      parts.push(
-        `Mood context (convey this feeling visually, do NOT render as text): ${scene.voiceover}`
-      )
-    }
-    if (scene.transition) {
-      parts.push(`Transition: ${enrichTransition(scene.transition)}`)
-    }
-  }
-
-  // CASTING — default demographic guidance
-  parts.push(
-    'CASTING: When depicting people, show diverse professionals aged 25-35 with modern, ' +
-      'polished appearances. Favor contemporary styling and natural expressions.'
-  )
-
-  // Visual consistency after content
+  // Visual DNA for batch consistency
   if (batchContext && batchContext.totalScenes > 1) {
     parts.push(
-      `VISUAL CONSISTENCY: This is scene ${batchContext.sceneIndex + 1} of ${batchContext.totalScenes} in a single storyboard. Maintain consistent color grading, lighting style, and visual treatment across all frames.`
+      'Consistent cinematic series — same color grading, same photographic style, same film stock.'
     )
   }
 
-  // Style as modifier, not primary direction
-  if (styleContext) {
-    parts.push(`STYLE DIRECTION: Apply as modifier to the subject above — ${styleContext}`)
+  // Subject + content
+  const subjectAnchor = extractSubjectAnchor(scene)
+  if (subjectAnchor) {
+    parts.push(subjectAnchor)
   }
 
-  parts.push(
-    'Shot on ARRI Alexa 35. 4K. Professional production quality, photorealistic. No text, watermarks, or UI elements.'
-  )
+  if (scene.imageGenerationPrompt) {
+    parts.push(scene.imageGenerationPrompt)
+  } else {
+    const contentParts: string[] = []
+    if (scene.title) contentParts.push(scene.title)
+    if (scene.visualNote) contentParts.push(scene.visualNote)
+    if (scene.description) contentParts.push(scene.description)
+    if (contentParts.length > 0) {
+      parts.push(contentParts.join('. '))
+    }
 
-  return parts.join('\n\n').slice(0, 8000)
+    const shotSpec = inferShotSpecs(scene.cameraNote, scene.visualNote)
+    parts.push(shotSpec)
+  }
+
+  // Style as modifier
+  if (styleContext) {
+    parts.push(styleContext)
+  }
+
+  parts.push('Professional cinematic quality, photorealistic, no text or watermarks.')
+
+  return parts.join('\n').slice(0, 1500)
 }

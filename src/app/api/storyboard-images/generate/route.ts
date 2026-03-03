@@ -252,9 +252,14 @@ export async function POST(request: NextRequest) {
             })
           : buildScenePrompt(scene, body.styleContext, undefined, { totalScenes, sceneIndex })
 
+        // Cap style refs to 1 for consistency scenes — the hero anchor image is
+        // prepended by FLUX.2 Pro, so total refs = hero + 1 style = 2.
+        // Too many references dilute the consistency signal from the hero frame.
+        const consistencyRefs = anchorImage ? referenceImages?.slice(0, 1) : referenceImages
+
         const result = await generateSceneImage(prompt, {
           size: '1536x1024',
-          referenceImages,
+          referenceImages: consistencyRefs,
           anchorImage,
           strategy: anchorImage ? 'consistency' : 'standard',
         })

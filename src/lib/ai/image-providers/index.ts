@@ -33,28 +33,14 @@ export function getProviderChain(strategy: ProviderStrategy): ImageProvider[] {
 }
 
 /**
- * Simplify a prompt for retry attempts (strip to core sections).
- * Removes detailed sections and keeps only essential content.
+ * Simplify a prompt for retry attempts.
+ * Takes the first ~800 chars (roughly the subject + content) and appends quality footer.
  */
 function simplifyPrompt(prompt: string): string {
-  const lines = prompt.split('\n')
-  const essentialSections = ['SUBJECT', 'SCENE CONTENT', 'STYLE DIRECTION', 'QUALITY DIRECTIVE']
-  const simplified: string[] = []
-  let currentSection = ''
-  let includeSection = true
-
-  for (const line of lines) {
-    const sectionMatch = line.match(/^([A-Z][A-Z\s]+):/)
-    if (sectionMatch) {
-      currentSection = sectionMatch[1].trim()
-      includeSection = essentialSections.some((s) => currentSection.includes(s))
-    }
-    if (includeSection) {
-      simplified.push(line)
-    }
-  }
-
-  return simplified.join('\n').trim() || prompt.slice(0, 2000)
+  // New prompts are already concise (~500-1000 chars), so just truncate
+  const truncated = prompt.slice(0, 800).trim()
+  if (truncated.includes('photorealistic')) return truncated
+  return truncated + '\nProfessional cinematic quality, photorealistic.'
 }
 
 /**

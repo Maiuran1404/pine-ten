@@ -56,18 +56,36 @@ export const flux2ProProvider: ImageProvider = {
       prompt: request.prompt,
       image_size: mapAspectRatio(request.aspectRatio),
       num_inference_steps: 28,
-      guidance_scale: 3.5,
+      guidance_scale: 5.0,
       num_images: 1,
       safety_tolerance: '5',
     }
 
-    // Attach reference images as data URIs (FLUX.2 Pro supports up to 9)
+    // Build reference image list: anchor image first (if present), then style refs
+    const allRefs: string[] = []
+
+    // Prepend hero anchor image for consistency — this is the key fix:
+    // FLUX.2 Pro uses reference images for style matching, so placing the hero
+    // frame first ensures all subsequent scenes match its visual DNA.
+    if (request.anchorImage) {
+      allRefs.push(toDataUri(request.anchorImage.base64, request.anchorImage.mimeType))
+      logger.debug('FLUX.2 Pro: prepended anchor image as first reference')
+    }
+
+    // Append style reference images
     if (request.referenceImages && request.referenceImages.length > 0) {
-      const maxRefs = Math.min(request.referenceImages.length, 9)
-      input.image_urls = request.referenceImages
-        .slice(0, maxRefs)
-        .map((img) => toDataUri(img.base64, img.mimeType))
-      logger.debug({ refCount: maxRefs }, 'FLUX.2 Pro: attached reference images')
+      for (const img of request.referenceImages) {
+        allRefs.push(toDataUri(img.base64, img.mimeType))
+      }
+    }
+
+    // Cap at 9 total (FLUX.2 Pro limit) and attach
+    if (allRefs.length > 0) {
+      input.image_urls = allRefs.slice(0, 9)
+      logger.debug(
+        { refCount: input.image_urls.length, hasAnchor: !!request.anchorImage },
+        'FLUX.2 Pro: attached reference images'
+      )
     }
 
     const { data, latencyMs } = await falGenerate<Flux2ProInput, Flux2ProOutput>(

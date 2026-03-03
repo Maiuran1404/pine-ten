@@ -103,7 +103,9 @@ export interface StructurePanelProps {
   // Video narrative props
   videoNarrative?: VideoNarrative | null
   narrativeApproved?: boolean
+  storyboardReviewed?: boolean
   onApproveNarrative?: (editedNarrative?: VideoNarrative) => void
+  onApproveStoryboard?: () => void
   onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
   // Error recovery for storyboard generation after narrative approval
   isChatLoading?: boolean
@@ -504,7 +506,9 @@ export function StructurePanel({
   onUpdateInspirationNotes,
   videoNarrative,
   narrativeApproved,
+  storyboardReviewed: _storyboardReviewed,
   onApproveNarrative,
+  onApproveStoryboard: _onApproveStoryboard,
   onNarrativeFieldEdit,
   isChatLoading,
   lastSendError,
@@ -533,8 +537,13 @@ export function StructurePanel({
     [onStyleConfirmSelection]
   )
 
-  // INSPIRATION stage: show StyleSelectionPanel or cinematic loading
-  if (briefingStage === 'INSPIRATION') {
+  // INSPIRATION stage: show StyleSelectionPanel or cinematic loading.
+  // Also catch the transitional state where narrative is approved but
+  // briefingStage hasn't updated from STRUCTURE yet (API in-flight).
+  const isInspirationPhase =
+    briefingStage === 'INSPIRATION' ||
+    (narrativeApproved && briefingStage === 'STRUCTURE' && structureType === 'storyboard')
+  if (isInspirationPhase) {
     // After style confirmation, show cinematic loading while AI generates structure
     if (styleConfirming && isChatLoading && structureType) {
       return (
@@ -609,8 +618,18 @@ export function StructurePanel({
     }
   }
 
-  // Video: narrative approved but storyboard not yet generated — show loading/error/retry
-  if (structureType === 'storyboard' && videoNarrative && narrativeApproved && !structureData) {
+  // Video: narrative approved, styles selected, but storyboard not yet generated — show loading/error/retry
+  // Guard: skip this when at INSPIRATION stage (style selection) or when styles haven't been
+  // selected yet — the user must pick visual styles before storyboard generation begins.
+  const hasSelectedStyles = (confirmedStyleIds?.length ?? 0) > 0
+  if (
+    structureType === 'storyboard' &&
+    videoNarrative &&
+    narrativeApproved &&
+    !structureData &&
+    briefingStage !== 'INSPIRATION' &&
+    hasSelectedStyles
+  ) {
     // If storyboard generation failed, show error + retry UI
     if (lastSendError && onRetryGeneration) {
       return (

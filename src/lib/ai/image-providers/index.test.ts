@@ -330,10 +330,11 @@ describe('generateWithFallback — prompt variation on retry', () => {
     expect(captured[1]).toContain('Ultra-high resolution.')
   })
 
-  it('simplifies to essential sections on attempt 3', async () => {
+  it('truncates prompt on attempt 3', async () => {
     const captured: string[] = []
     const prompt =
-      'SUBJECT: identity scan device\n\nSCENE CONTENT: product shot\n\nSTYLE DIRECTION: minimal\n\nATMOSPHERE: dramatic\n\nQUALITY DIRECTIVE: Shot on ARRI Alexa 35. 4K. photorealistic'
+      'A scenic mountain landscape with dramatic lighting.\nCinematic style, photorealistic.\n' +
+      'Extra detail that extends the prompt beyond 800 chars. '.repeat(20)
 
     mockFlux2Pro.generate = vi.fn(async (req: Record<string, unknown>) => {
       captured.push(req.prompt as string)
@@ -343,14 +344,13 @@ describe('generateWithFallback — prompt variation on retry', () => {
     await expect(generateWithFallback('hero', { prompt, aspectRatio: '3:2' }, 3)).rejects.toThrow()
 
     expect(captured).toHaveLength(3)
-    // Attempt 3 — simplified: SUBJECT, SCENE CONTENT, STYLE DIRECTION, and QUALITY DIRECTIVE survive
+    // Attempt 3 — truncated to ~800 chars
     const attempt3 = captured[2]
-    expect(attempt3).toContain('SUBJECT')
-    expect(attempt3).toContain('SCENE CONTENT')
-    expect(attempt3).toContain('STYLE DIRECTION')
-    expect(attempt3).toContain('QUALITY DIRECTIVE')
-    // ATMOSPHERE should have been stripped
-    expect(attempt3).not.toContain('ATMOSPHERE')
+    expect(attempt3.length).toBeLessThanOrEqual(850)
+    // Should still contain the beginning of the prompt
+    expect(attempt3).toContain('scenic mountain landscape')
+    // Should contain photorealistic (from the original or appended footer)
+    expect(attempt3).toContain('photorealistic')
   })
 })
 

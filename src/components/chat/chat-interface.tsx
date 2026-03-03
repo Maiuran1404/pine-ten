@@ -254,7 +254,9 @@ export function ChatInterface({
     // Video narrative
     videoNarrative,
     narrativeApproved,
+    storyboardReviewed,
     handleApproveNarrative,
+    handleApproveStoryboard,
     handleNarrativeFieldEdit,
     handleRegenerateNarrative: _handleRegenerateNarrative,
     handleRetryGeneration,
@@ -386,6 +388,20 @@ export function ChatInterface({
         return
       }
 
+      // Storyboard approval intent → trigger handleApproveStoryboard
+      // (allows deriveStage to advance past ELABORATE → REVIEW)
+      if (
+        storyboardScenes?.type === 'storyboard' &&
+        storyboardScenes.scenes.length > 0 &&
+        !storyboardReviewed &&
+        /\b(looks good|approve|approved|that works|move forward|continue|let'?s (go|move|continue|review)|ready to review)\b/i.test(
+          lower
+        )
+      ) {
+        handleApproveStoryboard()
+        return
+      }
+
       handleSendOption(option)
     },
     [
@@ -394,6 +410,9 @@ export function ChatInterface({
       videoNarrative,
       narrativeApproved,
       handleApproveNarrative,
+      storyboardScenes,
+      storyboardReviewed,
+      handleApproveStoryboard,
     ]
   )
 
@@ -448,7 +467,9 @@ export function ChatInterface({
       onUpdateInspirationNotes: updateInspirationNotes,
       videoNarrative,
       narrativeApproved,
+      storyboardReviewed,
       onApproveNarrative: handleApproveNarrative,
+      onApproveStoryboard: handleApproveStoryboard,
       onNarrativeFieldEdit: handleNarrativeFieldEdit,
       lastSendError,
       onRetryGeneration: handleRetryGeneration,
@@ -485,6 +506,7 @@ export function ChatInterface({
       canFindSimilar,
       videoNarrative,
       narrativeApproved,
+      storyboardReviewed,
       lastSendError,
       imageGenerationProgress,
       isGeneratingImages,
@@ -532,6 +554,7 @@ export function ChatInterface({
           storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes.length : 0
         }
         viewStructureRef={viewStructureRef}
+        isLoading={isLoading}
         className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
       >
         <div

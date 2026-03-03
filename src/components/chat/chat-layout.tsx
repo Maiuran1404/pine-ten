@@ -49,6 +49,8 @@ interface ChatLayoutProps {
   storyboardSceneCount?: number
   // Imperative handle to open the structure view from children
   viewStructureRef?: MutableRefObject<(() => void) | null>
+  // When true, block all interaction on the right panel (AI is streaming)
+  isLoading?: boolean
   // Optional customization
   showProgress?: boolean
   showMoodboard?: boolean
@@ -89,6 +91,7 @@ export function ChatLayout({
   onApplyMoodboardToScene,
   storyboardSceneCount,
   viewStructureRef,
+  isLoading = false,
   showProgress = true,
   showMoodboard = true,
   showBrief = true,
@@ -179,7 +182,7 @@ export function ChatLayout({
                 <ResizablePanel id="structure" defaultSize={45} minSize={35} maxSize={65}>
                   <div
                     className={cn(
-                      'flex flex-col h-full bg-muted/20 transition-all duration-500',
+                      'flex flex-col h-full bg-muted/20 transition-all duration-500 relative',
                       canvasActive && 'ring-1 ring-crafted-sage/30'
                     )}
                   >
@@ -192,6 +195,7 @@ export function ChatLayout({
                       />
                     )}
                     {structurePanelProps && <StructurePanel {...structurePanelProps} />}
+                    {isLoading && <div className="absolute inset-0 z-10 cursor-not-allowed" />}
                   </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
@@ -200,8 +204,9 @@ export function ChatLayout({
             {/* Mobile/Tablet: Structure panel bottom sheet */}
             <Sheet open={isMobileStructureOpen} onOpenChange={setIsMobileStructureOpen}>
               <SheetContent side="bottom" className="h-[80vh] p-0 rounded-t-xl lg:hidden">
-                <div className="h-full pt-4">
+                <div className="h-full pt-4 relative">
                   {structurePanelProps && <StructurePanel {...structurePanelProps} />}
+                  {isLoading && <div className="absolute inset-0 z-10 cursor-not-allowed" />}
                 </div>
               </SheetContent>
             </Sheet>
@@ -309,7 +314,7 @@ export function ChatLayout({
                     </div>
 
                     {/* Unified Panel */}
-                    <div className="flex-1 min-h-0 overflow-hidden">
+                    <div className="flex-1 min-h-0 overflow-hidden relative">
                       <UnifiedPanel
                         currentStage={currentStage}
                         completedStages={completedStages}
@@ -325,6 +330,8 @@ export function ChatLayout({
                         isReadyForDesigner={isReadyForDesigner}
                         deliverableCategory={deliverableCategory}
                       />
+                      {/* Block interactions while AI is streaming */}
+                      {isLoading && <div className="absolute inset-0 z-10 cursor-not-allowed" />}
                     </div>
                   </motion.div>
                 )}
@@ -347,7 +354,7 @@ export function ChatLayout({
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="bottom" className="h-[70vh] p-0 rounded-t-xl">
-                    <div className="h-full pt-4">
+                    <div className="h-full pt-4 relative">
                       <UnifiedPanel
                         currentStage={currentStage}
                         completedStages={completedStages}
@@ -364,6 +371,7 @@ export function ChatLayout({
                         onApplyMoodboardToScene={onApplyMoodboardToScene}
                         storyboardSceneCount={storyboardSceneCount}
                       />
+                      {isLoading && <div className="absolute inset-0 z-10 cursor-not-allowed" />}
                     </div>
                   </SheetContent>
                 </Sheet>

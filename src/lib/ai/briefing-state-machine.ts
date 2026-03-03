@@ -245,6 +245,8 @@ export interface BriefingState {
   // Video narrative (story concept before storyboard, video only)
   videoNarrative: VideoNarrative | null
   narrativeApproved: boolean
+  // Whether user has reviewed and approved the generated storyboard (video only)
+  storyboardReviewed: boolean
   // Target video duration extracted from user messages (e.g. "30 second video")
   targetDurationSeconds: number | null
   // Website-specific (only populated for website deliverables)
@@ -458,6 +460,7 @@ export function createInitialBriefingState(briefId?: string): BriefingState {
     messageCount: 0,
     videoNarrative: null,
     narrativeApproved: false,
+    storyboardReviewed: false,
     targetDurationSeconds: null,
   }
 }
@@ -475,8 +478,13 @@ export function checkElaborationComplete(state: BriefingState): boolean {
 
   switch (state.structure.type) {
     case 'storyboard': {
-      // Check if any scene has fullScript or directorNotes
-      return state.structure.scenes.some((s) => s.fullScript || s.directorNotes)
+      // Require substantial elaboration AND explicit user review before advancing.
+      // Without the storyboardReviewed gate, deriveStage() auto-advances past
+      // ELABORATE → REVIEW before the user gets to see the storyboard.
+      const scenes = state.structure.scenes
+      const elaboratedCount = scenes.filter((s) => s.fullScript || s.directorNotes).length
+      const substantiallyElaborated = elaboratedCount >= Math.ceil(scenes.length * 0.6)
+      return substantiallyElaborated && state.storyboardReviewed === true
     }
     case 'layout': {
       // Check if any section has headline or draftContent
@@ -558,6 +566,7 @@ export function goBackTo(state: BriefingState, targetStage: BriefingStage): Brie
     newState.deepenSelections = null
     newState.videoNarrative = null
     newState.narrativeApproved = false
+    newState.storyboardReviewed = false
   }
 
   // Going back to ELABORATE: clear strategic review + downstream, keep structure
@@ -568,6 +577,7 @@ export function goBackTo(state: BriefingState, targetStage: BriefingStage): Brie
     newState.strategicReview = null
     newState.sectionMoodboards = {}
     newState.deepenSelections = null
+    newState.storyboardReviewed = false
   }
 
   // Clear strategic review and downstream for anything at STRATEGIC_REVIEW or earlier
@@ -621,6 +631,7 @@ export function pivotCategory(
     deepenSelections: null,
     videoNarrative: null,
     narrativeApproved: false,
+    storyboardReviewed: false,
     turnsInCurrentStage: 0,
   }
 }
@@ -647,6 +658,7 @@ export interface SerializedBriefingState {
   messageCount: number
   videoNarrative: VideoNarrative | null
   narrativeApproved: boolean
+  storyboardReviewed: boolean
   targetDurationSeconds: number | null
   websiteInspirations?: WebsiteInspiration[]
   websiteGlobalStyles?: WebsiteGlobalStyles

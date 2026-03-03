@@ -89,6 +89,8 @@ export function useStoryboard({
   // Video narrative state (story concept before storyboard, video only)
   const [videoNarrative, setVideoNarrative] = useState<VideoNarrative | null>(null)
   const [narrativeApproved, setNarrativeApproved] = useState(false)
+  // Storyboard review gate — prevents auto-advance past ELABORATE until user approves
+  const [storyboardReviewed, setStoryboardReviewed] = useState(false)
 
   // Visual diff tracking (U1): track which scenes changed after a revision
   // Extended (#21): Map<sceneNumber, FieldChange[]> for field-level diffs
@@ -501,8 +503,8 @@ export function useStoryboard({
     setVideoNarrative(data)
   }, [])
 
-  // Approve narrative and trigger storyboard generation
-  // If the user has edited the narrative, include the edits in the message
+  // Approve narrative and transition to style selection (INSPIRATION stage)
+  // Storyboard building happens AFTER the user selects visual styles
   const handleApproveNarrative = useCallback(
     (editedNarrative?: VideoNarrative) => {
       setNarrativeApproved(true)
@@ -512,7 +514,7 @@ export function useStoryboard({
         const ackMessage: Message = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: 'Narrative approved! Building your storyboard...',
+          content: 'Narrative approved! Let\u2019s pick a visual style...',
           timestamp: new Date(),
         }
         setMessages((prev) => [...prev, ackMessage])
@@ -524,18 +526,28 @@ export function useStoryboard({
         const clean = (s: string) => s.replace(/<<|>>/g, '')
         const narrativeSummary = `Approved narrative:\nConcept: ${clean(currentNarrative.concept)}\nNarrative: ${clean(currentNarrative.narrative)}\nHook: ${clean(currentNarrative.hook)}`
         handleSendOption(
-          `I've finalized the story narrative. ${narrativeSummary}\n\nLet\u2019s build the storyboard based on this.`,
-          { narrativeApproved: true }
+          `I've finalized the story narrative. ${narrativeSummary}\n\nNow let's choose a visual style for the video.`,
+          { narrativeApproved: true, stage: 'INSPIRATION', turnsInCurrentStage: 0 }
         )
       } else {
         handleSendOption(
-          'The story narrative looks great. Let\u2019s build the storyboard based on this.',
-          { narrativeApproved: true }
+          'The story narrative looks great. Now let\u2019s choose a visual style for the video.',
+          { narrativeApproved: true, stage: 'INSPIRATION', turnsInCurrentStage: 0 }
         )
       }
     },
     [handleSendOption, videoNarrative, setMessages]
   )
+
+  // Approve storyboard and allow stage to advance past ELABORATE → REVIEW.
+  // Mirrors handleApproveNarrative: sends a chat message with stateOverride
+  // so deriveStage() can now exit ELABORATE.
+  const handleApproveStoryboard = useCallback(() => {
+    setStoryboardReviewed(true)
+    handleSendOption('The storyboard looks great. Let\u2019s move on to the final review.', {
+      storyboardReviewed: true,
+    })
+  }, [handleSendOption])
 
   // Edit a narrative field inline
   const handleNarrativeFieldEdit = useCallback(
@@ -823,8 +835,11 @@ export function useStoryboard({
     setVideoNarrative,
     narrativeApproved,
     setNarrativeApproved,
+    storyboardReviewed,
+    setStoryboardReviewed,
     updateVideoNarrative,
     handleApproveNarrative,
+    handleApproveStoryboard,
     handleNarrativeFieldEdit,
     handleRegenerateNarrative,
   }
