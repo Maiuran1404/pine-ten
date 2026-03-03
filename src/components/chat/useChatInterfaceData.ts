@@ -907,6 +907,9 @@ export function useChatInterfaceData({
       const scene = currentStoryboard.scenes.find((s) => s.sceneNumber === sceneNum)
       if (scene) handleRegenerateImage(scene)
     }
+
+    // Clear changedScenes after processing to prevent re-triggering
+    storyboard.dismissChangedScenes()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyboard.changedScenes])
 

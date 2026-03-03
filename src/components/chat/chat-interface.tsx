@@ -394,7 +394,7 @@ export function ChatInterface({
         storyboardScenes?.type === 'storyboard' &&
         storyboardScenes.scenes.length > 0 &&
         !storyboardReviewed &&
-        /\b(looks good|approve|approved|that works|move forward|continue|let'?s (go|move|continue|review)|ready to review)\b/i.test(
+        /\b(looks good|good enough|approve|approved|that works|move forward|move on|continue|let'?s (go|move|continue|review)|ready to review)\b/i.test(
           lower
         )
       ) {

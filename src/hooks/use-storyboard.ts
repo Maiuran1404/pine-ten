@@ -686,6 +686,19 @@ export function useStoryboard({
         })
       } finally {
         setIsGeneratingImages(false)
+        // Safety net: mark any scenes still stuck at 'generating'/'pending' as 'done'
+        // (prevents shimmer from persisting indefinitely)
+        setImageGenerationProgress((prev) => {
+          let changed = false
+          const updated = new Map(prev)
+          for (const [key, value] of updated) {
+            if (value === 'pending' || value === 'generating') {
+              updated.set(key, 'done')
+              changed = true
+            }
+          }
+          return changed ? updated : prev
+        })
       }
     },
     [csrfFetch]
@@ -755,6 +768,13 @@ export function useStoryboard({
 
           // Update scene image data
           handleSceneImageReplace(scene.sceneNumber, imageUrl, 'ai-generated')
+        } else {
+          // API returned success but no imageUrl — mark as done (scene keeps existing image)
+          setImageGenerationProgress((prev) => {
+            const updated = new Map(prev)
+            updated.set(scene.sceneNumber, 'done')
+            return updated
+          })
         }
       } catch {
         setImageGenerationProgress((prev) => {
