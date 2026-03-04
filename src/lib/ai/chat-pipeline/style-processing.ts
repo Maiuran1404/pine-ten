@@ -22,7 +22,6 @@ import type { StyleAxis } from '@/lib/constants/reference-libraries'
 import { normalizeDeliverableType } from '@/lib/constants/reference-libraries'
 import {
   getVideoReferencesForChat,
-  isVideoDeliverableType,
   type VideoReference,
   type VideoMatchContext,
 } from '@/lib/ai/video-references'
@@ -58,47 +57,25 @@ export async function handleStyleShortcut(
 
   const styleContext = extractStyleContext(messages || [])
   let deliverableStyles: SearchedDeliverableStyle[] | undefined = undefined
-  let videoRefsResult: VideoReference[] | undefined = undefined
   const { type, deliverableType, styleAxis } = clientStyleMarker
   const normalizedType = normalizeDeliverableType(deliverableType)
-  const isVideoType = isVideoDeliverableType(normalizedType)
 
   try {
     if (type === 'initial') {
-      // For ALL initial requests, try curated DB presets first
+      // For ALL initial requests, try curated DB presets first (visual styles only)
       deliverableStyles = await getStylePresets(normalizedType, styleContext)
       if (!deliverableStyles?.length) {
-        // No curated presets — fall through to type-specific pipeline
-        if (isVideoType) {
+        // No curated presets — fall through to web search + brand-aware fallback
+        deliverableStyles = await searchStyleImages(
+          { searchTerms: clientStyleMarker.searchTerms, deliverableType: normalizedType },
+          { count: 6, styleContext }
+        )
+        if (!deliverableStyles || deliverableStyles.length === 0) {
           deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
             includeAllAxes: true,
             context: styleContext,
           })
-        } else {
-          deliverableStyles = await searchStyleImages(
-            { searchTerms: clientStyleMarker.searchTerms, deliverableType: normalizedType },
-            { count: 6, styleContext }
-          )
-          if (!deliverableStyles || deliverableStyles.length === 0) {
-            deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
-              includeAllAxes: true,
-              context: styleContext,
-            })
-          }
         }
-      }
-    } else if (isVideoType) {
-      const lastUserMessage = messages[messages.length - 1]?.content || ''
-      const videoOffset = styleOffset || 0
-      const fetchLimit = videoOffset + 3
-      const allVideoRefs = await getVideoReferencesForChat(
-        normalizedType,
-        lastUserMessage,
-        fetchLimit
-      )
-      videoRefsResult = allVideoRefs.slice(videoOffset)
-      if (videoRefsResult.length === 0 && allVideoRefs.length > 0) {
-        videoRefsResult = allVideoRefs.slice(0, 3)
       }
     } else if (type === 'more') {
       const searchTerms = clientStyleMarker.searchTerms
@@ -139,7 +116,7 @@ export async function handleStyleShortcut(
   return NextResponse.json({
     content: '',
     deliverableStyles,
-    videoReferences: videoRefsResult,
+    videoReferences: undefined,
     deliverableStyleMarker: clientStyleMarker,
     selectedStyles,
   })
@@ -231,18 +208,6 @@ export async function processStylesAndVideo(
     deliverableStyleMarker = autoDetectStyleMarker(responseContent, lastUserMessage)
   }
 
-  // Last-resort: at INSPIRATION, create marker from briefing state deliverable category
-  if (!deliverableStyleMarker && isInspirationStage && isStyleEligible && updatedBriefingState) {
-    const category = updatedBriefingState.deliverableCategory
-    if (category === 'video') {
-      deliverableStyleMarker = {
-        type: 'initial',
-        deliverableType: 'launch_video',
-      }
-      logger.debug('Created fallback style marker from briefing state (video)')
-    }
-  }
-
   // Suppress marker at non-eligible stages
   if (!isStyleEligible) {
     deliverableStyleMarker = undefined
@@ -251,7 +216,6 @@ export async function processStylesAndVideo(
   if (deliverableStyleMarker) {
     const { type, deliverableType, styleAxis } = deliverableStyleMarker
     const normalizedType = normalizeDeliverableType(deliverableType)
-    const isVideoType = isVideoDeliverableType(normalizedType)
 
     try {
       switch (type) {
@@ -270,50 +234,30 @@ export async function processStylesAndVideo(
               'Loaded curated style presets from DB'
             )
           }
-          // If no curated presets, fall through to type-specific pipeline
+          // If no curated presets, fall through to enriched web search
           if (!deliverableStyles?.length) {
-            if (isVideoType) {
-              // Video fallback: web search at non-INSPIRATION, brand-aware otherwise
-              if (!isInspirationStage) {
-                deliverableStyles = await searchStyleImages(
-                  {
-                    searchTerms: deliverableStyleMarker.searchTerms,
-                    deliverableType: normalizedType,
-                  },
-                  { count: 6, styleContext }
-                )
+            let enrichedSearchTerms = deliverableStyleMarker.searchTerms
+            if (updatedBriefingState) {
+              const contextTerms: string[] = []
+              if (updatedBriefingState.styleKeywords?.length) {
+                contextTerms.push(...updatedBriefingState.styleKeywords.slice(0, 3))
               }
-              if (!deliverableStyles?.length) {
-                deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
-                  includeAllAxes: true,
-                  context: styleContext,
-                })
+              if (updatedBriefingState.inspirationRefs?.length) {
+                contextTerms.push(...updatedBriefingState.inspirationRefs.slice(0, 2))
               }
-            } else {
-              // Non-video fallback: enriched web search
-              let enrichedSearchTerms = deliverableStyleMarker.searchTerms
-              if (updatedBriefingState) {
-                const contextTerms: string[] = []
-                if (updatedBriefingState.styleKeywords?.length) {
-                  contextTerms.push(...updatedBriefingState.styleKeywords.slice(0, 3))
-                }
-                if (updatedBriefingState.inspirationRefs?.length) {
-                  contextTerms.push(...updatedBriefingState.inspirationRefs.slice(0, 2))
-                }
-                if (contextTerms.length > 0 && enrichedSearchTerms) {
-                  enrichedSearchTerms = [...enrichedSearchTerms, ...contextTerms]
-                }
+              if (contextTerms.length > 0 && enrichedSearchTerms) {
+                enrichedSearchTerms = [...enrichedSearchTerms, ...contextTerms]
               }
-              deliverableStyles = await searchStyleImages(
-                { searchTerms: enrichedSearchTerms, deliverableType: normalizedType },
-                { count: 6, styleContext }
-              )
-              if (!deliverableStyles || deliverableStyles.length === 0) {
-                deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
-                  includeAllAxes: true,
-                  context: styleContext,
-                })
-              }
+            }
+            deliverableStyles = await searchStyleImages(
+              { searchTerms: enrichedSearchTerms, deliverableType: normalizedType },
+              { count: 6, styleContext }
+            )
+            if (!deliverableStyles || deliverableStyles.length === 0) {
+              deliverableStyles = await getBrandAwareStyles(normalizedType, userId, {
+                includeAllAxes: true,
+                context: styleContext,
+              })
             }
           }
           if (!deliverableStyles?.length) {
@@ -321,8 +265,6 @@ export async function processStylesAndVideo(
           }
           break
         case 'more':
-          // Skip image styles for video types
-          if (isVideoType) break
           // Dynamic search for more of the same style
           deliverableStyles = await searchStyleImages(
             {
@@ -343,8 +285,6 @@ export async function processStylesAndVideo(
           }
           break
         case 'different':
-          // Skip image styles for video types
-          if (isVideoType) break
           // Dynamic search with different style terms
           deliverableStyles = await searchStyleImages(
             {
@@ -368,8 +308,6 @@ export async function processStylesAndVideo(
           }
           break
         case 'semantic': {
-          // Skip image styles for video types
-          if (isVideoType) break
           const { searchQuery } = deliverableStyleMarker
           if (searchQuery) {
             // First try keyword-based semantic search
@@ -397,8 +335,6 @@ export async function processStylesAndVideo(
           break
         }
         case 'refine': {
-          // Skip image styles for video types
-          if (isVideoType) break
           const { baseStyleId, refinementQuery } = deliverableStyleMarker
           if (baseStyleId && refinementQuery) {
             // Try to find by ID first, then by name
@@ -455,59 +391,33 @@ export async function processStylesAndVideo(
       logger.error({ err }, 'Error fetching deliverable styles')
     }
 
-    // Clear empty styles (preserve marker for video types for downstream video ref logic)
+    // Clear empty styles
     if (!deliverableStyles || deliverableStyles.length === 0) {
-      const markerIsVideoType =
-        deliverableStyleMarker &&
-        isVideoDeliverableType(normalizeDeliverableType(deliverableStyleMarker.deliverableType))
-      if (!markerIsVideoType) {
-        logger.debug(
-          { deliverableType: deliverableStyleMarker?.deliverableType },
-          'No styles found for deliverable type - clearing marker'
-        )
-        deliverableStyleMarker = undefined
-      }
+      logger.debug(
+        { deliverableType: deliverableStyleMarker?.deliverableType },
+        'No styles found for deliverable type - clearing marker'
+      )
+      deliverableStyleMarker = undefined
       deliverableStyles = undefined
     }
   }
 
-  // ── Video references ──
+  // ── Video references (only for explicit animated/product animated video requests) ──
   let videoReferences: VideoReference[] | undefined = undefined
 
   const lastUserMessageLower = lastUserMessage.toLowerCase()
-  const responseContentLower = responseContent.toLowerCase()
-  const combinedVideoContext = `${lastUserMessageLower} ${responseContentLower}`
 
-  const isVideoRequest =
-    combinedVideoContext.includes('video') ||
-    combinedVideoContext.includes('cinematic') ||
-    combinedVideoContext.includes('motion') ||
-    combinedVideoContext.includes('animation') ||
-    combinedVideoContext.includes('commercial') ||
-    combinedVideoContext.includes('reel')
+  // Only show video references when user explicitly asks for animated/product animated content
+  const isAnimatedVideoRequest =
+    lastUserMessageLower.includes('animated') ||
+    lastUserMessageLower.includes('animation') ||
+    lastUserMessageLower.includes('motion graphics') ||
+    lastUserMessageLower.includes('product animated')
 
-  const hasVideoMarker =
-    deliverableStyleMarker &&
-    isVideoDeliverableType(normalizeDeliverableType(deliverableStyleMarker.deliverableType))
-
-  logger.debug({ isVideoRequest, hasVideoMarker, deliverableStyleMarker }, 'Video detection check')
-
-  // Only fetch video refs when there's a video-type marker AND stage is eligible
-  // At INSPIRATION, preserve deliverableStyles (curated presets) — don't clear them
-  if (isStyleEligible && !moodboardHasStyles && hasVideoMarker) {
-    if (!isInspirationStage || !deliverableStyles?.length) {
-      deliverableStyles = undefined
-    }
-    logger.debug(
-      { preservedStyles: isInspirationStage && !!deliverableStyles?.length },
-      'Video marker detected - processing video refs'
-    )
+  if (isStyleEligible && !moodboardHasStyles && isAnimatedVideoRequest) {
+    logger.debug('Animated video request detected - fetching video references')
 
     try {
-      const deliverableType = deliverableStyleMarker?.deliverableType
-        ? normalizeDeliverableType(deliverableStyleMarker.deliverableType)
-        : 'launch_video'
-
       const videoMatchContext: VideoMatchContext = {
         intent: confirmedFields?.intent || brief?.intent?.value,
         platform: confirmedFields?.platform || brief?.platform?.value,
@@ -517,21 +427,18 @@ export async function processStylesAndVideo(
       }
 
       videoReferences = await getVideoReferencesForChat(
-        deliverableType,
+        'launch_video',
         lastUserMessage,
         3,
         videoMatchContext
       )
       logger.debug(
-        { count: videoReferences.length, deliverableType, context: videoMatchContext },
-        'Fetched video references with smart matching'
+        { count: videoReferences.length, context: videoMatchContext },
+        'Fetched video references for animated video request'
       )
     } catch (err) {
       logger.error({ err }, 'Error fetching video references')
     }
-  } else if (isStyleEligible && moodboardHasStyles && hasVideoMarker) {
-    deliverableStyles = undefined
-    logger.debug('Video request with moodboard styles - skipping video grid')
   }
 
   return { deliverableStyles, deliverableStyleMarker, videoReferences }
@@ -559,7 +466,11 @@ async function getStylePresets(
 
     if (presets.length === 0) return undefined
 
-    const mapped = presets.map((preset, index) => {
+    // Filter out video-specific entries (those with videoUrl) — visual styles only
+    const visualPresets = presets.filter((p) => !p.videoUrl)
+    if (visualPresets.length === 0) return undefined
+
+    const mapped = visualPresets.map((preset, index) => {
       // Score against conversation context when available
       let brandMatchScore: number | undefined
       let matchReason: string | undefined
