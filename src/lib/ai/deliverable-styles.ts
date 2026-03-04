@@ -4,12 +4,12 @@ import { deliverableStyleReferences } from '@/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { DeliverableType, StyleAxis } from '@/lib/constants/reference-libraries'
 
-/** Prefer uploaded reference images over generated preview */
+/** Use the admin-uploaded preview image for display */
 export function resolveStyleDisplayImage(style: {
   imageUrl: string
   styleReferenceImages?: string[] | null
 }): string {
-  return style.styleReferenceImages?.[0] || style.imageUrl
+  return style.imageUrl
 }
 
 /**

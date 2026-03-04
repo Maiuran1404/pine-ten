@@ -112,27 +112,7 @@ export async function POST(
       const portalUrl = `${config.app.url}/portal`
       const name = session.user.name || invite.name
 
-      // Welcome WhatsApp to artist
-      safeAsync(
-        async () => {
-          const { sendWhatsApp, whatsappTemplates: waTemplates } =
-            await import('@/lib/notifications/whatsapp')
-          const message = waTemplates.artistWelcome(name, portalUrl)
-          await sendWhatsApp({ to: whatsappNumber, message })
-        },
-        { context: 'artist-welcome-whatsapp' }
-      )
-
-      // Notify admin via WhatsApp
-      safeAsync(
-        async () => {
-          const { notifyAdminWhatsApp, adminWhatsAppTemplates } =
-            await import('@/lib/notifications/whatsapp')
-          const message = adminWhatsAppTemplates.artistInviteAccepted({ name, email })
-          await notifyAdminWhatsApp(message)
-        },
-        { context: 'admin-invite-accepted-whatsapp' }
-      )
+      // WhatsApp notifications disabled — not in use
 
       // Welcome email to artist
       safeAsync(

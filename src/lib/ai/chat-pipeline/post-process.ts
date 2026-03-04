@@ -71,7 +71,19 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
 
     // Track context for retry
     const lastContent = messages[messages.length - 1]?.content || ''
-    const isSceneFeedback = /\[Feedback on Scene/.test(lastContent)
+    const hasExplicitSceneMarker = /\[Feedback on Scene/.test(lastContent)
+    // Treat any user message as scene feedback when a storyboard exists at post-elaboration stages
+    const postElaborateStages = new Set(['ELABORATE', 'REVIEW', 'DEEPEN', 'SUBMIT'])
+    const hasExistingStoryboard =
+      (clientLatestStoryboard?.type === 'storyboard' &&
+        Array.isArray((clientLatestStoryboard as { scenes?: unknown[] }).scenes) &&
+        (clientLatestStoryboard as { scenes: unknown[] }).scenes.length > 0) ||
+      (briefingState.structure?.type === 'storyboard' &&
+        Array.isArray((briefingState.structure as { scenes?: unknown[] }).scenes) &&
+        (briefingState.structure as { scenes: unknown[] }).scenes.length > 0)
+    const isSceneFeedback =
+      hasExplicitSceneMarker ||
+      (postElaborateStages.has(briefingState.stage) && hasExistingStoryboard)
     const isRegenerationRequest = /regenerate.*storyboard/i.test(lastContent)
     const stageBeforePhaseA = briefingState.stage
 

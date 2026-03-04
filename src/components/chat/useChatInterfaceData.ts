@@ -1432,6 +1432,7 @@ export function useChatInterfaceData({
     handleSelectVideo: styleSelection.handleSelectVideo,
     handleShowMoreStyles: styleSelection.handleShowMoreStyles,
     handleShowDifferentStyles: styleSelection.handleShowDifferentStyles,
+    isSubmissionLoading: task.isSubmissionLoading,
     handleConfirmTask: task.handleConfirmTask,
     handleOpenSubmissionModal: task.handleOpenSubmissionModal,
     handleInsufficientCredits: task.handleInsufficientCredits,

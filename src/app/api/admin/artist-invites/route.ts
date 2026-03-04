@@ -135,18 +135,7 @@ export async function POST(request: NextRequest) {
           { context: 'artist-invite-email', email: input.email }
         )
 
-        // Fire-and-forget: send invite via WhatsApp if number provided
-        if (input.whatsappNumber) {
-          safeAsync(
-            async () => {
-              const { sendWhatsApp, whatsappTemplates: waTemplates } =
-                await import('@/lib/notifications/whatsapp')
-              const message = waTemplates.artistInvite(input.name, joinLink)
-              await sendWhatsApp({ to: input.whatsappNumber!, message })
-            },
-            { context: 'artist-invite-whatsapp', phone: input.whatsappNumber }
-          )
-        }
+        // WhatsApp notifications disabled — not in use
       }
 
       return successResponse({ invites: results }, 201)

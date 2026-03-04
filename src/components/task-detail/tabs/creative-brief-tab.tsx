@@ -1,6 +1,6 @@
 'use client'
 
-import type { TaskDetailData } from '@/components/task-detail/types'
+import type { TaskDetailData, StructureData } from '@/components/task-detail/types'
 import { StructureView } from '../brief/structure-view'
 import { AudienceBriefCard } from '../brief/audience-brief-card'
 import { StrategicReviewCard } from '../brief/strategic-review-card'
@@ -11,7 +11,9 @@ interface CreativeBriefTabProps {
 }
 
 export function CreativeBriefTab({ task }: CreativeBriefTabProps) {
-  const hasStructure = !!task.briefingState?.structure
+  // Structure can come from briefingState (via chatDraft) or directly from the task's structureData column
+  const structure = task.briefingState?.structure ?? (task.structureData as StructureData | null)
+  const hasStructure = !!structure
   const hasAudience = !!task.briefData?.audience?.value
   const hasStrategicReview = !!task.briefingState?.strategicReview
   const hasRequirements = !!task.requirements
@@ -29,7 +31,7 @@ export function CreativeBriefTab({ task }: CreativeBriefTabProps) {
 
   return (
     <div className="space-y-6">
-      {hasStructure && <StructureView structure={task.briefingState!.structure!} />}
+      {hasStructure && <StructureView structure={structure!} />}
 
       {hasAudience && <AudienceBriefCard audience={task.briefData!.audience!.value!} />}
 

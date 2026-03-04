@@ -3,6 +3,8 @@ import { db } from '@/db'
 import { notifications, users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { sendEmail, emailTemplates } from './email'
+// WhatsApp disabled — kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { sendWhatsApp, whatsappTemplates } from './whatsapp'
 import type { NotificationPreferences } from '@/types'
 import { logger } from '@/lib/logger'
@@ -104,34 +106,7 @@ export async function notify({
     }
   }
 
-  // Send WhatsApp if enabled and phone available
-  if (prefs.whatsapp !== false && userData.phone) {
-    const message = getWhatsAppMessage(type, {
-      taskTitle: additionalData?.taskTitle || title,
-      taskUrl: taskUrl || '',
-      credits: parseInt(additionalData?.credits || '0'),
-    })
-
-    if (message) {
-      const whatsappResult = await sendWhatsApp({
-        to: userData.phone,
-        message,
-      })
-
-      await db.insert(notifications).values({
-        userId,
-        type,
-        channel: 'WHATSAPP',
-        title,
-        content,
-        relatedTaskId: taskId,
-        status: whatsappResult.success ? 'SENT' : 'FAILED',
-        sentAt: new Date(),
-      })
-
-      results.push({ channel: 'WHATSAPP', success: whatsappResult.success })
-    }
-  }
+  // WhatsApp notifications disabled — not in use
 
   return results
 }
@@ -169,6 +144,7 @@ function getEmailTemplate(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getWhatsAppMessage(
   type: NotificationType,
   data: {

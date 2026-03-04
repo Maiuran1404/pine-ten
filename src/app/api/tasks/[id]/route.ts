@@ -49,6 +49,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         clientId: tasks.clientId,
         freelancerId: tasks.freelancerId,
         categoryId: tasks.categoryId,
+        structureData: tasks.structureData,
         // Category fields (nullable due to LEFT JOIN)
         categoryDbId: taskCategories.id,
         categoryName: taskCategories.name,
@@ -333,6 +334,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         files,
         messages,
         brandDNA,
+        structureData: taskRow.structureData,
         briefData,
         briefingState,
         previousWork,

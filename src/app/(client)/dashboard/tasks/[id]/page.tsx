@@ -31,7 +31,6 @@ import { ActivityTimeline } from '@/components/task-detail/sidebar/activity-time
 import { AttachmentsList } from '@/components/task-detail/sidebar/attachments-list'
 import { WebsiteDeliveryTab } from '@/components/task-detail/tabs/website-delivery-tab'
 import { FreshTaskHero } from '@/components/task-detail/fresh-task-hero'
-import { BriefRecap } from '@/components/task-detail/brief-recap'
 
 export default function TaskDetailPage() {
   const params = useParams()
@@ -287,119 +286,98 @@ export default function TaskDetailPage() {
 
           {/* Brief Summary Card */}
           <BriefSummaryCard task={task} />
-        </div>
 
-        {isFreshTask ? (
-          /* --- FRESH TASK: SINGLE-COLUMN CENTERED LAYOUT --- */
-          <div className="mx-auto max-w-3xl space-y-6">
+          {/* What to Expect (fresh tasks only) */}
+          {isFreshTask && (
             <FreshTaskHero
               estimatedHours={task.estimatedHours}
               deadline={task.deadline}
               hasDesigner={!!task.freelancer}
             />
+          )}
+        </div>
 
-            <BriefRecap task={task} />
-
-            {/* Designer + Metadata inline */}
-            <div className="space-y-4">
-              <DesignerCard
-                freelancer={task.freelancer}
-                assignedAt={task.assignedAt}
-                status={task.status}
-              />
-              <TaskMetadataPills task={task} />
-            </div>
-          </div>
-        ) : (
-          /* --- ACTIVE TASK: TWO-COLUMN LAYOUT WITH TABS + SIDEBAR --- */
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
-            {/* Left: Tab Content */}
-            <div>
-              <Tabs defaultValue="brief">
-                <TabsList className="mb-6 w-full">
-                  <TabsTrigger value="brief" className="flex-1 gap-1.5">
-                    <FileText className="h-4 w-4" />
-                    <span className="hidden sm:inline">Creative Brief</span>
-                    <span className="sm:hidden">Brief</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="visual" className="flex-1 gap-1.5">
-                    <Palette className="h-4 w-4" />
-                    <span className="hidden sm:inline">Visual Direction</span>
-                    <span className="sm:hidden">Visual</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="conversation"
-                    id="conversation-tab-trigger"
-                    className="flex-1 gap-1.5"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Conversation
-                    {task.messages.length > 0 && (
-                      <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs">
-                        {task.messages.length}
-                      </span>
-                    )}
-                  </TabsTrigger>
-                  {task.websiteProject && (
-                    <TabsTrigger value="website" className="flex-1 gap-1.5">
-                      <Globe className="h-4 w-4" />
-                      <span className="hidden sm:inline">Website</span>
-                      <span className="sm:hidden">Web</span>
-                    </TabsTrigger>
+        {/* --- TWO-COLUMN LAYOUT WITH TABS + SIDEBAR --- */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
+          {/* Left: Tab Content */}
+          <div>
+            <Tabs defaultValue="brief">
+              <TabsList className="mb-6 w-full">
+                <TabsTrigger value="brief" className="flex-1 gap-1.5">
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Creative Brief</span>
+                  <span className="sm:hidden">Brief</span>
+                </TabsTrigger>
+                <TabsTrigger value="visual" className="flex-1 gap-1.5">
+                  <Palette className="h-4 w-4" />
+                  <span className="hidden sm:inline">Visual Direction</span>
+                  <span className="sm:hidden">Visual</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="conversation"
+                  id="conversation-tab-trigger"
+                  className="flex-1 gap-1.5"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Conversation
+                  {task.messages.length > 0 && (
+                    <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs">
+                      {task.messages.length}
+                    </span>
                   )}
-                </TabsList>
-
-                <TabsContent value="brief">
-                  <CreativeBriefTab task={task} />
-                </TabsContent>
-
-                <TabsContent value="visual">
-                  <VisualDirectionTab task={task} />
-                </TabsContent>
-
-                <TabsContent value="conversation">
-                  <ConversationTab
-                    task={task}
-                    message={message}
-                    onMessageChange={setMessage}
-                    onSendMessage={handleSendMessage}
-                    onRequestRevision={handleRequestRevision}
-                    isSendingMessage={isSendingMessage}
-                    isAnalyzing={isAnalyzing}
-                    canChat={canChat}
-                  />
-                </TabsContent>
-
+                </TabsTrigger>
                 {task.websiteProject && (
-                  <TabsContent value="website">
-                    <WebsiteDeliveryTab projectId={task.websiteProject.id} taskId={task.id} />
-                  </TabsContent>
+                  <TabsTrigger value="website" className="flex-1 gap-1.5">
+                    <Globe className="h-4 w-4" />
+                    <span className="hidden sm:inline">Website</span>
+                    <span className="sm:hidden">Web</span>
+                  </TabsTrigger>
                 )}
-              </Tabs>
-            </div>
+              </TabsList>
 
-            {/* Right: Sidebar (collapses into inline on mobile) */}
-            <div className="space-y-6">
-              {/* Designer Card */}
-              <DesignerCard
-                freelancer={task.freelancer}
-                assignedAt={task.assignedAt}
-                status={task.status}
-              />
+              <TabsContent value="brief">
+                <CreativeBriefTab task={task} />
+              </TabsContent>
 
-              {/* Metadata Pills */}
-              <TaskMetadataPills task={task} />
+              <TabsContent value="visual">
+                <VisualDirectionTab task={task} />
+              </TabsContent>
 
-              {/* Activity Timeline */}
-              {task.activityLog && task.activityLog.length > 0 && (
-                <ActivityTimeline activityLog={task.activityLog} />
+              <TabsContent value="conversation">
+                <ConversationTab
+                  task={task}
+                  message={message}
+                  onMessageChange={setMessage}
+                  onSendMessage={handleSendMessage}
+                  onRequestRevision={handleRequestRevision}
+                  isSendingMessage={isSendingMessage}
+                  isAnalyzing={isAnalyzing}
+                  canChat={canChat}
+                />
+              </TabsContent>
+
+              {task.websiteProject && (
+                <TabsContent value="website">
+                  <WebsiteDeliveryTab projectId={task.websiteProject.id} taskId={task.id} />
+                </TabsContent>
               )}
-
-              {/* Attachments */}
-              {attachments.length > 0 && <AttachmentsList files={attachments} />}
-            </div>
+            </Tabs>
           </div>
-        )}
+
+          {/* Right: Sidebar */}
+          <div className="space-y-6">
+            <DesignerCard
+              freelancer={task.freelancer}
+              assignedAt={task.assignedAt}
+              status={task.status}
+            />
+            <TaskMetadataPills task={task} />
+            {task.activityLog && task.activityLog.length > 0 && (
+              <ActivityTimeline activityLog={task.activityLog} />
+            )}
+            {attachments.length > 0 && <AttachmentsList files={attachments} />}
+          </div>
+        </div>
       </div>
     </div>
   )

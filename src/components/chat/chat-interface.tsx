@@ -306,6 +306,7 @@ export function ChatInterface({
     handleSelectVideo,
     handleShowMoreStyles,
     handleShowDifferentStyles,
+    isSubmissionLoading,
     handleConfirmTask,
     handleOpenSubmissionModal,
     handleInsufficientCredits,
@@ -562,7 +563,7 @@ export function ChatInterface({
         briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
         onRequestSubmit={handleOpenSubmissionModal}
         isReadyForDesigner={brief ? isBriefReadyForDesigner(brief) : false}
-        showProgress={messages.length > 0}
+        showProgress={messages.some((m) => m.role === 'assistant')}
         showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
         showBrief={seamlessTransition && !isTaskMode && showRightPanel}
         deliverableCategory={deliverableCategory}
@@ -752,7 +753,7 @@ export function ChatInterface({
               onConfirmTask={handleConfirmTask}
               onMakeChanges={handleRejectTask}
               onInsufficientCredits={handleInsufficientCredits}
-              isSubmitting={isLoading}
+              isSubmitting={isSubmissionLoading}
               brief={brief}
               stateMachineQuickOptions={resolvedQuickOptions}
               onQuickOptionClick={handleQuickOptionClick}

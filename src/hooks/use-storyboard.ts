@@ -133,7 +133,7 @@ export function useStoryboard({
     briefingState?.stage === 'STRUCTURE' ||
     briefingState?.stage === 'INSPIRATION' ||
     ((briefingState?.stage === 'ELABORATE' || storyboardScenes !== null) && !isGeneratingImages) ||
-    videoNarrative !== null ||
+    (videoNarrative !== null && !isGeneratingImages) ||
     (briefingState?.deliverableCategory === 'website' && structureType === 'layout')
 
   // Fidelity level derived from current briefing stage (website only)

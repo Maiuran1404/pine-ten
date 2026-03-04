@@ -648,27 +648,7 @@ export async function POST(request: NextRequest) {
           })
       )
 
-      // Admin WhatsApp notification
-      notificationPromises.push(
-        Promise.resolve()
-          .then(() => {
-            const whatsappMessage = adminWhatsAppTemplates.newTaskCreated({
-              taskTitle: title,
-              clientName: session.user.name || 'Unknown',
-              clientEmail: session.user.email || '',
-              category: category || 'General',
-              creditsUsed: result.task.creditsUsed,
-              taskUrl: `${config.app.url}/admin/tasks`,
-            })
-            return notifyAdminWhatsApp(whatsappMessage)
-          })
-          .catch((error) => {
-            logger.error(
-              { err: error, taskId: result.task.id },
-              'Failed to send admin WhatsApp notification'
-            )
-          })
-      )
+      // WhatsApp notifications disabled — not in use
 
       // Artist assignment + client notifications
       if (result.assignedTo) {

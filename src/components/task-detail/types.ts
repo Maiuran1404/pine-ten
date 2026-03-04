@@ -185,6 +185,7 @@ export interface TaskDetailData {
   files: TaskFile[]
   messages: TaskMessage[]
   activityLog: ActivityLogEntry[]
+  structureData: StructureData | null
   brandDNA: BrandDNA | null
   briefData: BriefData | null
   briefingState: BriefingState | null

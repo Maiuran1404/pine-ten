@@ -277,9 +277,10 @@ export function runPreAiPipeline(
         Array.isArray((briefingState.structure as { scenes?: unknown[] }).scenes) &&
         (briefingState.structure as { scenes: unknown[] }).scenes.length > 0)
 
+    const storyboardModificationStages = new Set(['ELABORATE', 'REVIEW', 'DEEPEN', 'SUBMIT'])
     if (
       (briefingState.stage === 'STRUCTURE' && isSceneFeedback) ||
-      (briefingState.stage === 'ELABORATE' && hasStoryboard)
+      (storyboardModificationStages.has(briefingState.stage) && hasStoryboard)
     ) {
       let feedbackHint =
         '\n\nCRITICAL REQUIREMENT — YOU MUST OUTPUT A [STORYBOARD] BLOCK: The user is modifying the storyboard. ' +

@@ -190,14 +190,7 @@ async function handler(request: NextRequest) {
                 html: welcomeEmail.html,
               })
 
-              // Send WhatsApp notification to admin
-              const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
-                name: userName,
-                email: userEmail,
-                role: 'CLIENT',
-                signupUrl: `${config.app.url}/admin/clients`,
-              })
-              await notifyAdminWhatsApp(whatsappMessage)
+              // WhatsApp notifications disabled — not in use
             } catch (error) {
               logger.error({ error }, 'Failed to send client onboarding notifications')
             }
@@ -260,14 +253,7 @@ async function handler(request: NextRequest) {
               hourlyRate: freelancerHourlyRate ?? undefined,
             })
 
-            // Send WhatsApp notification to admin
-            const whatsappMessage = adminWhatsAppTemplates.newUserSignup({
-              name: freelancerName,
-              email: freelancerEmail,
-              role: 'FREELANCER',
-              signupUrl: `${config.app.url}/admin/freelancers`,
-            })
-            await notifyAdminWhatsApp(whatsappMessage)
+            // WhatsApp notifications disabled — not in use
           } catch (error) {
             logger.error({ error }, 'Failed to send freelancer application notification')
           }

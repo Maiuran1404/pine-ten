@@ -11,7 +11,6 @@ import * as Sentry from '@sentry/nextjs'
 import { useCsrfContext } from '@/providers/csrf-provider'
 import { usePostHog } from 'posthog-js/react'
 import { PostHogEvents } from '@/lib/posthog-events'
-import { toast } from 'sonner'
 import { useCredits, dispatchCreditsUpdated } from '@/providers/credit-provider'
 import {
   type ChatMessage as Message,
@@ -70,9 +69,9 @@ export function useTaskSubmission({
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [showSubmissionModal, setShowSubmissionModal] = useState(false)
   const [showSubmissionSuccess, _setShowSubmissionSuccess] = useState(false)
-  const [submittedTaskId, setSubmittedTaskId] = useState<string | null>(null)
-  const [submittedAssignedArtist, setSubmittedAssignedArtist] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [submittedTaskId, _setSubmittedTaskId] = useState<string | null>(null)
+  const [submittedAssignedArtist, _setSubmittedAssignedArtist] = useState<string | null>(null)
+  const [isLoading, _setIsLoading] = useState(false)
 
   // Track payment processing
   const [paymentProcessed, setPaymentProcessed] = useState(false)
@@ -87,7 +86,7 @@ export function useTaskSubmission({
   const deliverables = taskData?.files?.filter((f) => f.isDeliverable) || []
   const taskFiles = taskData?.files?.filter((f) => !f.isDeliverable) || []
 
-  // Task confirmation handler
+  // Task confirmation handler — navigates IMMEDIATELY, API call runs in background
   const handleConfirmTask = useCallback(async () => {
     if (!pendingTask) return
     if (isSubmittingRef.current) return
@@ -113,6 +112,7 @@ export function useTaskSubmission({
         $source: 'client',
       })
       setShowCreditDialog(true)
+      isSubmittingRef.current = false
       return
     }
 
@@ -123,87 +123,105 @@ export function useTaskSubmission({
       level: 'info',
     })
 
+    // Store submission metadata for the celebration page to display immediately
     sessionStorage.setItem('crafted-previous-credits', String(userCredits))
-    setIsLoading(true)
+    sessionStorage.setItem(
+      'crafted-pending-submission',
+      JSON.stringify({
+        title: normalizedTask.title,
+        description: normalizedTask.description,
+        category: normalizedTask.category,
+        creditsRequired: normalizedTask.creditsRequired,
+        estimatedHours: normalizedTask.estimatedHours,
+        deliveryDays: normalizedTask.deliveryDays,
+      })
+    )
+    sessionStorage.removeItem('crafted-launched-task-id')
+    sessionStorage.removeItem('crafted-launch-error')
 
+    // Navigate IMMEDIATELY — user sees celebration page instantly
+    router.push('/dashboard/tasks/launching')
+
+    // Build API payload and fire in background (fire-and-forget)
     const allAttachmentsForTask = messages
       .filter((m) => m.attachments && m.attachments.length > 0)
       .flatMap((m) => m.attachments || [])
       .filter((file) => file != null && file.fileUrl != null)
 
-    try {
-      const response = await csrfFetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...normalizedTask,
-          chatHistory: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-            timestamp: m.timestamp,
-            attachments: m.attachments?.filter((a) => a != null),
-          })),
-          styleReferences: selectedStyles,
-          attachments: allAttachmentsForTask,
-          moodboardItems: moodboardItems.map((item) => ({
-            id: item.id,
-            type: item.type,
-            imageUrl: item.imageUrl,
-            name: item.name,
-            metadata: item.metadata,
-          })),
-          structureData: latestStoryboardRef.current ?? storyboardScenes ?? undefined,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error?.message || error.message || 'Failed to create task')
-      }
-
-      const result = await response.json()
-      const taskId = result.data?.taskId
-      if (!taskId) {
-        throw new Error('Task was created but no task ID was returned')
-      }
-
-      setTaskSubmitted(true)
-      deleteDraft(draftId)
-      onDraftUpdate?.()
-      setPendingTask(null)
-
-      Sentry.addBreadcrumb({
-        category: 'task-submission',
-        message: 'Task created successfully',
-        data: { taskId },
-        level: 'info',
-      })
-
-      posthog?.capture(PostHogEvents.BRIEFING_COMPLETED, {
-        task_id: taskId,
-        credits_used: normalizedTask.creditsRequired,
-        $source: 'client',
-      })
-
-      window.dispatchEvent(new CustomEvent('tasks-updated'))
-      const newCredits = userCredits - (normalizedTask.creditsRequired ?? 0)
-      deductCredits(normalizedTask.creditsRequired)
-      dispatchCreditsUpdated(newCredits)
-      onTaskCreated?.(taskId)
-
-      setSubmittedTaskId(taskId)
-      setSubmittedAssignedArtist(result.data.assignedTo || null)
-
-      // Navigate to celebration page immediately — don't block on extra fetches
-      router.push(`/dashboard/tasks/${taskId}/launched`)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create task')
-      // Don't re-throw — the toast provides user feedback and the finally
-      // block resets isLoading so the UI recovers to a clickable state.
-    } finally {
-      setIsLoading(false)
-      isSubmittingRef.current = false
+    const apiBody = {
+      ...normalizedTask,
+      chatHistory: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+        attachments: m.attachments?.filter((a) => a != null),
+      })),
+      styleReferences: selectedStyles,
+      attachments: allAttachmentsForTask,
+      moodboardItems: moodboardItems.map((item) => ({
+        id: item.id,
+        type: item.type,
+        imageUrl: item.imageUrl,
+        name: item.name,
+        metadata: item.metadata,
+      })),
+      structureData: latestStoryboardRef.current ?? storyboardScenes ?? undefined,
     }
+
+    // Fire-and-forget — continues even after the chat component unmounts
+    void (async () => {
+      try {
+        const response = await csrfFetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(apiBody),
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error?.message || error.message || 'Failed to create task')
+        }
+
+        const result = await response.json()
+        const taskId = result.data?.taskId
+        if (!taskId) {
+          throw new Error('Task was created but no task ID was returned')
+        }
+
+        // Store result for the launching page to pick up
+        sessionStorage.setItem('crafted-launched-task-id', taskId)
+
+        // Background cleanup (state updates are no-ops if component unmounted — that's fine)
+        deleteDraft(draftId)
+        onDraftUpdate?.()
+
+        Sentry.addBreadcrumb({
+          category: 'task-submission',
+          message: 'Task created successfully',
+          data: { taskId },
+          level: 'info',
+        })
+
+        posthog?.capture(PostHogEvents.BRIEFING_COMPLETED, {
+          task_id: taskId,
+          credits_used: normalizedTask.creditsRequired,
+          $source: 'client',
+        })
+
+        window.dispatchEvent(new CustomEvent('tasks-updated'))
+        const newCredits = userCredits - (normalizedTask.creditsRequired ?? 0)
+        deductCredits(normalizedTask.creditsRequired)
+        dispatchCreditsUpdated(newCredits)
+        onTaskCreated?.(taskId)
+      } catch (error) {
+        sessionStorage.setItem(
+          'crafted-launch-error',
+          error instanceof Error ? error.message : 'Failed to create task'
+        )
+      } finally {
+        isSubmittingRef.current = false
+      }
+    })()
   }, [
     pendingTask,
     userCredits,
@@ -216,8 +234,6 @@ export function useTaskSubmission({
     onDraftUpdate,
     onTaskCreated,
     deductCredits,
-    setMessages,
-    setAnimatingMessageId,
     posthog,
     csrfFetch,
     router,

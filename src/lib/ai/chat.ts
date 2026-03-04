@@ -459,19 +459,19 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
 
   // Banned opener patterns — strip hollow affirmations from the start of responses
   const BANNED_OPENERS = [
-    /^Strong direction[.!,\s—-]*/i,
-    /^Smart move[.!,\s—-]*/i,
-    /^Bold choice[.!,\s—-]*/i,
-    /^This is solid[.!,\s—-]*/i,
-    /^Looking good[.!,\s—-]*/i,
-    /^Nice work[.!,\s—-]*/i,
-    /^Perfect[.!,\s—-]*/i,
-    /^Great[.!,\s—-]*/i,
-    /^Excellent[.!,\s—-]*/i,
-    /^Amazing[.!,\s—-]*/i,
-    /^Awesome[.!,\s—-]*/i,
-    /^Love it[.!,\s—-]*/i,
-    /^Love that[.!,\s—-]*/i,
+    /^Strong direction[.!,—-]+\s*/i,
+    /^Smart move[.!,—-]+\s*/i,
+    /^Bold choice[.!,—-]+\s*/i,
+    /^This is solid[.!,—-]+\s*/i,
+    /^Looking good[.!,—-]+\s*/i,
+    /^Nice work[.!,—-]+\s*/i,
+    /^Perfect[.!,—-]+\s*/i,
+    /^Great[.!,—-]+\s*/i,
+    /^Excellent[.!,—-]+\s*/i,
+    /^Amazing[.!,—-]+\s*/i,
+    /^Awesome[.!,—-]+\s*/i,
+    /^Love it[.!,—-]+\s*/i,
+    /^Love that[.!,—-]+\s*/i,
   ]
 
   // Strip banned openers (start-of-response only — safe, no fragment risk)

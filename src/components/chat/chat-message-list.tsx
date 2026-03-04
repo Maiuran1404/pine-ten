@@ -541,8 +541,8 @@ export const ChatMessageList = memo(function ChatMessageList({
               return (
                 <motion.div
                   key={message.id}
-                  initial={seamlessTransition && index > 0 ? { opacity: 0, y: 10 } : false}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={seamlessTransition && index > 0 ? { opacity: 0 } : false}
+                  animate={{ opacity: 1 }}
                   transition={{ duration: 0.2 }}
                   className={cn(
                     'flex',

@@ -428,6 +428,18 @@ function SceneCard({
         !isSelected && 'hover:shadow-sm hover:border-border/80'
       )}
     >
+      {/* Scene image */}
+      {scene.resolvedImageUrl && (
+        <div className="aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={scene.resolvedImageUrl}
+            alt={scene.title}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
+
       <div className="p-3 space-y-2">
         {/* Top row: checkbox, scene number, timestamp */}
         <div className="flex items-center gap-2">
