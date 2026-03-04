@@ -623,74 +623,63 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Fire-and-forget: send all notifications in the background
-      // so the API response returns immediately after the DB transaction
-      const notificationPromises: Promise<unknown>[] = []
+      // Fire-and-forget notifications — sendEmail is now queued with batch
+      // coalescing, so all emails from this block are sent in a single Resend
+      // API call (~150ms after the first queueEmail). No need for Promise.allSettled.
 
       // Admin email notification
-      notificationPromises.push(
-        adminNotifications
-          .newTaskCreated({
-            taskId: result.task.id,
-            taskTitle: title,
-            clientName: session.user.name || 'Unknown',
-            clientEmail: session.user.email || '',
-            category: category || 'General',
-            creditsUsed: result.task.creditsUsed,
-            deadline: deadline ? new Date(deadline) : undefined,
-            companyId: result.companyId || undefined,
-          })
-          .catch((error) => {
-            logger.error(
-              { err: error, taskId: result.task.id },
-              'Failed to send admin email notification'
-            )
-          })
-      )
-
-      // WhatsApp notifications disabled — not in use
+      adminNotifications
+        .newTaskCreated({
+          taskId: result.task.id,
+          taskTitle: title,
+          clientName: session.user.name || 'Unknown',
+          clientEmail: session.user.email || '',
+          category: category || 'General',
+          creditsUsed: result.task.creditsUsed,
+          deadline: deadline ? new Date(deadline) : undefined,
+          companyId: result.companyId || undefined,
+        })
+        .catch((error) => {
+          logger.error(
+            { err: error, taskId: result.task.id },
+            'Failed to send admin email notification'
+          )
+        })
 
       // Artist assignment + client notifications
       if (result.assignedTo) {
-        notificationPromises.push(
-          notify({
-            userId: result.assignedTo.artist.userId,
-            type: 'TASK_ASSIGNED',
-            title: 'New Task Assigned',
-            content: `You have been assigned a new task: ${title}. Get started when you're ready!`,
-            taskId: result.task.id,
-            taskUrl: `${config.app.url}/portal/tasks/${result.task.id}`,
-            additionalData: {
-              taskTitle: title,
-              matchScore: result.assignedTo.totalScore.toString(),
-            },
-          }).catch((error) => {
-            logger.error(
-              { err: error, artistId: result.assignedTo!.artist.userId },
-              'Failed to send artist assignment notification'
-            )
-          })
-        )
+        notify({
+          userId: result.assignedTo.artist.userId,
+          type: 'TASK_ASSIGNED',
+          title: 'New Task Assigned',
+          content: `You have been assigned a new task: ${title}. Get started when you're ready!`,
+          taskId: result.task.id,
+          taskUrl: `${config.app.url}/portal/tasks/${result.task.id}`,
+          additionalData: {
+            taskTitle: title,
+            matchScore: result.assignedTo.totalScore.toString(),
+          },
+        }).catch((error) => {
+          logger.error(
+            { err: error, artistId: result.assignedTo!.artist.userId },
+            'Failed to send artist assignment notification'
+          )
+        })
 
         const designerName = result.assignedTo.artist.name || 'A designer'
         const taskUrl = `${config.app.url}/dashboard/tasks/${result.task.id}`
-        notificationPromises.push(
-          sendNotificationEmail({
-            userId: session.user.id,
-            template: (t, user) =>
-              t.taskAssignedToClient(user.name || 'there', title, designerName, taskUrl),
-            context: 'client assignment email',
-          }).catch((error) => {
-            logger.error(
-              { err: error, taskId: result.task.id },
-              'Failed to send client assignment email'
-            )
-          })
-        )
+        sendNotificationEmail({
+          userId: session.user.id,
+          template: (t, user) =>
+            t.taskAssignedToClient(user.name || 'there', title, designerName, taskUrl),
+          context: 'client assignment email',
+        }).catch((error) => {
+          logger.error(
+            { err: error, taskId: result.task.id },
+            'Failed to send client assignment email'
+          )
+        })
       }
-
-      // Don't await — let notifications settle in the background
-      void Promise.allSettled(notificationPromises)
 
       // PostHog server-side event (also fire-and-forget)
       captureServerEvent(session.user.id, PostHogEvents.TASK_CREATED, {

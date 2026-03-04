@@ -282,11 +282,11 @@ export function ChatLayout({
                 ) : (
                   <motion.div
                     key="expanded"
-                    initial={{ width: 0, opacity: 0 }}
+                    initial={false}
                     animate={{ width: 320, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                     className="hidden lg:flex flex-col shrink-0 border-l border-border/50 bg-muted/30 backdrop-blur-sm h-full overflow-hidden"
+                    style={{ width: 320 }}
                   >
                     {/* Progress bar aligned to right panel */}
                     {showProgress && (

@@ -126,14 +126,15 @@ export function useStoryboard({
   // Structure panel visible when we have structure data, video narrative,
   // at STRUCTURE stage (narrative panel), INSPIRATION stage (style selection),
   // ELABORATE stage (storyboard), OR for website projects
-  // (websites show the InspirationPanel before structure data exists)
-  // When images are still generating, hide the storyboard panel so it only
-  // appears once all scene images are ready (avoids "Generating..." placeholders).
+  // (websites show the InspirationPanel before structure data exists).
+  // Keep the panel visible during image generation — RichStoryboardPanel handles
+  // per-scene loading states via imageGenerationProgress.
   const structurePanelVisible =
     briefingState?.stage === 'STRUCTURE' ||
     briefingState?.stage === 'INSPIRATION' ||
-    ((briefingState?.stage === 'ELABORATE' || storyboardScenes !== null) && !isGeneratingImages) ||
-    (videoNarrative !== null && !isGeneratingImages) ||
+    briefingState?.stage === 'ELABORATE' ||
+    storyboardScenes !== null ||
+    videoNarrative !== null ||
     (briefingState?.deliverableCategory === 'website' && structureType === 'layout')
 
   // Fidelity level derived from current briefing stage (website only)

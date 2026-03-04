@@ -68,6 +68,14 @@ export const config = {
     auth: { window: 60, max: 200 }, // 200 req/min
     chat: { window: 60, max: 100 }, // 100 req/min
   },
+  // Email rate limits and queue settings
+  email: {
+    perUserLimit: { window: 3600, max: 20 }, // 20 emails/user/hour
+    globalLimit: { window: 3600, max: 200 }, // 200 emails/hour total
+    batchWindowMs: 150, // Coalesce emails queued within this window
+    minDelayBetweenSendsMs: 500, // Minimum gap between Resend API calls
+    deduplicationTtlMs: 60_000, // Skip same to+subject within this window
+  },
 } as const
 
 // Task category configuration (can be overridden by DB)

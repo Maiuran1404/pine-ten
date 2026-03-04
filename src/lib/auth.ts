@@ -75,6 +75,7 @@ export const auth = betterAuth({
         to: user.email,
         subject: resetEmail.subject,
         html: resetEmail.html,
+        priority: 'high', // Bypass queue — auth-critical email
       })
     },
   },

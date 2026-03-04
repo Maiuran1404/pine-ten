@@ -24,6 +24,7 @@ export async function GET() {
           <p>Time: ${new Date().toISOString()}</p>
         </div>
       `,
+        priority: 'high', // Bypass queue for test — need synchronous result
       })
 
       return successResponse({
