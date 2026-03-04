@@ -596,7 +596,7 @@ export function useChatInterfaceData({
 
   // ─── Quick options ──────────────────────────────────────────
   const resolvedQuickOptions = useMemo(() => {
-    if (chatMessages.isLoading || task.pendingTask) return null
+    if (chatMessages.isLoading || task.pendingTask || task.taskSubmitted) return null
     // Note: INSPIRATION suppression removed — chat-input-area.tsx already hides chips
     // when inline style/video pickers are present (hasInlineStylePicker check).
     // The redundant guard here caused a race with async briefingState sync.
@@ -618,7 +618,13 @@ export function useChatInterfaceData({
       return lastAssistantMessage.quickOptions
     }
     return null
-  }, [chatMessages.messages, chatMessages.isLoading, task.pendingTask, stateMachineQuickOptions])
+  }, [
+    chatMessages.messages,
+    chatMessages.isLoading,
+    task.pendingTask,
+    task.taskSubmitted,
+    stateMachineQuickOptions,
+  ])
 
   // ─── Collapse left sidebar when chat starts ──────────────────
   useEffect(() => {

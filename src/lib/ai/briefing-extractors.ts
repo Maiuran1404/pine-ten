@@ -199,13 +199,20 @@ export function resolveDeliverableCategory(inference: InferenceResult): Delivera
   const contentType = inference.contentType.value
   const platform = inference.platform.value
 
-  // Video detection
+  // Video detection — explicit content type
   if (contentType === 'video' || contentType === 'reel') {
     return 'video'
   }
 
   // Video-first platforms: TikTok, YouTube always produce video content
   if (platform === 'tiktok' || platform === 'youtube') {
+    return 'video'
+  }
+
+  // Video detection — check raw topic text for video keywords when contentType is ambiguous
+  // This catches "brand story video" where contentType might resolve to 'story' instead of 'video'
+  const topic = inference.topic?.value ?? ''
+  if (topic && /\b(video|motion|animation|cinematic|footage)\b/i.test(topic)) {
     return 'video'
   }
 
@@ -228,7 +235,6 @@ export function resolveDeliverableCategory(inference: InferenceResult): Delivera
 
   // Single design asset
   if (taskType === 'single_asset') {
-    // Could be logo, brand package, or simple design
     if (contentType === 'poster' || contentType === 'flyer' || contentType === 'banner') {
       return 'design'
     }

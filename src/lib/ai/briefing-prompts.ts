@@ -943,7 +943,11 @@ Reference these inspirations when recommending section structure and design appr
 export function buildBrandSection(ctx: BrandContext, stage?: BriefingStage): string {
   const parts: string[] = [
     '== BRAND CONTEXT (supplementary background reference) ==',
-    "This brand profile provides background context about the client's business. Always address the user's specific project description and request FIRST. Use brand context to inform your recommendations, but never override or ignore what the user explicitly asks for.",
+    "This brand profile provides background context about the client's registered business. CRITICAL RULES:",
+    "1. If the user describes a project for a DIFFERENT company or brand (e.g., 'coffee company' when the profile says 'tech startup'), DO NOT apply this brand context. Ask: 'Is this for [brand profile company] or a different brand?'",
+    '2. NEVER assume the project is for the registered brand unless the user explicitly confirms it or the project clearly aligns.',
+    "3. Address the user's specific project description FIRST. Only reference brand context when it's clearly relevant.",
+    "4. When the user's project description contradicts the brand profile (different industry, different product), prioritize the user's description.",
     'When first referencing this brand data, briefly acknowledge it (e.g. "Based on your brand profile for [Company]...") so the user knows where the information came from.',
   ]
 

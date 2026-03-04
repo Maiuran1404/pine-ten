@@ -478,13 +478,18 @@ export function checkElaborationComplete(state: BriefingState): boolean {
 
   switch (state.structure.type) {
     case 'storyboard': {
-      // Require substantial elaboration AND explicit user review before advancing.
-      // Without the storyboardReviewed gate, deriveStage() auto-advances past
-      // ELABORATE → REVIEW before the user gets to see the storyboard.
+      // If user explicitly approved the storyboard, skip elaboration count check.
+      // The user said "good enough" — respect that decision.
+      if (state.storyboardReviewed === true) return true
+
+      // Otherwise require substantial elaboration before auto-advancing.
+      // Accept voiceover as fallback for fullScript (AI often puts content there instead).
       const scenes = state.structure.scenes
-      const elaboratedCount = scenes.filter((s) => s.fullScript || s.directorNotes).length
+      const elaboratedCount = scenes.filter(
+        (s) => s.fullScript || s.directorNotes || (s.voiceover && s.voiceover.length > 30)
+      ).length
       const substantiallyElaborated = elaboratedCount >= Math.ceil(scenes.length * 0.6)
-      return substantiallyElaborated && state.storyboardReviewed === true
+      return substantiallyElaborated
     }
     case 'layout': {
       // Check if any section has headline or draftContent

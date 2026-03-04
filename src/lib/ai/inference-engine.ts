@@ -392,15 +392,32 @@ const CONTENT_TYPE_PATTERNS: PatternMatch[] = [
   },
   { pattern: /\b(flyers?|leaflets?)\b/i, value: 'flyer', confidence: 0.9 },
   { pattern: /\b(posters?)\b/i, value: 'poster', confidence: 0.9 },
+  // Compound video patterns — high confidence to beat competing design/brand patterns
   {
-    pattern: /\b(videos?|motion|animations?)\b/i,
+    pattern:
+      /\b(brand\s*(story|video)|story\s*video|explainer\s*video|training\s*video|corporate\s*video|demo\s*video|promo\s*video|commercial\s*video|video\s*ad|video\s*content)\b/i,
     value: 'video',
-    confidence: 0.85,
+    confidence: 0.95,
+  },
+  {
+    pattern: /\b\d+[\s-]*(?:second|sec|minute|min)s?\b.*\bvideo\b/i,
+    value: 'video',
+    confidence: 0.95,
+  },
+  {
+    pattern: /\bvideo\b.*\b\d+[\s-]*(?:second|sec|minute|min)s?\b/i,
+    value: 'video',
+    confidence: 0.95,
   },
   {
     pattern: /\b(cinematic|promotional\s*video|product\s*video|intro\s*video)\b/i,
     value: 'video',
     confidence: 0.95,
+  },
+  {
+    pattern: /\b(videos?|motion|animations?)\b/i,
+    value: 'video',
+    confidence: 0.85,
   },
   { pattern: /\b(\d+[-–]\d+\s*seconds?)\b/i, value: 'video', confidence: 0.7 },
 ]

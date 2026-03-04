@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Pencil,
   Clapperboard,
+  ArrowRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -441,7 +442,9 @@ function getElaborationProgress(data: StructureData): { done: number; total: num
   switch (data.type) {
     case 'storyboard': {
       const total = data.scenes.length
-      const done = data.scenes.filter((s) => s.fullScript || s.directorNotes).length
+      const done = data.scenes.filter(
+        (s) => s.fullScript || s.directorNotes || (s.voiceover && s.voiceover.length > 30)
+      ).length
       return { done, total }
     }
     case 'layout': {
@@ -506,9 +509,9 @@ export function StructurePanel({
   onUpdateInspirationNotes,
   videoNarrative,
   narrativeApproved,
-  storyboardReviewed: _storyboardReviewed,
+  storyboardReviewed,
   onApproveNarrative,
-  onApproveStoryboard: _onApproveStoryboard,
+  onApproveStoryboard,
   onNarrativeFieldEdit,
   isChatLoading,
   lastSendError,
@@ -750,26 +753,42 @@ export function StructurePanel({
         })()}
 
       {structureData.type === 'storyboard' && (
-        <RichStoryboardPanel
-          scenes={structureData.scenes}
-          sceneImageData={sceneImageData}
-          isRegenerating={isRegenerating}
-          changedScenes={changedScenes}
-          onSceneClick={onSceneClick}
-          onSelectionChange={onSelectionChange}
-          onSceneEdit={onSceneEdit}
-          onSceneReorder={onSceneReorder}
-          onRegenerateStoryboard={onRegenerateStoryboard}
-          onRegenerateScene={onRegenerateScene}
-          onRegenerateField={onRegenerateField}
-          onUndo={onUndo}
-          onRedo={onRedo}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          imageGenerationProgress={imageGenerationProgress}
-          onRegenerateImage={onRegenerateImage}
-          targetDurationSeconds={targetDurationSeconds}
-        />
+        <>
+          <RichStoryboardPanel
+            scenes={structureData.scenes}
+            sceneImageData={sceneImageData}
+            isRegenerating={isRegenerating}
+            changedScenes={changedScenes}
+            onSceneClick={onSceneClick}
+            onSelectionChange={onSelectionChange}
+            onSceneEdit={onSceneEdit}
+            onSceneReorder={onSceneReorder}
+            onRegenerateStoryboard={onRegenerateStoryboard}
+            onRegenerateScene={onRegenerateScene}
+            onRegenerateField={onRegenerateField}
+            onUndo={onUndo}
+            onRedo={onRedo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            imageGenerationProgress={imageGenerationProgress}
+            onRegenerateImage={onRegenerateImage}
+            targetDurationSeconds={targetDurationSeconds}
+          />
+          {/* Approve storyboard CTA — matches narrative panel pattern */}
+          {briefingStage === 'ELABORATE' && !storyboardReviewed && onApproveStoryboard && (
+            <div className="shrink-0 px-4 py-3 border-t border-border/40">
+              <Button
+                size="lg"
+                className="gap-2 w-full bg-crafted-green hover:bg-crafted-forest text-white rounded-xl h-11 font-medium shadow-sm shadow-crafted-green/15"
+                onClick={onApproveStoryboard}
+                disabled={isChatLoading}
+              >
+                <ArrowRight className="h-4 w-4" />
+                Looks great — let&apos;s continue
+              </Button>
+            </div>
+          )}
+        </>
       )}
       {structureData.type === 'layout' && (
         <ScrollArea className="flex-1">
