@@ -123,6 +123,11 @@ export interface StructurePanelProps {
   onStyleConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void
   onStyleShowMore?: (styleAxis: string) => void
   onStyleShowDifferent?: () => void
+  // Style change from storyboard toolbar
+  currentStyles?: DeliverableStyle[]
+  onChangeVisualStyle?: (styles: DeliverableStyle[], regenerateImages: boolean) => void
+  onOpenStyleSheet?: () => void
+  isStyleLoading?: boolean
   className?: string
 }
 
@@ -525,6 +530,10 @@ export function StructurePanel({
   onStyleConfirmSelection,
   onStyleShowMore,
   onStyleShowDifferent,
+  currentStyles,
+  onChangeVisualStyle,
+  onOpenStyleSheet,
+  isStyleLoading,
   className,
 }: StructurePanelProps) {
   // Track when user confirms a style — used to show cinematic loading instead of skeleton cards.
@@ -773,6 +782,14 @@ export function StructurePanel({
             imageGenerationProgress={imageGenerationProgress}
             onRegenerateImage={onRegenerateImage}
             targetDurationSeconds={targetDurationSeconds}
+            currentStyles={currentStyles}
+            onChangeStyle={onChangeVisualStyle}
+            styleSelectionStyles={styleSelectionStyles}
+            confirmedStyleIds={confirmedStyleIds}
+            onStyleShowMore={onStyleShowMore}
+            onStyleShowDifferent={onStyleShowDifferent}
+            isStyleLoading={isStyleLoading}
+            onOpenStyleSheet={onOpenStyleSheet}
           />
           {/* Approve storyboard CTA — matches narrative panel pattern */}
           {briefingStage === 'ELABORATE' && !storyboardReviewed && onApproveStoryboard && (

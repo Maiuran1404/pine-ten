@@ -29,7 +29,7 @@ import {
 import { extractStyleContext } from '@/lib/ai/chat-context'
 import { db } from '@/db'
 import { deliverableStyleReferences } from '@/db/schema'
-import { eq, ilike, and, asc, isNotNull } from 'drizzle-orm'
+import { eq, ilike, and, asc } from 'drizzle-orm'
 import type { SerializedBriefingState } from '@/lib/ai/briefing-state-machine'
 import type { StyleContext } from '@/lib/ai/brand-style-scoring'
 import type { ChatRequestBody } from './types'
@@ -544,18 +544,18 @@ async function getStylePresets(
   styleContext?: StyleContext
 ): Promise<SearchedDeliverableStyle[] | undefined> {
   try {
-    // Only return curated presets (those with a promptGuide) for reliable visual direction
+    // Load admin-uploaded reference styles from DB (real curated images)
     const presets = await db
       .select()
       .from(deliverableStyleReferences)
       .where(
         and(
           eq(deliverableStyleReferences.deliverableType, deliverableType),
-          eq(deliverableStyleReferences.isActive, true),
-          isNotNull(deliverableStyleReferences.promptGuide)
+          eq(deliverableStyleReferences.isActive, true)
         )
       )
       .orderBy(asc(deliverableStyleReferences.displayOrder))
+      .limit(30)
 
     if (presets.length === 0) return undefined
 

@@ -226,11 +226,18 @@ export function useChatMessages({
 
         const data: ChatApiResponse = await response.json()
 
-        // Re-attach storyboard when AI responds to scene feedback without new storyboard
+        // Re-attach storyboard when AI responds without new storyboard data.
+        // Covers scene feedback AND general ELABORATE stage messages (structural changes,
+        // duration updates, tone changes, etc.) — prevents the panel from going blank.
         const isSceneFeedback =
           isSceneFeedbackFlag || processedContent.startsWith('[Feedback on Scene')
+        const isElaborateStage = serializedBriefingStateRef.current?.stage === 'ELABORATE'
         let resolvedStructureOverride: StructureData | undefined
-        if (isSceneFeedback && !data.structureData && latestStoryboardRef.current) {
+        if (
+          (isSceneFeedback || isElaborateStage) &&
+          !data.structureData &&
+          latestStoryboardRef.current
+        ) {
           resolvedStructureOverride = latestStoryboardRef.current
         }
 

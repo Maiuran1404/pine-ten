@@ -265,6 +265,9 @@ export function ChatInterface({
     imageGenerationProgress,
     isGeneratingImages,
     handleRegenerateImage,
+    // Style change from storyboard toolbar
+    handleChangeVisualStyle,
+    handleFetchStylesForChange,
 
     // Website inspiration
     websiteInspirations,
@@ -339,6 +342,12 @@ export function ChatInterface({
     }
     return []
   }, [messages])
+
+  // Current selected styles from brief visual direction (for storyboard toolbar label)
+  const currentStyles = useMemo(
+    () => brief?.visualDirection?.selectedStyles ?? [],
+    [brief?.visualDirection?.selectedStyles]
+  )
 
   // Compute primitives for ChatInputArea to avoid passing full messages array
   const hasInlineStylePicker = useMemo(() => {
@@ -494,6 +503,11 @@ export function ChatInterface({
       onStyleConfirmSelection: handleConfirmStyleSelection,
       onStyleShowMore: handleShowMoreStyles,
       onStyleShowDifferent: handleShowDifferentStyles,
+      // Style change from storyboard toolbar
+      currentStyles,
+      onChangeVisualStyle: handleChangeVisualStyle,
+      onOpenStyleSheet: handleFetchStylesForChange,
+      isStyleLoading: isLoading,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable handlers from hooks
     [
@@ -524,6 +538,7 @@ export function ChatInterface({
       isGeneratingImages,
       latestDeliverableStyles,
       moodboardStyleIds,
+      currentStyles,
     ]
   )
 

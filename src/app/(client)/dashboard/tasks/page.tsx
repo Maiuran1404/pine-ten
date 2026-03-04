@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -35,6 +35,11 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
+import { useTasks, queryKeys } from '@/hooks/use-queries'
+import { useQueryClient } from '@tanstack/react-query'
+import { ProgressRing } from '@/components/tasks/progress-ring'
+import { EmptyStateInspiration } from '@/components/tasks/empty-state-inspiration'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface MoodboardItem {
   id: string
@@ -163,9 +168,36 @@ const displayPropertyOptions: { key: keyof DisplayProperties; label: string }[] 
   { key: 'createdDate', label: 'Created Date' },
 ]
 
+const progressMap: Record<string, number> = {
+  PENDING: 20,
+  OFFERED: 20,
+  ASSIGNED: 40,
+  IN_PROGRESS: 60,
+  IN_REVIEW: 80,
+  PENDING_ADMIN_REVIEW: 80,
+  REVISION_REQUESTED: 80,
+  COMPLETED: 100,
+}
+
+function isDeadlineSoon(deadline: string | null | undefined): boolean {
+  if (!deadline) return false
+  const deadlineDate = new Date(deadline)
+  const now = new Date()
+  const diffMs = deadlineDate.getTime() - now.getTime()
+  return diffMs > 0 && diffMs < 48 * 60 * 60 * 1000
+}
+
+const cardVariants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0 },
+}
+
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const { data, isLoading, refetch } = useTasks({ view: 'client', limit: 50 })
+  const tasks = useMemo(() => (data?.tasks as unknown as Task[]) || [], [data])
+
   const [filter, setFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
@@ -188,35 +220,18 @@ export default function TasksPage() {
     setDisplayProperties((prev) => ({ ...prev, [key]: !prev[key] }))
   }, [])
 
+  // Listen for tasks-updated custom event to invalidate query
   useEffect(() => {
-    fetchTasks()
-
-    const interval = setInterval(() => {
-      fetchTasks()
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [])
+    const handler = () => queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all })
+    window.addEventListener('tasks-updated', handler)
+    return () => window.removeEventListener('tasks-updated', handler)
+  }, [queryClient])
 
   useEffect(() => {
     if (showSearch && searchInputRef.current) {
       searchInputRef.current.focus()
     }
   }, [showSearch])
-
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch('/api/tasks?limit=50&view=client')
-      if (response.ok) {
-        const result = await response.json()
-        setTasks(result.data?.tasks || result.tasks || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch tasks:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const statusOrder: Record<string, number> = {
     IN_PROGRESS: 0,
@@ -260,6 +275,13 @@ export default function TasksPage() {
       }
     })
 
+  // Section grouping
+  const needsAttentionTasks = filteredTasks.filter((t) => t.status === 'IN_REVIEW')
+  const activeTasks = filteredTasks.filter((t) =>
+    ['PENDING', 'OFFERED', 'ASSIGNED', 'IN_PROGRESS', 'REVISION_REQUESTED'].includes(t.status)
+  )
+  const completedTasks = filteredTasks.filter((t) => t.status === 'COMPLETED')
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -277,7 +299,8 @@ export default function TasksPage() {
 
   const TaskRow = ({ task }: { task: Task }) => {
     const status = statusConfig[task.status] || statusConfig.PENDING
-    // Thumbnail fallback chain: moodboardItems → styleReferences → thumbnailUrl (uploaded attachments)
+    const progress = progressMap[task.status] ?? 0
+    // Thumbnail fallback chain: moodboardItems -> styleReferences -> thumbnailUrl (uploaded attachments)
     const moodboardThumb = task.moodboardItems?.find(
       (item) => item.type === 'style' || item.type === 'image' || item.type === 'upload'
     )
@@ -293,115 +316,129 @@ export default function TasksPage() {
 
     return (
       <Link href={`/dashboard/tasks/${task.id}`}>
-        <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 cursor-pointer group">
-          {/* Thumbnail */}
-          {displayProperties.thumbnail && (
-            <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0 border border-border">
-              {thumbnailUrl ? (
-                <Image
-                  src={thumbnailUrl}
-                  alt={displayTitle}
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Palette className="h-4 w-4 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Title and Description */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-foreground truncate group-hover:text-foreground/80">
-                {displayTitle}
-              </h3>
-            </div>
-            {displayProperties.description && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{displayDescription}</p>
-            )}
-          </div>
-
-          {/* Designer */}
-          {displayProperties.designer && (
-            <div className="hidden md:flex items-center gap-2 w-28 shrink-0">
-              {task.freelancer ? (
-                <>
-                  {task.freelancer.image ? (
-                    <Image
-                      src={task.freelancer.image}
-                      alt={task.freelancer.name || 'Designer'}
-                      width={20}
-                      height={20}
-                      className="w-5 h-5 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="h-3 w-3 text-primary" />
-                    </div>
-                  )}
-                  <span className="text-xs text-muted-foreground truncate">
-                    {task.freelancer.name?.split(' ')[0]}
-                  </span>
-                </>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
-            </div>
-          )}
-
-          {/* Date */}
-          {displayProperties.createdDate && (
-            <div className="hidden sm:block text-xs text-muted-foreground w-20 text-right shrink-0">
-              {formatDate(task.createdAt)}
-            </div>
-          )}
-
-          {/* Status */}
-          {displayProperties.status && (
-            <div className="shrink-0">
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
-                  status.bgColor,
-                  status.color
+        <div className="flex flex-col">
+          <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 cursor-pointer group">
+            {/* Thumbnail */}
+            {displayProperties.thumbnail && (
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0 border border-border">
+                {thumbnailUrl ? (
+                  <Image
+                    src={thumbnailUrl}
+                    alt={displayTitle}
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Palette className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 )}
-              >
-                {status.icon}
-                <span className="hidden sm:inline">{status.label}</span>
-              </span>
-            </div>
-          )}
+              </div>
+            )}
 
-          {/* Credits */}
-          {displayProperties.credits && (
-            <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-14 justify-end shrink-0">
-              <Coins className="h-3 w-3" />
-              {task.creditsUsed}
+            {/* Title and Description */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-foreground truncate group-hover:text-foreground/80">
+                  {displayTitle}
+                </h3>
+                {isDeadlineSoon(task.deadline) && (
+                  <span className="w-2 h-2 rounded-full bg-ds-warning shrink-0" />
+                )}
+              </div>
+              {displayProperties.description && (
+                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                  {displayDescription}
+                </p>
+              )}
             </div>
-          )}
 
-          {/* More Actions */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                onClick={(e) => e.preventDefault()}
-              >
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/dashboard/tasks/${task.id}`}>View Details</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            {/* Designer */}
+            {displayProperties.designer && (
+              <div className="hidden md:flex items-center gap-2 w-28 shrink-0">
+                {task.freelancer ? (
+                  <>
+                    {task.freelancer.image ? (
+                      <Image
+                        src={task.freelancer.image}
+                        alt={task.freelancer.name || 'Designer'}
+                        width={20}
+                        height={20}
+                        className="w-5 h-5 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-3 w-3 text-primary" />
+                      </div>
+                    )}
+                    <span className="text-xs text-muted-foreground truncate">
+                      {task.freelancer.name?.split(' ')[0]}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
+              </div>
+            )}
+
+            {/* Date */}
+            {displayProperties.createdDate && (
+              <div className="hidden sm:block text-xs text-muted-foreground w-20 text-right shrink-0">
+                {formatDate(task.createdAt)}
+              </div>
+            )}
+
+            {/* Status */}
+            {displayProperties.status && (
+              <div className="shrink-0">
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+                    status.bgColor,
+                    status.color
+                  )}
+                >
+                  {status.icon}
+                  <span className="hidden sm:inline">{status.label}</span>
+                </span>
+              </div>
+            )}
+
+            {/* Credits */}
+            {displayProperties.credits && (
+              <div className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground w-14 justify-end shrink-0">
+                <Coins className="h-3 w-3" />
+                {task.creditsUsed}
+              </div>
+            )}
+
+            {/* More Actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/tasks/${task.id}`}>View Details</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          {/* Progress bar under each row */}
+          <div className="h-0.5 bg-border">
+            <div
+              className="h-full bg-crafted-green transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
       </Link>
     )
@@ -409,8 +446,10 @@ export default function TasksPage() {
 
   const TaskCard = ({ task }: { task: Task }) => {
     const status = statusConfig[task.status] || statusConfig.PENDING
+    const progress = progressMap[task.status] ?? 0
+    const showProgressRing = task.status !== 'COMPLETED'
 
-    // Get inspiration images — fallback chain: moodboardItems → styleReferences → thumbnailUrl
+    // Get inspiration images — fallback chain: moodboardItems -> styleReferences -> thumbnailUrl
     const moodboardImages =
       task.moodboardItems?.filter(
         (item) => item.type === 'style' || item.type === 'image' || item.type === 'upload'
@@ -494,7 +533,7 @@ export default function TasksPage() {
                   </div>
                 </div>
               ) : (
-                /* Four+ images — 2×2 grid */
+                /* Four+ images — 2x2 grid */
                 <div className="w-full h-full grid grid-cols-2 grid-rows-2 gap-px">
                   {visibleImages.map((item, i) => (
                     <div key={item.id} className="relative overflow-hidden">
@@ -530,15 +569,46 @@ export default function TasksPage() {
                   </span>
                 </div>
               )}
+
+              {/* Progress ring — top-right, below status badge */}
+              {showProgressRing && (
+                <div className="absolute top-2 left-2 z-10 bg-background/80 backdrop-blur-sm rounded-full p-0.5">
+                  <ProgressRing progress={progress} size={24} strokeWidth={2} />
+                </div>
+              )}
+
+              {/* Designer avatar overlay — bottom-left of thumbnail */}
+              {task.freelancer && (
+                <div className="absolute bottom-2 left-2 z-10">
+                  {task.freelancer.image ? (
+                    <Image
+                      src={task.freelancer.image}
+                      alt={task.freelancer.name || 'Designer'}
+                      width={20}
+                      height={20}
+                      className="w-5 h-5 rounded-full object-cover border border-background"
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-primary/10 border border-background flex items-center justify-center">
+                      <User className="h-2.5 w-2.5 text-primary" />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {/* Card Body */}
           <div className="p-3.5 flex flex-col gap-2 flex-1 min-h-0">
             {/* Title */}
-            <h3 className="text-sm font-medium text-foreground line-clamp-1 group-hover:text-foreground/80">
-              {task.title}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-foreground line-clamp-1 group-hover:text-foreground/80">
+                {task.title}
+              </h3>
+              {isDeadlineSoon(task.deadline) && (
+                <span className="w-2 h-2 rounded-full bg-ds-warning shrink-0" />
+              )}
+            </div>
 
             {/* Description */}
             {displayProperties.description && (
@@ -613,6 +683,65 @@ export default function TasksPage() {
           </div>
         </div>
       </Link>
+    )
+  }
+
+  const renderSection = (
+    title: string,
+    sectionTasks: Task[],
+    options?: { pulse?: boolean; dimmed?: boolean }
+  ) => {
+    if (sectionTasks.length === 0) return null
+
+    return (
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          <span
+            className={cn(
+              'inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground',
+              options?.pulse && 'animate-pulse bg-ds-status-revision/20 text-ds-status-revision'
+            )}
+          >
+            {sectionTasks.length}
+          </span>
+        </div>
+        <AnimatePresence mode="popLayout">
+          {viewMode === 'cards' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sectionTasks.map((task) => (
+                <motion.div
+                  key={task.id}
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  layout
+                  className={cn(options?.dimmed && 'opacity-70')}
+                >
+                  <TaskCard task={task} />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              {sectionTasks.map((task) => (
+                <motion.div
+                  key={task.id}
+                  variants={cardVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  layout
+                  className={cn(options?.dimmed && 'opacity-70')}
+                >
+                  <TaskRow task={task} />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
     )
   }
 
@@ -831,7 +960,7 @@ export default function TasksPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => fetchTasks()}>Refresh</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => refetch()}>Refresh</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -841,33 +970,6 @@ export default function TasksPage() {
 
       {/* Content */}
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-4">
-        {/* Tasks needing review banner */}
-        {(() => {
-          const reviewTasks = filteredTasks.filter((t) => t.status === 'IN_REVIEW')
-          if (reviewTasks.length === 0) return null
-          return (
-            <div className="mb-4 space-y-2">
-              {reviewTasks.map((task) => (
-                <Link key={task.id} href={`/dashboard/tasks/${task.id}`}>
-                  <div className="flex items-center gap-4 p-3 rounded-lg border-2 border-ds-status-revision bg-ds-status-revision/5 dark:bg-ds-status-revision/10 hover:bg-ds-status-revision/10 dark:hover:bg-ds-status-revision/15 transition-colors cursor-pointer">
-                    <div className="w-8 h-8 rounded-full bg-ds-status-revision/10 dark:bg-ds-status-revision/20 flex items-center justify-center shrink-0 animate-pulse">
-                      <Eye className="h-4 w-4 text-ds-status-revision" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-semibold text-ds-status-revision">
-                        Ready for review:{' '}
-                      </span>
-                      <span className="text-sm text-foreground">{task.title}</span>
-                    </div>
-                    <span className="text-sm font-medium text-ds-status-revision shrink-0">
-                      Review →
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )
-        })()}
         {isLoading ? (
           viewMode === 'cards' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -903,48 +1005,28 @@ export default function TasksPage() {
             </div>
           )
         ) : filteredTasks.length === 0 ? (
-          <div className="rounded-lg border border-border bg-card p-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-crafted-green/10 flex items-center justify-center mx-auto mb-4">
-              <Palette className="h-6 w-6 text-crafted-green" />
+          filter === 'all' && !searchQuery ? (
+            <EmptyStateInspiration />
+          ) : (
+            <div className="rounded-lg border border-border bg-card p-12 text-center">
+              <div className="w-12 h-12 rounded-full bg-crafted-green/10 flex items-center justify-center mx-auto mb-4">
+                <Palette className="h-6 w-6 text-crafted-green" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-1">
+                {searchQuery ? 'No tasks found' : `No ${currentFilter.label.toLowerCase()}`}
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                {searchQuery
+                  ? 'Try a different search term'
+                  : 'Create your first design request to get started'}
+              </p>
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-1">
-              {searchQuery
-                ? 'No tasks found'
-                : filter === 'all'
-                  ? 'No tasks yet'
-                  : `No ${currentFilter.label.toLowerCase()}`}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {searchQuery
-                ? 'Try a different search term'
-                : 'Create your first design request to get started'}
-            </p>
-            {!searchQuery && filter === 'all' && (
-              <Button asChild>
-                <Link href="/dashboard">
-                  <MessageSquarePlus className="h-4 w-4 mr-2" />
-                  New Request
-                </Link>
-              </Button>
-            )}
-          </div>
+          )
         ) : (
           <>
-            {viewMode === 'cards' ? (
-              /* Cards Grid */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} />
-                ))}
-              </div>
-            ) : (
-              /* Rows List */
-              <div className="rounded-lg border border-border bg-card overflow-hidden">
-                {filteredTasks.map((task) => (
-                  <TaskRow key={task.id} task={task} />
-                ))}
-              </div>
-            )}
+            {renderSection('Needs Your Attention', needsAttentionTasks, { pulse: true })}
+            {renderSection('Active Projects', activeTasks)}
+            {renderSection('Completed', completedTasks, { dimmed: true })}
 
             {/* Pagination Footer — only show when there are more tasks than displayed */}
             {filteredTasks.length < tasks.length && (

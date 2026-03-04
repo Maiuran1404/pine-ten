@@ -25,6 +25,7 @@ import {
   Download,
   Clipboard,
   Loader2,
+  Palette,
 } from 'lucide-react'
 import { DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable'
@@ -33,7 +34,17 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 import { OptimizedImage } from '@/components/ui/optimized-image'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
@@ -43,6 +54,8 @@ import { StoryboardPreview } from './storyboard-preview'
 import { useStoryboardKeyboard } from '@/hooks/use-storyboard-keyboard'
 import { copyStoryboardToClipboard, exportStoryboardPDF } from '@/lib/storyboard-export'
 import { useCsrfContext } from '@/providers/csrf-provider'
+import type { DeliverableStyle } from './types'
+import { StyleSelectionPanel } from './style-selection-panel'
 
 // =============================================================================
 // HELPERS
@@ -1080,6 +1093,15 @@ interface RichStoryboardPanelProps {
   onRetryAllFailed?: () => void
   // User-specified target duration from briefing state (e.g. "45 second video")
   targetDurationSeconds?: number | null
+  // Style change from toolbar
+  currentStyles?: DeliverableStyle[]
+  onChangeStyle?: (styles: DeliverableStyle[], regenerateImages: boolean) => void
+  styleSelectionStyles?: DeliverableStyle[]
+  confirmedStyleIds?: string[]
+  onStyleShowMore?: (styleAxis: string) => void
+  onStyleShowDifferent?: () => void
+  isStyleLoading?: boolean
+  onOpenStyleSheet?: () => void
 }
 
 // =============================================================================
@@ -1114,6 +1136,14 @@ export function RichStoryboardPanel({
   onRegenerateImage,
   onRetryAllFailed,
   targetDurationSeconds,
+  currentStyles,
+  onChangeStyle,
+  styleSelectionStyles,
+  confirmedStyleIds,
+  onStyleShowMore,
+  onStyleShowDifferent,
+  isStyleLoading,
+  onOpenStyleSheet,
 }: RichStoryboardPanelProps) {
   const [selectedScenes, setSelectedScenes] = useState<number[]>([])
   const [regenConfirm, setRegenConfirm] = useState(false)
@@ -1121,6 +1151,9 @@ export function RichStoryboardPanel({
   const [detailScene, setDetailScene] = useState<StoryboardScene | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [styleSheetOpen, setStyleSheetOpen] = useState(false)
+  const [regenPromptOpen, setRegenPromptOpen] = useState(false)
+  const [pendingStyleChange, setPendingStyleChange] = useState<DeliverableStyle[] | null>(null)
   const { csrfFetch } = useCsrfContext()
 
   // DnD sensors with activation constraint to avoid conflicts with click (#6)
@@ -1255,6 +1288,22 @@ export function RichStoryboardPanel({
               })()}
           </div>
           <div className="flex items-center gap-1">
+            {/* Change style button */}
+            {onChangeStyle && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onOpenStyleSheet?.()
+                  setStyleSheetOpen(true)
+                }}
+                className="gap-1.5 text-xs h-7 text-muted-foreground hover:text-primary max-w-[120px]"
+                title="Change visual style"
+              >
+                <Palette className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{currentStyles?.[0]?.name || 'Style'}</span>
+              </Button>
+            )}
             {/* Undo/Redo buttons (#20) */}
             {onUndo && (
               <Button
@@ -1558,6 +1607,71 @@ export function RichStoryboardPanel({
         scenes={scenes}
         sceneImageData={sceneImageData}
       />
+
+      {/* Style change Sheet */}
+      {onChangeStyle && (
+        <Sheet open={styleSheetOpen} onOpenChange={setStyleSheetOpen}>
+          <SheetContent side="right" className="w-[400px] sm:w-[440px] p-0 flex flex-col">
+            <SheetHeader className="px-4 py-3 border-b border-border/40 shrink-0">
+              <SheetTitle className="text-sm font-semibold">Change Visual Style</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <StyleSelectionPanel
+                styles={styleSelectionStyles ?? []}
+                confirmedStyleIds={confirmedStyleIds}
+                onConfirmSelection={(selectedStyles) => {
+                  setPendingStyleChange(selectedStyles)
+                  setStyleSheetOpen(false)
+                  setRegenPromptOpen(true)
+                }}
+                onShowDifferent={onStyleShowDifferent}
+                isLoading={isStyleLoading}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
+
+      {/* Regeneration prompt AlertDialog */}
+      <AlertDialog open={regenPromptOpen} onOpenChange={setRegenPromptOpen}>
+        <AlertDialogContent className="bg-card border-border max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-crafted-green/10 flex items-center justify-center mb-2">
+              <Palette className="h-6 w-6 text-crafted-green" />
+            </div>
+            <AlertDialogTitle className="text-center text-foreground">
+              Style updated
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-muted-foreground">
+              Would you like to regenerate scene images with the new style?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
+            <AlertDialogCancel
+              className="bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground"
+              onClick={() => {
+                if (pendingStyleChange && onChangeStyle) {
+                  onChangeStyle(pendingStyleChange, false)
+                }
+                setPendingStyleChange(null)
+              }}
+            >
+              Skip
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-crafted-green text-white hover:bg-crafted-forest border-0"
+              onClick={() => {
+                if (pendingStyleChange && onChangeStyle) {
+                  onChangeStyle(pendingStyleChange, true)
+                }
+                setPendingStyleChange(null)
+              }}
+            >
+              Regenerate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

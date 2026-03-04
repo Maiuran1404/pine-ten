@@ -717,9 +717,16 @@ Do NOT ask questions. Generate the creative content now.`
   // Subsequent turns: refine based on user feedback
   switch (category) {
     case 'video':
-      return `The user is refining the elaborated storyboard. Apply their feedback to the specific scenes they mentioned.
-Regenerate the FULL [STORYBOARD] block with all scenes, updating only what was requested.
-Keep all existing detail (fullScript, directorNotes, referenceDescription) intact for scenes the user didn't mention.
+      return `The user is modifying the storyboard. Their message may be ANY of these modification types — handle ALL uniformly:
+- STRUCTURAL: changing scene count ("make it 6 scenes"), adding scenes, removing scenes, merging scenes ("combine scenes 2 and 3"), splitting scenes
+- DURATION: changing target duration ("target 60 seconds", "make it shorter", "double the length"), redistributing scene durations
+- CONTENT: changing tone ("make it more energetic"), updating voiceover/script, adding product shots, changing visual direction
+- SCENE-SPECIFIC: feedback on particular scenes (apply changes only to mentioned scenes)
+- FULL REGEN: "start over", "completely different approach" (rebuild from scratch using known brief context)
+
+MANDATORY: You MUST output the FULL [STORYBOARD]...[/STORYBOARD] block with valid JSON containing ALL scenes (not just changed ones). Without it the storyboard panel will not update.
+Keep all existing detail (fullScript, directorNotes, referenceDescription, voiceover, visualNote, duration, transition, cameraNote, hookData) intact for scenes the user did NOT mention.
+If scene count or target duration changed, redistribute durations proportionally across all scenes.
 If the user's feedback changes the visual direction or image of any scene, also output [REGENERATE_IMAGES: X,Y] with affected scene numbers to trigger image regeneration.`
     case 'website':
       return `The user is refining the elaborated layout. Apply their feedback to the specific sections they mentioned.

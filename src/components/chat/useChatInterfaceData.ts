@@ -874,6 +874,105 @@ export function useChatInterfaceData({
     [_briefingState, draftId, storyboard, brandData, toneOfVoice]
   )
 
+  // ─── Change visual style from storyboard toolbar ──────────
+  const handleChangeVisualStyle = useCallback(
+    (styles: DeliverableStyle[], regenerateImages: boolean) => {
+      // 1. Replace selected styles in brief visual direction
+      updateBriefInState((current) => {
+        const currentDirection = current.visualDirection || {
+          selectedStyles: [],
+          moodKeywords: [],
+          colorPalette: brandColors,
+          typography: brandTypography,
+          avoidElements: [],
+        }
+        return {
+          ...current,
+          visualDirection: {
+            ...currentDirection,
+            selectedStyles: styles,
+          },
+          updatedAt: new Date(),
+        }
+      })
+
+      // 2. Add styles to moodboard if not already present
+      for (const style of styles) {
+        if (!hasMoodboardItem(style.id)) {
+          addFromStyle(style)
+        }
+      }
+
+      // 3. Optionally regenerate all scene images with new style
+      if (regenerateImages) {
+        const currentStoryboard = storyboard.latestStoryboardRef.current
+        if (currentStoryboard?.type === 'storyboard') {
+          // Build style context from new styles
+          const rawStyleContext = styles
+            .map((s) => s.promptGuide || `${s.name}${s.description ? `: ${s.description}` : ''}`)
+            .join('; ')
+          const styleContext =
+            rawStyleContext.length > 1950 ? rawStyleContext.slice(0, 1950) : rawStyleContext
+
+          const briefId = _briefingState?.brief?.id || draftId
+          const styleIds = styles.map((s) => s.id).filter((id) => id && id !== 'moodboard-synced')
+
+          // Clear existing resolved image URLs so the generator picks them up
+          const clearedScenes = currentStoryboard.scenes.map((s) => ({
+            ...s,
+            resolvedImageUrl: undefined,
+          }))
+          storyboard.setStoryboardScenes({
+            ...currentStoryboard,
+            scenes: clearedScenes,
+          })
+
+          // Build brand context
+          const imgBrandContext = brandData
+            ? {
+                colors: {
+                  primary: brandData.primaryColor ?? undefined,
+                  secondary: brandData.secondaryColor ?? undefined,
+                  accent: brandData.accentColor ?? undefined,
+                },
+                industry: brandData.industry ?? undefined,
+                toneOfVoice: toneOfVoice ?? undefined,
+                brandDescription: brandData.description ?? undefined,
+              }
+            : undefined
+
+          storyboard.generateSceneImages(
+            clearedScenes,
+            styleContext,
+            briefId,
+            styleIds,
+            imgBrandContext
+          )
+        }
+      }
+    },
+    [
+      updateBriefInState,
+      brandColors,
+      brandTypography,
+      hasMoodboardItem,
+      addFromStyle,
+      storyboard,
+      _briefingState,
+      draftId,
+      brandData,
+      toneOfVoice,
+    ]
+  )
+
+  // Fetch styles for the style change sheet
+  const handleFetchStylesForChange = useCallback(() => {
+    const category = _briefingState?.deliverableCategory
+    if (category) {
+      styleSelection.fetchInitialStyles(category)
+    }
+  }, [_briefingState?.deliverableCategory, styleSelection])
+
   // Wire up forward ref for AI-triggered image regeneration (via [REGENERATE_IMAGES] marker)
   regenerateImageRef.current = (sceneNumbers: number[]) => {
     if (storyboard.isGeneratingImages) return
@@ -1284,6 +1383,9 @@ export function useChatInterfaceData({
     isGeneratingImages: storyboard.isGeneratingImages,
     imageGenerationProgress: storyboard.imageGenerationProgress,
     handleRegenerateImage,
+    // Style change from storyboard toolbar
+    handleChangeVisualStyle,
+    handleFetchStylesForChange,
 
     // Website inspiration
     websiteInspirations: websiteInspiration.selectedInspirations,

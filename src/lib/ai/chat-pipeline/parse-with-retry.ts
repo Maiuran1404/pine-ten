@@ -319,11 +319,25 @@ function buildRetryCandidates(input: ParseWithRetryInput): RetryCandidate[] {
   })
 
   // 4b. Structure retry at ELABORATE stage (priority 4, same as STRUCTURE)
+  // Mirrors SCENE_FEEDBACK: embeds actual storyboard JSON so the AI has context to work from.
   candidates.push({
     markerType: 'ELABORATE',
     shouldRetry: stageBeforePhaseA === 'ELABORATE' && !structureData && !!structureType,
     priority: 4,
-    buildReinforcement: () => getFormatReinforcement(structureType!),
+    buildReinforcement: () => {
+      const storyboardForRetry =
+        (clientLatestStoryboard?.type === 'storyboard' && clientLatestStoryboard) ||
+        (briefingState.structure?.type === 'storyboard' && briefingState.structure) ||
+        null
+      if (storyboardForRetry) {
+        return (
+          `You did not include the updated storyboard in your response. ` +
+          `Apply the changes from your previous response to the current storyboard and output the FULL updated storyboard wrapped in [STORYBOARD]...[/STORYBOARD] markers with valid JSON.\n\n` +
+          `Current storyboard to update:\n[STORYBOARD]${JSON.stringify(storyboardForRetry)}[/STORYBOARD]`
+        )
+      }
+      return getFormatReinforcement(structureType!)
+    },
     parseRetryResponse: (content: string) => {
       const parsed = parseStructuredOutput(content, structureType!)
       return parsed.success && parsed.data ? { structureData: parsed.data } : {}

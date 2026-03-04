@@ -69,7 +69,7 @@ export function useTaskSubmission({
   const [hasRequestedTaskSummary, setHasRequestedTaskSummary] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [showSubmissionModal, setShowSubmissionModal] = useState(false)
-  const [showSubmissionSuccess, setShowSubmissionSuccess] = useState(false)
+  const [showSubmissionSuccess, _setShowSubmissionSuccess] = useState(false)
   const [submittedTaskId, setSubmittedTaskId] = useState<string | null>(null)
   const [submittedAssignedArtist, setSubmittedAssignedArtist] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -118,6 +118,7 @@ export function useTaskSubmission({
       level: 'info',
     })
 
+    sessionStorage.setItem('crafted-previous-credits', String(userCredits))
     setIsLoading(true)
 
     const allAttachmentsForTask = messages
@@ -231,7 +232,7 @@ export function useTaskSubmission({
       // Show celebration overlay instead of immediate redirect
       setSubmittedTaskId(taskId)
       setSubmittedAssignedArtist(result.data.assignedTo || null)
-      setShowSubmissionSuccess(true)
+      router.push(`/dashboard/tasks/${taskId}/launched`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create task')
       // Don't re-throw — the toast provides user feedback and the finally
@@ -255,6 +256,7 @@ export function useTaskSubmission({
     setAnimatingMessageId,
     posthog,
     csrfFetch,
+    router,
   ])
 
   const handleOpenSubmissionModal = useCallback(() => {

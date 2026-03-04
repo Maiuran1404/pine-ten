@@ -207,11 +207,15 @@ export function runPreAiPipeline(
       briefingState.styleKeywords = [...new Set([...briefingState.styleKeywords, 'launch'])]
     }
 
-    // 4b. Extract target video duration from user message
-    if (!briefingState.targetDurationSeconds) {
+    // 4b. Extract target video duration from user message (always re-extract — user may update)
+    {
       const durationMatch = lastUserMessage.match(/(\d+)\s*[-–]?\s*(?:second|sec|s)\b/i)
       if (durationMatch) {
-        briefingState.targetDurationSeconds = parseInt(durationMatch[1], 10)
+        const parsed = parseInt(durationMatch[1], 10)
+        // >= 5 sanity check: avoids false matches like "scene 3s" (3 is too short for a video target)
+        if (parsed >= 5) {
+          briefingState.targetDurationSeconds = parsed
+        }
       }
     }
 
@@ -261,20 +265,35 @@ export function runPreAiPipeline(
     // 8. Build system prompt
     let systemPrompt = buildSystemPrompt(briefingState, brandContext)
 
-    // Add scene feedback hint
+    // Add storyboard modification hint — fires for ANY message at ELABORATE stage
+    // with existing storyboard data, not just scene-feedback markers.
+    // At ELABORATE, every user message is a storyboard modification.
     const lastUserContent = messages[messages.length - 1]?.content || ''
+    const isSceneFeedback = /\[Feedback on Scene/.test(lastUserContent)
+    const hasStoryboard =
+      (clientLatestStoryboard?.type === 'storyboard' &&
+        Array.isArray((clientLatestStoryboard as { scenes?: unknown[] }).scenes) &&
+        (clientLatestStoryboard as { scenes: unknown[] }).scenes.length > 0) ||
+      (briefingState.structure?.type === 'storyboard' &&
+        Array.isArray((briefingState.structure as { scenes?: unknown[] }).scenes) &&
+        (briefingState.structure as { scenes: unknown[] }).scenes.length > 0)
+
     if (
-      (briefingState.stage === 'STRUCTURE' || briefingState.stage === 'ELABORATE') &&
-      /\[Feedback on Scene/.test(lastUserContent)
+      (briefingState.stage === 'STRUCTURE' && isSceneFeedback) ||
+      (briefingState.stage === 'ELABORATE' && hasStoryboard)
     ) {
       let feedbackHint =
-        '\n\nCRITICAL REQUIREMENT — YOU MUST OUTPUT A [STORYBOARD] BLOCK: The user is giving feedback on specific storyboard scenes. ' +
-        'IMPROVE the existing text based on their feedback — do NOT blank out, remove, or shorten existing content. ' +
+        '\n\nCRITICAL REQUIREMENT — YOU MUST OUTPUT A [STORYBOARD] BLOCK: The user is modifying the storyboard. ' +
+        'This could be scene-specific feedback, structural changes (add/remove/merge/split scenes), ' +
+        'duration changes, tone changes, content additions, or any other modification. ' +
+        'Apply the requested changes to the existing storyboard. ' +
         'Preserve all existing fields (title, description, voiceover, visualNote, duration, transition, cameraNote, hookData, fullScript, directorNotes) for scenes the user did NOT mention. ' +
         'For scenes the user DID mention, apply their feedback while keeping any fields they did not specifically ask to change. ' +
         'You MUST regenerate the FULL [STORYBOARD]...[/STORYBOARD] block with valid JSON in your response — without it the storyboard panel will not update. ' +
         'If the user asked to merge, combine, remove, or reduce scenes, output ONLY the resulting scenes (fewer than before). ' +
-        "If the user asked to add or split scenes, include the new scenes. Always output the complete updated storyboard reflecting the user's changes."
+        'If the user asked to add or split scenes, include the new scenes. ' +
+        'If the user changed the target duration or scene count, redistribute durations accordingly. ' +
+        "Always output the complete updated storyboard reflecting the user's changes."
 
       const storyboardForHint =
         (clientLatestStoryboard?.type === 'storyboard' && clientLatestStoryboard) ||
