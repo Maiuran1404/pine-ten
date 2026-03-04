@@ -415,7 +415,10 @@ export function extractMarkerContent(text: string, marker: MarkerType): string |
   if (openIdx === -1) return null
 
   const contentStart = openIdx + openTag.length
-  const closeIdx = text.lastIndexOf(closeTag)
+  // Use indexOf from contentStart (not lastIndexOf) to extract the FIRST complete
+  // marker pair. lastIndexOf would span across multiple blocks if the AI echoes
+  // storyboard markers from the context, producing garbled JSON.
+  const closeIdx = text.indexOf(closeTag, contentStart)
 
   if (closeIdx === -1) {
     // Marker opened but never closed — try to extract anyway
@@ -605,7 +608,7 @@ function extractSceneFields(s: Record<string, unknown>, index: number) {
     visualTechniques,
     hookData: s.hookData ? validateHookData(s.hookData as Record<string, unknown>) : undefined,
     referenceVideoId: typeof s.referenceVideoId === 'string' ? s.referenceVideoId : undefined,
-    hasContent: !!(title || description),
+    hasContent: !!(title || description || voiceover || visualNote || fullScript),
   }
 }
 

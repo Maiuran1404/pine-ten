@@ -94,7 +94,7 @@ export function useChatMessages({
 
   // Process API response into assistant message
   const processApiResponse = useCallback(
-    (data: ChatApiResponse, resolvedStructureDataOverride?: StructureData) => {
+    (data: ChatApiResponse) => {
       const thinkingTime = requestStartTimeRef.current
         ? Math.round((Date.now() - requestStartTimeRef.current) / 1000)
         : undefined
@@ -103,9 +103,10 @@ export function useChatMessages({
         syncBriefingFromServer(data.briefingState)
       }
 
-      // Track latest structure data and activate panel
-      const resolvedStructureData: StructureData | undefined =
-        resolvedStructureDataOverride ?? data.structureData ?? undefined
+      // Only update structure data when the server sends genuinely new data.
+      // The storyboard panel stays visible via existing storyboardScenes state —
+      // no fallback injection of old data is needed (or wanted).
+      const resolvedStructureData: StructureData | undefined = data.structureData ?? undefined
       if (resolvedStructureData) {
         if (resolvedStructureData.type === 'storyboard') {
           latestStoryboardRef.current = resolvedStructureData
@@ -155,10 +156,20 @@ export function useChatMessages({
 
       // BUG-9: Surface parse failures to the user
       if (data.parseFailures && data.parseFailures.length > 0) {
-        toast.warning('Some content couldn\u2019t be fully parsed', {
-          description: `Failed markers: ${data.parseFailures.join(', ')}`,
-          duration: 5000,
-        })
+        const hasSceneFeedback = data.parseFailures.some(
+          (f) => f === 'SCENE_FEEDBACK' || f === 'ELABORATE'
+        )
+        if (hasSceneFeedback) {
+          toast.warning('Storyboard couldn\u2019t be updated automatically', {
+            description: 'Try asking again or click Regenerate to rebuild the storyboard.',
+            duration: 5000,
+          })
+        } else {
+          toast.warning('Some content couldn\u2019t be fully parsed', {
+            description: `Failed markers: ${data.parseFailures.join(', ')}`,
+            duration: 5000,
+          })
+        }
       }
 
       return data
@@ -229,22 +240,7 @@ export function useChatMessages({
 
         const data: ChatApiResponse = await response.json()
 
-        // Re-attach storyboard when AI responds without new storyboard data.
-        // Covers scene feedback AND general ELABORATE stage messages (structural changes,
-        // duration updates, tone changes, etc.) — prevents the panel from going blank.
-        const isSceneFeedback =
-          isSceneFeedbackFlag || processedContent.startsWith('[Feedback on Scene')
-        const isElaborateStage = serializedBriefingStateRef.current?.stage === 'ELABORATE'
-        let resolvedStructureOverride: StructureData | undefined
-        if (
-          (isSceneFeedback || isElaborateStage) &&
-          !data.structureData &&
-          latestStoryboardRef.current
-        ) {
-          resolvedStructureOverride = latestStoryboardRef.current
-        }
-
-        processApiResponse(data, resolvedStructureOverride)
+        processApiResponse(data)
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Failed to send message. Please try again.'
@@ -311,15 +307,7 @@ export function useChatMessages({
 
         const data: ChatApiResponse = await response.json()
 
-        // Re-attach storyboard only during structure-related stages
-        const currentStage = serializedBriefingStateRef.current?.stage
-        const isStructureRelated = currentStage === 'STRUCTURE' || currentStage === 'ELABORATE'
-        let resolvedStructureOverride: StructureData | undefined
-        if (isStructureRelated && !data.structureData && latestStoryboardRef.current) {
-          resolvedStructureOverride = latestStoryboardRef.current
-        }
-
-        processApiResponse(data, resolvedStructureOverride)
+        processApiResponse(data)
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Failed to send message. Please try again.'

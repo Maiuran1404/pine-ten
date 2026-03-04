@@ -228,26 +228,34 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
     }
 
     // Unified retry with shared budget
-    const retryResult = await parseWithRetry({
-      briefingState,
-      brandContext,
-      messages: messages as ChatMessage[],
-      responseContent,
-      userId,
-      chatContext,
-      stageBeforePhaseA,
-      structureData,
-      strategicReviewData,
-      videoNarrativeData,
-      structureType,
-      isSceneFeedback,
-      isRegenerationRequest,
-      narrativeApproved: briefingState.narrativeApproved ?? false,
-      clientLatestStoryboard:
-        clientLatestStoryboard?.type === 'storyboard'
-          ? (clientLatestStoryboard as StructureData)
-          : null,
-    })
+    const retryResult = await parseWithRetry(
+      {
+        briefingState,
+        brandContext,
+        messages: messages as ChatMessage[],
+        responseContent,
+        userId,
+        chatContext,
+        stageBeforePhaseA,
+        structureData,
+        strategicReviewData,
+        videoNarrativeData,
+        structureType,
+        isSceneFeedback,
+        isRegenerationRequest,
+        narrativeApproved: briefingState.narrativeApproved ?? false,
+        clientLatestStoryboard:
+          clientLatestStoryboard?.type === 'storyboard'
+            ? (clientLatestStoryboard as StructureData)
+            : null,
+      },
+      {
+        // Scene feedback and elaborate stages get extra retry budget because
+        // the AI often describes changes conversationally on the first attempt
+        // and only outputs the structured marker on the second retry.
+        maxRetries: isSceneFeedback || stageBeforePhaseA === 'ELABORATE' ? 2 : 1,
+      }
+    )
 
     structureData = retryResult.structureData ?? undefined
     strategicReviewData = retryResult.strategicReviewData ?? undefined

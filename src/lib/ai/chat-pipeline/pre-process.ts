@@ -307,7 +307,7 @@ export function runPreAiPipeline(
       ) {
         feedbackHint +=
           '\n\nHere is the current storyboard that you must use as the base (preserve all fields, only modify what the user requested):\n' +
-          `[STORYBOARD]${JSON.stringify(storyboardForHint)}[/STORYBOARD]`
+          `<current-storyboard>${JSON.stringify(storyboardForHint)}</current-storyboard>`
       }
 
       systemPrompt += feedbackHint

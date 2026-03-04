@@ -1,6 +1,16 @@
 'use client'
 
-import { Layout, Calendar, Paintbrush, Hash, Megaphone, ListOrdered } from 'lucide-react'
+import {
+  Layout,
+  Calendar,
+  Paintbrush,
+  Hash,
+  Megaphone,
+  ListOrdered,
+  Film,
+  Clock,
+  Eye,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -9,12 +19,17 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion'
-import { StoryboardPanel } from '@/components/chat/storyboard-view'
+import {
+  parseDurationSeconds,
+  formatTimestamp,
+  computeTimestampRanges,
+} from '@/components/chat/storyboard-view'
 import type { StructureData } from '@/components/task-detail/types'
 import type {
   LayoutSection,
   ContentCalendarOutline,
   DesignSpec,
+  StoryboardScene,
 } from '@/lib/ai/briefing-state-machine'
 
 interface StructureViewProps {
@@ -25,7 +40,7 @@ interface StructureViewProps {
 export function StructureView({ structure, className }: StructureViewProps) {
   switch (structure.type) {
     case 'storyboard':
-      return <StoryboardPanel scenes={structure.scenes} className={className} />
+      return <CompactStoryboardGrid scenes={structure.scenes} className={className} />
 
     case 'layout':
       return <LayoutView sections={structure.sections} className={className} />
@@ -39,6 +54,143 @@ export function StructureView({ structure, className }: StructureViewProps) {
     default:
       return null
   }
+}
+
+// =============================================================================
+// COMPACT STORYBOARD GRID — 3-column grid for task detail view
+// =============================================================================
+
+function CompactStoryboardGrid({
+  scenes,
+  className,
+}: {
+  scenes: StoryboardScene[]
+  className?: string
+}) {
+  if (scenes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <Film className="h-8 w-8 text-muted-foreground/40 mb-3" />
+        <p className="text-sm text-muted-foreground">Storyboard will appear here</p>
+      </div>
+    )
+  }
+
+  const totalDuration = scenes.reduce((acc, scene) => acc + parseDurationSeconds(scene.duration), 0)
+  const timestampRanges = computeTimestampRanges(scenes)
+
+  return (
+    <div className={cn('space-y-3', className)}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Film className="h-4 w-4 text-crafted-green" />
+          <span className="text-sm font-semibold text-foreground">Storyboard</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>
+            {scenes.length} {scenes.length === 1 ? 'scene' : 'scenes'}
+          </span>
+          {totalDuration > 0 && (
+            <>
+              <span className="text-muted-foreground/30">·</span>
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{formatTimestamp(totalDuration)}</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* 3-column grid */}
+      <div className="grid grid-cols-3 gap-2.5">
+        {scenes.map((scene, index) => (
+          <CompactSceneCard
+            key={scene.sceneNumber}
+            scene={scene}
+            index={index}
+            isFirst={index === 0}
+            timestamp={timestampRanges[index]}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CompactSceneCard({
+  scene,
+  index,
+  isFirst,
+  timestamp,
+}: {
+  scene: StoryboardScene
+  index: number
+  isFirst: boolean
+  timestamp: { start: string; end: string }
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-lg border overflow-hidden',
+        isFirst ? 'border-ds-role-hook/30' : 'border-border/40'
+      )}
+    >
+      {/* Thumbnail */}
+      {scene.resolvedImageUrl ? (
+        <div className="aspect-video w-full overflow-hidden bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={scene.resolvedImageUrl}
+            alt={scene.title}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ) : (
+        <div className="aspect-video w-full bg-muted/50" />
+      )}
+
+      {/* Info */}
+      <div className="p-2 space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-medium text-muted-foreground">
+            Scene {scene.sceneNumber}
+          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] font-mono text-muted-foreground/60">{timestamp.start}</span>
+            {isFirst && (
+              <Badge
+                variant="outline"
+                className="text-[8px] h-3.5 px-1 border-ds-role-hook/40 bg-ds-role-hook/10 text-ds-role-hook uppercase tracking-wide"
+              >
+                Hook
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <h4 className="text-xs font-medium text-foreground leading-snug line-clamp-1">
+          {scene.title}
+        </h4>
+
+        <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
+          {scene.description}
+        </p>
+
+        {scene.visualNote && (
+          <div className="flex items-start gap-1 text-muted-foreground/70">
+            <Eye className="h-2.5 w-2.5 mt-0.5 shrink-0" />
+            <span className="text-[9px] italic leading-relaxed line-clamp-1">
+              {scene.visualNote}
+            </span>
+          </div>
+        )}
+
+        <div className="text-[9px] text-muted-foreground pt-0.5">{scene.duration}</div>
+      </div>
+    </div>
+  )
 }
 
 // =============================================================================

@@ -263,9 +263,10 @@ function buildRetryCandidates(input: ParseWithRetryInput): RetryCandidate[] {
         (briefingState.structure?.type === 'storyboard' && briefingState.structure) ||
         null
       return storyboardForRetry
-        ? `The user gave feedback on specific scenes but you didn't include the updated storyboard in your response. ` +
-            `Apply the changes from your previous response to the current storyboard and output the FULL updated storyboard wrapped in [STORYBOARD]...[/STORYBOARD] markers with valid JSON.\n\n` +
-            `Current storyboard to update:\n[STORYBOARD]${JSON.stringify(storyboardForRetry)}[/STORYBOARD]`
+        ? `IMPORTANT: You described changes but did not output the updated storyboard data. ` +
+            `RESPOND WITH ONLY the updated [STORYBOARD]...[/STORYBOARD] JSON block — no other text, no explanations, no markdown. ` +
+            `Apply the changes you described in your previous message to the storyboard below and output the complete result.\n\n` +
+            `<current-storyboard>${JSON.stringify(storyboardForRetry)}</current-storyboard>`
         : getFormatReinforcement(structureType!)
     },
     parseRetryResponse: (content: string) => {
@@ -331,9 +332,10 @@ function buildRetryCandidates(input: ParseWithRetryInput): RetryCandidate[] {
         null
       if (storyboardForRetry) {
         return (
-          `You did not include the updated storyboard in your response. ` +
-          `Apply the changes from your previous response to the current storyboard and output the FULL updated storyboard wrapped in [STORYBOARD]...[/STORYBOARD] markers with valid JSON.\n\n` +
-          `Current storyboard to update:\n[STORYBOARD]${JSON.stringify(storyboardForRetry)}[/STORYBOARD]`
+          `IMPORTANT: You described changes but did not output the updated storyboard data. ` +
+          `RESPOND WITH ONLY the updated [STORYBOARD]...[/STORYBOARD] JSON block — no other text, no explanations, no markdown. ` +
+          `Apply the changes you described in your previous message to the storyboard below and output the complete result.\n\n` +
+          `<current-storyboard>${JSON.stringify(storyboardForRetry)}</current-storyboard>`
         )
       }
       return getFormatReinforcement(structureType!)

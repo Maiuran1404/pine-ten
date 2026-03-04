@@ -869,9 +869,9 @@ function RichSceneCard({
       className={cn(
         'group/card rounded-lg border overflow-hidden transition-all cursor-pointer',
         'border-border/50',
-        isSelected && 'ring-2 ring-primary bg-primary/5',
-        isChanged && !isSelected && 'ring-2 ring-crafted-green/60 animate-pulse',
-        !isSelected && !isChanged && 'hover:shadow-sm hover:border-border/80',
+        isSelected && isChanged && 'ring-2 ring-crafted-green/60 bg-crafted-green/5',
+        isSelected && !isChanged && 'ring-2 ring-primary bg-primary/5',
+        !isSelected && 'hover:shadow-sm hover:border-border/80',
         isDragging && 'opacity-50 shadow-lg z-50'
       )}
     >
@@ -914,12 +914,12 @@ function RichSceneCard({
           Scene {scene.sceneNumber}
         </Badge>
 
-        {/* Updated badge — visual diff indicator (U1 + #21 field diffs) */}
-        {isChanged && (
+        {/* Updated badge — visual diff indicator, only visible when selected */}
+        {isChanged && isSelected && (
           <Badge
             variant="secondary"
             className={cn(
-              'absolute top-2 text-[9px] h-4 px-1.5 bg-crafted-green/80 text-white border-0 backdrop-blur-sm animate-pulse cursor-help',
+              'absolute top-2 text-[9px] h-4 px-1.5 bg-crafted-green/80 text-white border-0 backdrop-blur-sm cursor-help',
               isSelected ? 'left-16' : 'left-9'
             )}
             title={
