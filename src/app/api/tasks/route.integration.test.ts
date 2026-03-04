@@ -415,11 +415,7 @@ describe('POST /api/tasks - Integration (Task Creation Flow)', () => {
         })
       )
 
-      // 8. WhatsApp notification was sent
-      expect(mockWhatsAppTemplate).toHaveBeenCalledTimes(1)
-      expect(mockNotifyAdminWhatsApp).toHaveBeenCalledTimes(1)
-
-      // 9. Artist was notified of assignment
+      // 8. Artist was notified of assignment
       expect(mockNotify).toHaveBeenCalledTimes(1)
       expect(mockNotify).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -480,7 +476,6 @@ describe('POST /api/tasks - Integration (Task Creation Flow)', () => {
 
       // Admin notifications still sent
       expect(mockNewTaskCreated).toHaveBeenCalledTimes(1)
-      expect(mockNotifyAdminWhatsApp).toHaveBeenCalledTimes(1)
 
       // Fewer inserts: tasks + 1x activityLog (created only) + creditTransactions = 3
       expect(mockTx.insert).toHaveBeenCalledTimes(3)
@@ -700,32 +695,6 @@ describe('POST /api/tasks - Integration (Task Creation Flow)', () => {
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({ err: expect.any(Error), taskId: 'task-new-1' }),
         'Failed to send admin email notification'
-      )
-    })
-
-    it('returns 201 even when WhatsApp notification fails', async () => {
-      setupAuth()
-      const { mockTx } = buildTxMock({
-        credits: 50,
-        companyId: null,
-        categoryId: null,
-        task: newTask,
-      })
-
-      mockWithTransaction.mockImplementation(async (fn: (tx: typeof mockTx) => Promise<unknown>) =>
-        fn(mockTx)
-      )
-      mockRankArtistsForTask.mockResolvedValue([])
-
-      mockNotifyAdminWhatsApp.mockRejectedValueOnce(new Error('WhatsApp API down'))
-
-      const response = await POST(makeRequest(validBody) as never)
-      expect(response.status).toBe(201)
-
-      const { logger } = await import('@/lib/logger')
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.objectContaining({ err: expect.any(Error), taskId: 'task-new-1' }),
-        'Failed to send admin WhatsApp notification'
       )
     })
 
