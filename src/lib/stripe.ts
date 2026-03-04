@@ -142,7 +142,8 @@ export async function createCheckoutSession(
   userId: string,
   userEmail: string,
   packageId: string,
-  returnUrl?: string
+  returnUrl?: string,
+  requestOrigin?: string
 ) {
   // Fetch packages with current pricing from database
   const packages = await getCreditPackages()
@@ -156,17 +157,18 @@ export async function createCheckoutSession(
   const settings = await getCreditSettings()
 
   // Build success and cancel URLs
-  // If returnUrl is provided, redirect back there with payment params
-  // Otherwise default to dashboard
+  // Use the request origin to preserve the correct subdomain (e.g. app.localhost:3000)
+  // Falls back to config.app.url for backwards compatibility
+  const baseUrl = requestOrigin || config.app.url
+
   // SECURITY: Validate returnUrl is a safe relative path
   const safeReturnUrl =
     returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/dashboard'
-  const baseReturnUrl = safeReturnUrl
-  const successUrl = new URL(baseReturnUrl, config.app.url)
+  const successUrl = new URL(safeReturnUrl, baseUrl)
   successUrl.searchParams.set('payment', 'success')
   successUrl.searchParams.set('credits', creditPackage.credits.toString())
 
-  const cancelUrl = new URL(baseReturnUrl, config.app.url)
+  const cancelUrl = new URL(safeReturnUrl, baseUrl)
   cancelUrl.searchParams.set('payment', 'cancelled')
 
   const session = await stripe.checkout.sessions.create({

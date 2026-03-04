@@ -16,12 +16,16 @@ vi.mock('@/lib/stripe', () => ({
 
 const { POST } = await import('./route')
 
-function makeRequest(body: unknown) {
+function makeRequest(body: unknown, origin = 'http://app.localhost:3000') {
   return {
     url: 'http://localhost/api/webhooks/stripe/checkout',
     method: 'POST',
     json: vi.fn().mockResolvedValue(body),
-    headers: { get: () => null, has: () => false },
+    headers: {
+      get: (key: string) => (key === 'origin' ? origin : null),
+      has: () => false,
+    },
+    nextUrl: { origin: 'http://localhost:3000' },
     cookies: { get: () => undefined },
     ip: '127.0.0.1',
   }
@@ -71,7 +75,8 @@ describe('POST /api/webhooks/stripe/checkout', () => {
       'user-1',
       'test@test.com',
       'pkg-10',
-      '/billing'
+      '/billing',
+      'http://app.localhost:3000'
     )
   })
 })

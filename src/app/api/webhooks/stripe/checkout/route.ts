@@ -20,11 +20,16 @@ export async function POST(request: NextRequest) {
 
     const { packageId, returnUrl } = checkoutBodySchema.parse(await request.json())
 
+    // Use the request origin so Stripe redirects back to the correct subdomain
+    // (e.g. app.localhost:3000 in dev, app.getcrafted.ai in prod)
+    const origin = request.headers.get('origin') || request.nextUrl.origin
+
     const checkoutSession = await createCheckoutSession(
       session.user.id,
       session.user.email,
       packageId,
-      returnUrl
+      returnUrl,
+      origin
     )
 
     return successResponse({ url: checkoutSession.url })
