@@ -22,7 +22,7 @@ interface UseChatScrollOptions {
 
 export function useChatScroll({
   messages,
-  isLoading,
+  isLoading: _isLoading,
   animatingMessageId,
   completedTypingIds,
 }: UseChatScrollOptions) {
@@ -89,7 +89,7 @@ export function useChatScroll({
     scrollToBottom()
     const frame = requestAnimationFrame(() => scrollToBottom())
     return () => cancelAnimationFrame(frame)
-  }, [messages, isLoading, scrollToBottom])
+  }, [messages, scrollToBottom])
 
   // MutationObserver — watches the scroll viewport for DOM changes
   // (typing animation adding text, images loading, etc.) and auto-scrolls
