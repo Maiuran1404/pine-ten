@@ -761,8 +761,16 @@ export function useChatInterfaceData({
     // Check if scenes already have images (e.g. from draft restore)
     const scenesNeedingImages = structure.scenes.filter((s) => !s.resolvedImageUrl)
 
-    // If ALL scenes need images, this is a fresh/regenerated storyboard — reset trigger
-    if (scenesNeedingImages.length > 0 && scenesNeedingImages.length === structure.scenes.length) {
+    // If ALL scenes need images, this is a fresh/regenerated storyboard — reset trigger.
+    // BUT: if the sceneImageData map already has entries, images were previously generated
+    // and this is a scene-feedback update (server returns scenes without client-side image URLs).
+    // Don't reset in that case — the auto-regenerate effect handles per-scene regeneration.
+    const hasExistingGeneratedImages = storyboard.sceneImageData.size > 0
+    if (
+      scenesNeedingImages.length > 0 &&
+      scenesNeedingImages.length === structure.scenes.length &&
+      !hasExistingGeneratedImages
+    ) {
       imageGenTriggeredRef.current = false
     }
     if (imageGenTriggeredRef.current) return
@@ -1138,6 +1146,12 @@ export function useChatInterfaceData({
     // allUploadsPromise resolves when in-flight uploads finish.
     const { alreadyDone, allUploadsPromise, hasInFlight } = fileUpload.collectAndClear()
     const hasSceneRefs = storyboard.sceneReferences.length > 0
+
+    // Show per-scene shimmer immediately on referenced scenes while AI processes
+    if (hasSceneRefs) {
+      storyboard.markScenesGenerating(storyboard.sceneReferences.map((s) => s.sceneNumber))
+    }
+
     storyboard.setSceneReferences([])
 
     if (!hasInFlight) {
@@ -1160,6 +1174,7 @@ export function useChatInterfaceData({
     fileUpload.collectAndClear,
     storyboard.sceneReferences,
     storyboard.setSceneReferences,
+    storyboard.markScenesGenerating,
   ])
 
   const handleDiscard = useCallback(() => {
@@ -1359,6 +1374,8 @@ export function useChatInterfaceData({
     storyboardScenes: storyboard.storyboardScenes,
     structureType: storyboard.structureType,
     structurePanelVisible: storyboard.structurePanelVisible,
+    isFullRegeneration: storyboard.isFullRegeneration,
+    setIsFullRegeneration: storyboard.setIsFullRegeneration,
     changedScenes: storyboard.changedScenes,
     sceneImageData: storyboard.sceneImageData,
     websiteGlobalStyles: storyboard.globalStyles,

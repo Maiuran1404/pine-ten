@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useMemo, useCallback } from 'react'
+import { useRef, useMemo, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { Image as ImageIcon, Trash2, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -234,6 +234,8 @@ export function ChatInterface({
     storyboardScenes,
     structureType,
     structurePanelVisible,
+    isFullRegeneration,
+    setIsFullRegeneration,
     changedScenes,
     sceneImageData,
     websiteGlobalStyles,
@@ -438,6 +440,14 @@ export function ChatInterface({
     ]
   )
 
+  // Safety: clear full-regeneration overlay when chat loading finishes,
+  // in case the AI didn't output storyboard data (parse failure).
+  useEffect(() => {
+    if (!isLoading && isFullRegeneration) {
+      setIsFullRegeneration(false)
+    }
+  }, [isLoading, isFullRegeneration, setIsFullRegeneration])
+
   // Build structure panel props as a single passthrough object
   const structurePanelProps = useMemo(
     () => ({
@@ -446,7 +456,7 @@ export function ChatInterface({
       briefingStage: briefingStage ?? undefined,
       sceneImageData,
       isChatLoading: isLoading,
-      isRegenerating: isLoading,
+      isRegenerating: isFullRegeneration,
       changedScenes,
       onUndo: undo,
       onRedo: redo,

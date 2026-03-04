@@ -94,6 +94,10 @@ export function useStoryboard({
   // Storyboard review gate — prevents auto-advance past ELABORATE until user approves
   const [storyboardReviewed, setStoryboardReviewed] = useState(false)
 
+  // Full storyboard regeneration flag — true only when user clicks "Regenerate" button.
+  // Scene feedback and other chat loading should NOT trigger the full skeleton overlay.
+  const [isFullRegeneration, setIsFullRegeneration] = useState(false)
+
   // Visual diff tracking (U1): track which scenes changed after a revision
   // Extended (#21): Map<sceneNumber, FieldChange[]> for field-level diffs
   const [changedScenes, setChangedScenes] = useState<
@@ -414,27 +418,42 @@ export function useStoryboard({
     [pushHistory, onStructureChange]
   )
 
+  // Mark specific scenes as 'generating' immediately — shows shimmer
+  // on those scenes while the AI processes the request.
+  const markScenesGenerating = useCallback((sceneNumbers: number[]) => {
+    setImageGenerationProgress((prev) => {
+      const next = new Map(prev)
+      for (const n of sceneNumbers) {
+        next.set(n, 'generating')
+      }
+      return next
+    })
+  }, [])
+
   // Trigger AI regeneration of whole storyboard
   const handleRegenerateStoryboard = useCallback(() => {
+    setIsFullRegeneration(true)
     handleSendOption('Regenerate the entire storyboard based on everything we have discussed')
   }, [handleSendOption])
 
   // Trigger AI regeneration of a specific scene
   const handleRegenerateScene = useCallback(
     (scene: { sceneNumber: number; title: string }) => {
+      markScenesGenerating([scene.sceneNumber])
       handleSendOption(
         `Regenerate Scene ${scene.sceneNumber}: "${scene.title}" — keep the overall story arc`
       )
     },
-    [handleSendOption]
+    [handleSendOption, markScenesGenerating]
   )
 
   // Trigger AI regeneration of a specific field on a scene
   const handleRegenerateField = useCallback(
     (scene: { sceneNumber: number; title: string }, field: string) => {
+      markScenesGenerating([scene.sceneNumber])
       handleSendOption(`Rewrite the ${field} for Scene ${scene.sceneNumber}: "${scene.title}"`)
     },
-    [handleSendOption]
+    [handleSendOption, markScenesGenerating]
   )
 
   // Replace a scene's image with a new URL (#11)
@@ -470,9 +489,9 @@ export function useStoryboard({
   // Update structure data from API response
   const updateStructureData = useCallback((data: StructureData) => {
     // Visual diff detection (U1 + #21): compare old vs new scenes with field-level diffs
+    const changed = new Map<number, { field: string; oldValue: string; newValue: string }[]>()
     if (data.type === 'storyboard' && previousScenesRef.current?.type === 'storyboard') {
       const oldScenes = previousScenesRef.current.scenes
-      const changed = new Map<number, { field: string; oldValue: string; newValue: string }[]>()
       const diffFields = [
         'title',
         'description',
@@ -509,6 +528,8 @@ export function useStoryboard({
     // Preserve client-side image URLs when the server sends back scenes without them.
     // The AI response never includes resolvedImageUrl (that's set client-side after generation),
     // so without this merge, every AI response would wipe images and re-trigger generation shimmer.
+    // Changed scenes keep their old image as a placeholder — the auto-regenerate effect in
+    // useChatInterfaceData will trigger per-scene image regeneration with shimmer overlay.
     let mergedData = data
     if (data.type === 'storyboard' && previousScenesRef.current?.type === 'storyboard') {
       const oldScenes = previousScenesRef.current.scenes
@@ -534,6 +555,8 @@ export function useStoryboard({
       latestStoryboardRef.current = mergedData
       // sceneImageData is now derived via useMemo from storyboardScenes — no hydration needed
     }
+    // Clear full-regeneration overlay now that new data has arrived
+    setIsFullRegeneration(false)
   }, [])
 
   // Update video narrative from API response
@@ -868,10 +891,13 @@ export function useStoryboard({
     handleSectionEdit,
     handleSceneEdit,
     handleSceneReorder,
+    isFullRegeneration,
+    setIsFullRegeneration,
     handleRegenerateStoryboard,
     handleRegenerateScene,
     handleRegenerateField,
     handleSceneImageReplace,
+    markScenesGenerating,
     updateStructureData,
     undo,
     redo,
