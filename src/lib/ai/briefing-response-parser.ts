@@ -415,7 +415,7 @@ export function extractMarkerContent(text: string, marker: MarkerType): string |
   if (openIdx === -1) return null
 
   const contentStart = openIdx + openTag.length
-  const closeIdx = text.indexOf(closeTag, contentStart)
+  const closeIdx = text.lastIndexOf(closeTag)
 
   if (closeIdx === -1) {
     // Marker opened but never closed — try to extract anyway
@@ -494,11 +494,14 @@ function replaceSingleQuotes(input: string): string {
   for (let i = 0; i < chars.length; i++) {
     const char = chars[i]
     const prevChar = i > 0 ? chars[i - 1] : ''
+    // Track double-backslash: \\\" means the backslash is escaped, so the quote is NOT escaped
+    const prevPrevChar = i > 1 ? chars[i - 2] : ''
+    const isEscaped = prevChar === '\\' && prevPrevChar !== '\\'
 
-    if (char === '"' && prevChar !== '\\' && !inSingleQuote) {
+    if (char === '"' && !isEscaped && !inSingleQuote) {
       inDoubleQuote = !inDoubleQuote
       result.push(char)
-    } else if (char === "'" && prevChar !== '\\' && !inDoubleQuote) {
+    } else if (char === "'" && !isEscaped && !inDoubleQuote) {
       inSingleQuote = !inSingleQuote
       result.push('"')
     } else {
@@ -585,7 +588,8 @@ function extractSceneFields(s: Record<string, unknown>, index: number) {
       const raw = getString(s, 'duration') ?? ''
       if (!raw) return '5s'
       const seconds = parseInt(raw.match(/(\d+)/)?.[1] || '0', 10)
-      return seconds >= 1 ? raw : '5s'
+      const clamped = Math.min(Math.max(seconds, 1), 300) // 1s-5min
+      return `${clamped}s`
     })(),
     visualNote: visualNote ?? '',
     voiceover,

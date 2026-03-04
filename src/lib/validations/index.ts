@@ -44,7 +44,7 @@ export const createTaskSchema = z.object({
       z.object({
         id: z.string(),
         type: z.enum(['style', 'color', 'image', 'upload']),
-        imageUrl: z.string(),
+        imageUrl: z.string().min(1),
         name: z.string(),
         metadata: z
           .object({
@@ -59,7 +59,37 @@ export const createTaskSchema = z.object({
     .optional()
     .default([]),
   // Structure data (storyboard, layout, calendar, design spec)
-  structureData: z.record(z.string(), z.unknown()).optional().nullable(),
+  structureData: z
+    .discriminatedUnion('type', [
+      z.object({
+        type: z.literal('storyboard'),
+        scenes: z.array(
+          z
+            .object({
+              sceneNumber: z.number(),
+              title: z.string(),
+              description: z.string(),
+              duration: z.string(),
+              visualNote: z.string(),
+            })
+            .passthrough()
+        ),
+      }),
+      z.object({
+        type: z.literal('layout'),
+        sections: z.array(z.object({ title: z.string(), type: z.string() }).passthrough()),
+      }),
+      z.object({
+        type: z.literal('calendar'),
+        outline: z.object({}).passthrough(),
+      }),
+      z.object({
+        type: z.literal('single_design'),
+        specification: z.object({}).passthrough(),
+      }),
+    ])
+    .optional()
+    .nullable(),
   // Brief integration
   briefId: z.string().uuid().optional().nullable(),
   briefData: z.record(z.string(), z.unknown()).optional().nullable(),

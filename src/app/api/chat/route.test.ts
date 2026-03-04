@@ -257,26 +257,19 @@ describe('POST /api/chat', () => {
     expect(response.status).toBe(200)
   })
 
-  it('returns quick options from AI response', async () => {
+  it('does not return quick options (derived from state machine only)', async () => {
     setupAuth()
     mockChat.mockResolvedValue({
       content: 'What kind of design?',
       styleReferences: [],
       deliverableStyleMarker: undefined,
-      quickOptions: {
-        question: 'What kind of design?',
-        options: ['Logo', 'Banner', 'Social Post'],
-      },
     })
 
     const response = await POST(makeRequest(validBody) as never)
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.quickOptions).toEqual({
-      question: 'What kind of design?',
-      options: ['Logo', 'Banner', 'Social Post'],
-    })
+    expect(data.quickOptions).toBeUndefined()
   })
 
   it('accepts briefing state in request body', async () => {

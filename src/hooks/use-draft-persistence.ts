@@ -39,7 +39,8 @@ const ALLOWED_IMAGE_HOSTS = [
   'getcrafted.ai',
 ]
 
-function sanitizeRestoredMessages(messages: Array<Record<string, unknown>>): void {
+function sanitizeRestoredMessages(messages: Array<Record<string, unknown>>): boolean {
+  let sanitized = false
   for (const msg of messages) {
     const sd = msg.structureData as
       | { type?: string; scenes?: Array<{ resolvedImageUrl?: string }> }
@@ -54,15 +55,18 @@ function sanitizeRestoredMessages(messages: Array<Record<string, unknown>>): voi
               ALLOWED_IMAGE_HOSTS.some((host) => url.hostname.endsWith(host))
             if (!isAllowed) {
               scene.resolvedImageUrl = undefined
+              sanitized = true
             }
           } catch {
             // Invalid URL — strip it
             scene.resolvedImageUrl = undefined
+            sanitized = true
           }
         }
       }
     }
   }
+  return sanitized
 }
 
 interface UseDraftPersistenceOptions {
@@ -159,8 +163,11 @@ export function useDraftPersistence({
         timestamp: new Date(m.timestamp),
       }))
       // Sanitize restored scene image URLs to prevent crash loops (BUG-9)
-      sanitizeRestoredMessages(loadedMessages)
+      const hadSanitizedImages = sanitizeRestoredMessages(loadedMessages)
       setMessages(loadedMessages)
+      if (hadSanitizedImages) {
+        toast.info('Some external images were removed for security')
+      }
       setSelectedStyles(draft.selectedStyles)
       setPendingTask(draft.pendingTask)
       setCompletedTypingIds(new Set(loadedMessages.map((m) => m.id)))

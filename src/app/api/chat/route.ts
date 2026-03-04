@@ -9,15 +9,12 @@ import { withRateLimit } from '@/lib/rate-limit'
 import { config } from '@/lib/config'
 import { requireAuth } from '@/lib/require-auth'
 import { withErrorHandling } from '@/lib/errors'
+import { logger } from '@/lib/logger'
 import { chatRouteSchema } from '@/lib/validations'
 // Stock image search removed — DALL-E generation now handled client-side after INSPIRATION stage
 import { buildPipelineContext } from '@/lib/ai/chat-pipeline/pre-process'
 import { runPostAiPipeline } from '@/lib/ai/chat-pipeline/post-process'
-import {
-  deduplicateResponse,
-  stripMarkers,
-  enrichQuickOptions,
-} from '@/lib/ai/chat-pipeline/response-builder'
+import { deduplicateResponse, stripMarkers } from '@/lib/ai/chat-pipeline/response-builder'
 import { handleStyleShortcut, processStylesAndVideo } from '@/lib/ai/chat-pipeline/style-processing'
 import type { PostProcessResult } from '@/lib/ai/chat-pipeline/types'
 
@@ -51,12 +48,12 @@ async function handler(request: NextRequest) {
       // - Style reference lookup
       // - Style + video processing
       // - Post-AI pipeline (marker parsing, retry, stage derivation)
-      // - Quick options enrichment
-      const [styleReferences, stylesAndVideo, postResult, quickOptions] = await Promise.all([
+      const [styleReferences, stylesAndVideo, postResult] = await Promise.all([
         // Get style reference images if categories were mentioned
-        response.styleReferences && response.styleReferences.length > 0
+        (response.styleReferences && response.styleReferences.length > 0
           ? getStyleReferencesByCategory(response.styleReferences)
-          : Promise.resolve(undefined),
+          : Promise.resolve(undefined)
+        ).catch(() => undefined),
 
         // Style + video processing (deliverable styles, auto-detect, video references)
         processStylesAndVideo({
@@ -73,10 +70,17 @@ async function handler(request: NextRequest) {
           lastUserMessage: ctx.body.messages[ctx.body.messages.length - 1]?.content || '',
           confirmedFields: ctx.chatContext.confirmedFields,
           brief: ctx.body.brief,
+        }).catch((err) => {
+          logger.error(err, 'Style/video processing failed')
+          return {
+            deliverableStyles: undefined,
+            deliverableStyleMarker: undefined,
+            videoReferences: undefined,
+          }
         }),
 
         // Post-AI pipeline: marker parsing, retry, stage derivation
-        ctx.body.briefingState
+        (ctx.body.briefingState
           ? runPostAiPipeline({
               responseContent: response.content,
               messages: ctx.body.messages,
@@ -87,10 +91,11 @@ async function handler(request: NextRequest) {
               chatContext: ctx.chatContext,
               userId: session.user.id,
             })
-          : Promise.resolve({} as PostProcessResult),
-
-        // Enrich style-direction quick options with representative images
-        enrichQuickOptions(response.quickOptions),
+          : Promise.resolve({} as PostProcessResult)
+        ).catch((err) => {
+          logger.error(err, 'Post-AI pipeline failed')
+          return {} as PostProcessResult
+        }),
       ])
 
       const { deliverableStyles, deliverableStyleMarker, videoReferences } = stylesAndVideo
@@ -109,7 +114,6 @@ async function handler(request: NextRequest) {
         deliverableStyles,
         deliverableStyleMarker,
         selectedStyles: ctx.body.selectedStyles,
-        quickOptions,
         videoReferences,
         structureData: postResult.structureData,
         strategicReviewData: postResult.strategicReviewData,

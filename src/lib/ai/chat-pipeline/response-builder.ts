@@ -1,11 +1,9 @@
 /**
  * Response building utilities for the chat pipeline.
- * Handles marker stripping, deduplication, and quick option enrichment.
+ * Handles marker stripping and deduplication.
  */
 import 'server-only'
 
-import { logger } from '@/lib/logger'
-import { searchPexelsForScene } from '@/lib/ai/pexels-image-search'
 import type { StructureData } from '@/lib/ai/briefing-state-machine'
 
 /** Remove consecutive duplicate sentences and phrases from AI response */
@@ -114,49 +112,5 @@ export function stripMarkers(
   return cleanContent
 }
 
-/** Enrich style-direction quick options with representative Pexels images */
-export async function enrichQuickOptions(
-  quickOptions: { question: string; options: unknown[] } | undefined
-): Promise<{ question: string; options: unknown[] } | undefined> {
-  if (!quickOptions) return quickOptions
-
-  const isStyleDirection =
-    quickOptions.options.length >= 2 &&
-    (() => {
-      const q = (quickOptions.question || '').toLowerCase()
-      return /style|visual direction|aesthetic|look and feel|inspiration|mood|vibe/.test(q)
-    })()
-
-  if (!isStyleDirection) return quickOptions
-
-  try {
-    const enriched = await Promise.all(
-      quickOptions.options.map(async (option) => {
-        const label = typeof option === 'string' ? option : (option as { label: string }).label
-        if (/^(that works|skip|yes|no|sure|go ahead|sounds good)/i.test(label)) {
-          return option
-        }
-        const query = `${label} design style aesthetic`
-        const photos = await searchPexelsForScene(query, 1)
-        if (photos.length > 0) {
-          return { label, imageUrl: photos[0].url }
-        }
-        return option
-      })
-    )
-    const hasImages = enriched.some(
-      (o) =>
-        typeof o === 'object' &&
-        o !== null &&
-        'imageUrl' in o &&
-        (o as { imageUrl?: string }).imageUrl
-    )
-    if (hasImages) {
-      return { question: quickOptions.question, options: enriched }
-    }
-  } catch (enrichErr) {
-    logger.debug({ err: enrichErr }, 'Quick option image enrichment failed — using text-only')
-  }
-
-  return quickOptions
-}
+// enrichQuickOptions removed — quick options are now derived exclusively
+// from the briefing state machine (single source of truth).

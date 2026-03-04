@@ -143,6 +143,10 @@ export function useChatInterfaceData({
 
   // Apply brand data to brief when brand data becomes available
   const brandDataAppliedRef = useRef(false)
+  // Reset when draftId changes so brand data re-applies for new drafts
+  useEffect(() => {
+    brandDataAppliedRef.current = false
+  }, [draftId])
   useEffect(() => {
     if (brandDataAppliedRef.current) return
     if (!brandColors.length && !brandAudiences.length) return
@@ -364,6 +368,7 @@ export function useChatInterfaceData({
       (action) => setMessagesRef.current(action),
       []
     ),
+    onStructureChange: updateStructure,
   })
 
   // ─── Website inspiration (only active for website projects) ──
@@ -594,28 +599,15 @@ export function useChatInterfaceData({
     return estimate
   }, [_briefingState?.deliverableCategory])
 
-  // ─── Quick options ──────────────────────────────────────────
+  // ─── Quick options (state machine is the single source) ─────
   const resolvedQuickOptions = useMemo(() => {
     if (chatMessages.isLoading || task.pendingTask || task.taskSubmitted) return null
-    // Note: INSPIRATION suppression removed — chat-input-area.tsx already hides chips
-    // when inline style/video pickers are present (hasInlineStylePicker check).
-    // The redundant guard here caused a race with async briefingState sync.
     const msgs = chatMessages.messages
     // Dismiss chips after user answers (BUG-7)
     if (msgs.length > 0 && msgs[msgs.length - 1].role === 'user') return null
 
-    // State machine quick options take priority (deterministic, stage-appropriate)
     if (stateMachineQuickOptions && stateMachineQuickOptions.options.length > 0) {
       return stateMachineQuickOptions
-    }
-
-    // Fallback: AI-returned quick options from last assistant message
-    const lastAssistantMessage = [...msgs].reverse().find((m) => m.role === 'assistant')
-    if (
-      lastAssistantMessage?.quickOptions &&
-      lastAssistantMessage.quickOptions.options.length > 0
-    ) {
-      return lastAssistantMessage.quickOptions
     }
     return null
   }, [
@@ -1018,16 +1010,8 @@ export function useChatInterfaceData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyboard.changedScenes])
 
-  // ─── Sync storyboard edits to briefing state for draft persistence ──
-  const structureSyncRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-  useEffect(() => {
-    if (!storyboard.storyboardScenes) return
-    clearTimeout(structureSyncRef.current)
-    structureSyncRef.current = setTimeout(() => {
-      updateStructure(storyboard.storyboardScenes)
-    }, 500)
-    return () => clearTimeout(structureSyncRef.current)
-  }, [storyboard.storyboardScenes, updateStructure])
+  // Storyboard edits now sync immediately via onStructureChange callback
+  // (passed to useStoryboard), removing the 500ms debounce race condition.
 
   // ─── Detect "ready to execute" patterns ─────────────────────
   useEffect(() => {

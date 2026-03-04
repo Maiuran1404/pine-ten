@@ -4,6 +4,14 @@ import { deliverableStyleReferences } from '@/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { DeliverableType, StyleAxis } from '@/lib/constants/reference-libraries'
 
+/** Prefer uploaded reference images over generated preview */
+export function resolveStyleDisplayImage(style: {
+  imageUrl: string
+  styleReferenceImages?: string[] | null
+}): string {
+  return style.styleReferenceImages?.[0] || style.imageUrl
+}
+
 /**
  * Get initial diverse styles for a deliverable type
  * Returns one style per styleAxis for variety
@@ -16,6 +24,7 @@ export async function getInitialDeliverableStyles(deliverableType: DeliverableTy
       name: deliverableStyleReferences.name,
       description: deliverableStyleReferences.description,
       imageUrl: deliverableStyleReferences.imageUrl,
+      styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
       deliverableType: deliverableStyleReferences.deliverableType,
       styleAxis: deliverableStyleReferences.styleAxis,
       subStyle: deliverableStyleReferences.subStyle,
@@ -37,7 +46,12 @@ export async function getInitialDeliverableStyles(deliverableType: DeliverableTy
     )
 
   // Sort by featuredOrder so Premium Cinematic (featuredOrder=1) comes first
-  return styles.sort((a, b) => a.featuredOrder - b.featuredOrder)
+  return styles
+    .sort((a, b) => a.featuredOrder - b.featuredOrder)
+    .map(({ styleReferenceImages, ...rest }) => ({
+      ...rest,
+      imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+    }))
 }
 
 /**
@@ -55,6 +69,7 @@ export async function getMoreOfStyle(
       name: deliverableStyleReferences.name,
       description: deliverableStyleReferences.description,
       imageUrl: deliverableStyleReferences.imageUrl,
+      styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
       deliverableType: deliverableStyleReferences.deliverableType,
       styleAxis: deliverableStyleReferences.styleAxis,
       subStyle: deliverableStyleReferences.subStyle,
@@ -72,7 +87,10 @@ export async function getMoreOfStyle(
     .limit(limit)
     .offset(offset)
 
-  return styles
+  return styles.map(({ styleReferenceImages, ...rest }) => ({
+    ...rest,
+    imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+  }))
 }
 
 /**
@@ -90,6 +108,7 @@ export async function getDifferentStyles(
       name: deliverableStyleReferences.name,
       description: deliverableStyleReferences.description,
       imageUrl: deliverableStyleReferences.imageUrl,
+      styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
       deliverableType: deliverableStyleReferences.deliverableType,
       styleAxis: deliverableStyleReferences.styleAxis,
       subStyle: deliverableStyleReferences.subStyle,
@@ -116,7 +135,10 @@ export async function getDifferentStyles(
     )
     .limit(limit)
 
-  return styles
+  return styles.map(({ styleReferenceImages, ...rest }) => ({
+    ...rest,
+    imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+  }))
 }
 
 /**

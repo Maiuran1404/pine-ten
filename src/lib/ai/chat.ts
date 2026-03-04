@@ -86,22 +86,9 @@ Include search terms that describe the visual style to find relevant design refe
 Without this exact marker on its own line, no styles will appear to the user.
 Example: [DELIVERABLE_STYLES: instagram_post | search: fintech minimal dark UI design]
 
-QUICK OPTIONS FOR CONFIRMATION:
-When making a recommendation, provide confirmation options.
-Format: [QUICK_OPTIONS]{"question": "Your question summary", "options": ["Option 1", "Option 2", "Option 3"]}[/QUICK_OPTIONS]
-
-Examples:
-- After recommending platform: ["That works", "Actually prefer Instagram", "Let's do both"]
-- After recommending audience: ["Exactly right", "Broader audience", "More specific niche"]
-- After showing styles: ["I like the first one", "Show me more options", "Something different"]
-
 WHEN USER SELECTS A STYLE:
 Acknowledge briefly, then state your recommendations for the remaining details.
 Example: "The Dark Tech style is perfect for your launch. I'll design this for Instagram Reels targeting startup founders, emphasizing speed and efficiency. Ready to proceed, or any tweaks?"
-[QUICK_OPTIONS]{"question": "Ready?", "options": ["Let's do it", "Change the platform", "Different audience"]}[/QUICK_OPTIONS]
-
-CRITICAL: EVERY SINGLE RESPONSE MUST END WITH [QUICK_OPTIONS].
-There are NO exceptions. Even after style selection, after confirmations, after providing information - ALWAYS end with quick options that give the user a clear next step.
 
 WHEN TO SHOW STYLES (use [DELIVERABLE_STYLES: type]):
 - User mentions ANY content type (video, post, carousel, ad, logo, etc.)
@@ -128,7 +115,6 @@ State your creative direction confidently, show styles with search context.
 Example:
 "For a cinematic product introduction, I'd go with bold, dark visuals that match your tech brand. Here are some directions:"
 [DELIVERABLE_STYLES: instagram_reel | search: cinematic tech product dark bold visuals]
-[QUICK_OPTIONS]{"question": "Style preference?", "options": ["I like the first one", "Show me more", "Something brighter"]}[/QUICK_OPTIONS]
 
 RULES:
 - 20-40 words max before the marker
@@ -136,7 +122,6 @@ RULES:
 - Be decisive - make recommendations, don't ask for basic info you can infer
 - Use brand data (industry, audience, platform) to make smart assumptions
 - Ask for confirmation, not information
-- ALWAYS include [QUICK_OPTIONS] with confirmation-style options
 - EVERY response MUST end with a question that leads into the next step. Never just state information and stop. The question should present a specific choice, not seek validation.`
 
 function getSystemPrompt(): string {
@@ -153,10 +138,7 @@ function getSystemPrompt(): string {
 TODAY: ${todayStr}
 
 IF THE REQUEST IS COMPLETELY UNCLEAR:
-"What are we making today?"
-[QUICK_OPTIONS]
-{"question": "Content type?", "options": ["Social content", "Video ad", "Branding", "Something else"]}
-[/QUICK_OPTIONS]
+"What are we making today? Social content, video ad, branding, or something else?"
 
 REMEMBER - YOU HAVE BRAND CONTEXT:
 - You know their industry, audience, and recommended platforms
@@ -170,7 +152,7 @@ ABSOLUTE REQUIREMENTS:
 3. 20-40 words max, no exclamation marks
 4. Make recommendations based on brand data - don't ask questions you can answer yourself
 5. Use confirmation questions ("Sound good?" "Any changes?") instead of open questions ("What platform?")
-6. EVERY response MUST include [QUICK_OPTIONS] with 2-3 clear next-step actions. Never leave the user without a CTA.`
+6. End every response with a clear question or recommendation that gives the user a next step.`
 }
 
 export interface ChatMessage {
@@ -380,7 +362,7 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
     deliverableStyleMarker = {
       type: 'initial',
       deliverableType: deliverableMatch[1].trim(),
-      searchTerms: searchTermsRaw ? searchTermsRaw.split(/\s+/) : undefined,
+      searchTerms: searchTermsRaw ? [searchTermsRaw.trim()] : undefined,
     }
   }
 
@@ -430,7 +412,11 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
   if (assetRequestMatch) {
     try {
       const parsed = JSON.parse(assetRequestMatch[1])
-      if (parsed.prompt && Array.isArray(parsed.acceptTypes)) {
+      if (
+        typeof parsed.prompt === 'string' &&
+        parsed.prompt.length > 0 &&
+        Array.isArray(parsed.acceptTypes)
+      ) {
         assetRequest = {
           prompt: parsed.prompt,
           acceptTypes: parsed.acceptTypes,
@@ -438,35 +424,12 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
         }
       }
     } catch {
-      // Malformed JSON — skip asset request
+      logger.debug({ raw: assetRequestMatch[1] }, 'Malformed ASSET_REQUEST JSON')
     }
   }
 
-  // Parse quick options from AI output: [QUICK_OPTIONS]{"question": "...", "options": [...]}[/QUICK_OPTIONS]
-  let quickOptions:
-    | { question: string; options: (string | { label: string; imageUrl?: string })[] }
-    | undefined = undefined
-  const quickOptionsMatch = content.match(/\[QUICK_OPTIONS\]\s*([\s\S]*?)\s*\[\/QUICK_OPTIONS\]/)
-  if (quickOptionsMatch) {
-    try {
-      const parsed = JSON.parse(quickOptionsMatch[1])
-      if (parsed.options && Array.isArray(parsed.options) && parsed.options.length > 0) {
-        quickOptions = {
-          question: parsed.question || '',
-          options: parsed.options.filter(
-            (o: unknown) =>
-              (typeof o === 'string' && o.trim()) ||
-              (typeof o === 'object' &&
-                o !== null &&
-                'label' in o &&
-                typeof (o as { label: unknown }).label === 'string')
-          ),
-        }
-      }
-    } catch {
-      // Malformed JSON — skip quick options
-    }
-  }
+  // Quick options are now derived exclusively from the briefing state machine.
+  // AI-generated [QUICK_OPTIONS] markers are no longer parsed or returned.
 
   // ========================================================================
   // Content cleaning — strip markers from raw AI output
@@ -553,7 +516,6 @@ ${[...new Set(styles.map((s) => s.category))].join(', ')}`
   return {
     content: cleanContent,
     styleReferences: mentionedStyles,
-    quickOptions,
     deliverableStyleMarker,
     assetRequest,
   }

@@ -6,6 +6,7 @@ import type { DeliverableType, StyleAxis } from '@/lib/constants/reference-libra
 import { analyzeColorBucketFromHex, type ColorBucket } from '@/lib/constants/reference-libraries'
 import { getHistoryBoostScores } from './selection-history'
 import { extractStyleDNA, type StyleDNA } from './style-dna'
+import { resolveStyleDisplayImage } from './deliverable-styles'
 import { logger } from '@/lib/logger'
 
 /**
@@ -495,33 +496,39 @@ export async function getBrandAwareStyles(
   const company = user?.company
 
   // Get all active styles for this deliverable type
-  const styles = await db
-    .select({
-      id: deliverableStyleReferences.id,
-      name: deliverableStyleReferences.name,
-      description: deliverableStyleReferences.description,
-      imageUrl: deliverableStyleReferences.imageUrl,
-      deliverableType: deliverableStyleReferences.deliverableType,
-      styleAxis: deliverableStyleReferences.styleAxis,
-      subStyle: deliverableStyleReferences.subStyle,
-      semanticTags: deliverableStyleReferences.semanticTags,
-      featuredOrder: deliverableStyleReferences.featuredOrder,
-      displayOrder: deliverableStyleReferences.displayOrder,
-      usageCount: deliverableStyleReferences.usageCount,
-      createdAt: deliverableStyleReferences.createdAt,
-      // Additional fields for context matching
-      industries: deliverableStyleReferences.industries,
-      moodKeywords: deliverableStyleReferences.moodKeywords,
-      targetAudience: deliverableStyleReferences.targetAudience,
-    })
-    .from(deliverableStyleReferences)
-    .where(
-      and(
-        eq(deliverableStyleReferences.deliverableType, deliverableType),
-        eq(deliverableStyleReferences.isActive, true)
+  const styles = (
+    await db
+      .select({
+        id: deliverableStyleReferences.id,
+        name: deliverableStyleReferences.name,
+        description: deliverableStyleReferences.description,
+        imageUrl: deliverableStyleReferences.imageUrl,
+        styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
+        deliverableType: deliverableStyleReferences.deliverableType,
+        styleAxis: deliverableStyleReferences.styleAxis,
+        subStyle: deliverableStyleReferences.subStyle,
+        semanticTags: deliverableStyleReferences.semanticTags,
+        featuredOrder: deliverableStyleReferences.featuredOrder,
+        displayOrder: deliverableStyleReferences.displayOrder,
+        usageCount: deliverableStyleReferences.usageCount,
+        createdAt: deliverableStyleReferences.createdAt,
+        // Additional fields for context matching
+        industries: deliverableStyleReferences.industries,
+        moodKeywords: deliverableStyleReferences.moodKeywords,
+        targetAudience: deliverableStyleReferences.targetAudience,
+      })
+      .from(deliverableStyleReferences)
+      .where(
+        and(
+          eq(deliverableStyleReferences.deliverableType, deliverableType),
+          eq(deliverableStyleReferences.isActive, true)
+        )
       )
-    )
-    .orderBy(deliverableStyleReferences.featuredOrder, deliverableStyleReferences.displayOrder)
+      .orderBy(deliverableStyleReferences.featuredOrder, deliverableStyleReferences.displayOrder)
+  ).map(({ styleReferenceImages, ...rest }) => ({
+    ...rest,
+    imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+  }))
 
   // If no styles found, try fallback deliverable types
   let _actualDeliverableType = deliverableType
@@ -531,35 +538,41 @@ export async function getBrandAwareStyles(
     const fallbacks = DELIVERABLE_TYPE_FALLBACKS[deliverableType]
     if (fallbacks) {
       for (const fallbackType of fallbacks) {
-        const fallbackStyles = await db
-          .select({
-            id: deliverableStyleReferences.id,
-            name: deliverableStyleReferences.name,
-            description: deliverableStyleReferences.description,
-            imageUrl: deliverableStyleReferences.imageUrl,
-            deliverableType: deliverableStyleReferences.deliverableType,
-            styleAxis: deliverableStyleReferences.styleAxis,
-            subStyle: deliverableStyleReferences.subStyle,
-            semanticTags: deliverableStyleReferences.semanticTags,
-            featuredOrder: deliverableStyleReferences.featuredOrder,
-            displayOrder: deliverableStyleReferences.displayOrder,
-            usageCount: deliverableStyleReferences.usageCount,
-            createdAt: deliverableStyleReferences.createdAt,
-            industries: deliverableStyleReferences.industries,
-            moodKeywords: deliverableStyleReferences.moodKeywords,
-            targetAudience: deliverableStyleReferences.targetAudience,
-          })
-          .from(deliverableStyleReferences)
-          .where(
-            and(
-              eq(deliverableStyleReferences.deliverableType, fallbackType),
-              eq(deliverableStyleReferences.isActive, true)
+        const fallbackStyles = (
+          await db
+            .select({
+              id: deliverableStyleReferences.id,
+              name: deliverableStyleReferences.name,
+              description: deliverableStyleReferences.description,
+              imageUrl: deliverableStyleReferences.imageUrl,
+              styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
+              deliverableType: deliverableStyleReferences.deliverableType,
+              styleAxis: deliverableStyleReferences.styleAxis,
+              subStyle: deliverableStyleReferences.subStyle,
+              semanticTags: deliverableStyleReferences.semanticTags,
+              featuredOrder: deliverableStyleReferences.featuredOrder,
+              displayOrder: deliverableStyleReferences.displayOrder,
+              usageCount: deliverableStyleReferences.usageCount,
+              createdAt: deliverableStyleReferences.createdAt,
+              industries: deliverableStyleReferences.industries,
+              moodKeywords: deliverableStyleReferences.moodKeywords,
+              targetAudience: deliverableStyleReferences.targetAudience,
+            })
+            .from(deliverableStyleReferences)
+            .where(
+              and(
+                eq(deliverableStyleReferences.deliverableType, fallbackType),
+                eq(deliverableStyleReferences.isActive, true)
+              )
             )
-          )
-          .orderBy(
-            deliverableStyleReferences.featuredOrder,
-            deliverableStyleReferences.displayOrder
-          )
+            .orderBy(
+              deliverableStyleReferences.featuredOrder,
+              deliverableStyleReferences.displayOrder
+            )
+        ).map(({ styleReferenceImages, ...rest }) => ({
+          ...rest,
+          imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+        }))
 
         if (fallbackStyles.length > 0) {
           finalStyles = fallbackStyles
@@ -860,12 +873,20 @@ export async function getBrandAwareStylesOfAxis(
 
   const company = user?.company
 
-  // Helper to score styles
+  // Helper to score styles and resolve uploaded reference images
   const scoreStyles = (
     styles: typeof rawStyles,
     axis: StyleAxis,
     reason: string
   ): BrandAwareStyle[] => {
+    const resolveImage = (style: (typeof styles)[number]) => {
+      const { styleReferenceImages, ...rest } = style
+      return {
+        ...rest,
+        imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+      }
+    }
+
     if (company) {
       const colorProfile = analyzeBrandColorTemperature({
         primaryColor: company.primaryColor,
@@ -875,7 +896,7 @@ export async function getBrandAwareStylesOfAxis(
       })
 
       return styles.map((style) => ({
-        ...style,
+        ...resolveImage(style),
         semanticTags: style.semanticTags || [],
         brandMatchScore: calculateStyleScore(axis, colorProfile, company.industry),
         matchReason: reason,
@@ -883,7 +904,7 @@ export async function getBrandAwareStylesOfAxis(
     }
 
     return styles.map((style) => ({
-      ...style,
+      ...resolveImage(style),
       semanticTags: style.semanticTags || [],
       brandMatchScore: 50,
       matchReason: reason,
@@ -897,6 +918,7 @@ export async function getBrandAwareStylesOfAxis(
       name: deliverableStyleReferences.name,
       description: deliverableStyleReferences.description,
       imageUrl: deliverableStyleReferences.imageUrl,
+      styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
       deliverableType: deliverableStyleReferences.deliverableType,
       styleAxis: deliverableStyleReferences.styleAxis,
       subStyle: deliverableStyleReferences.subStyle,
@@ -930,6 +952,7 @@ export async function getBrandAwareStylesOfAxis(
         name: deliverableStyleReferences.name,
         description: deliverableStyleReferences.description,
         imageUrl: deliverableStyleReferences.imageUrl,
+        styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
         deliverableType: deliverableStyleReferences.deliverableType,
         styleAxis: deliverableStyleReferences.styleAxis,
         subStyle: deliverableStyleReferences.subStyle,
@@ -961,6 +984,7 @@ export async function getBrandAwareStylesOfAxis(
           name: deliverableStyleReferences.name,
           description: deliverableStyleReferences.description,
           imageUrl: deliverableStyleReferences.imageUrl,
+          styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
           deliverableType: deliverableStyleReferences.deliverableType,
           styleAxis: deliverableStyleReferences.styleAxis,
           subStyle: deliverableStyleReferences.subStyle,
@@ -999,6 +1023,7 @@ export async function getBrandAwareStylesOfAxis(
       name: deliverableStyleReferences.name,
       description: deliverableStyleReferences.description,
       imageUrl: deliverableStyleReferences.imageUrl,
+      styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
       deliverableType: deliverableStyleReferences.deliverableType,
       styleAxis: deliverableStyleReferences.styleAxis,
       subStyle: deliverableStyleReferences.subStyle,
@@ -1032,6 +1057,7 @@ export async function getBrandAwareStylesOfAxis(
           name: deliverableStyleReferences.name,
           description: deliverableStyleReferences.description,
           imageUrl: deliverableStyleReferences.imageUrl,
+          styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
           deliverableType: deliverableStyleReferences.deliverableType,
           styleAxis: deliverableStyleReferences.styleAxis,
           subStyle: deliverableStyleReferences.subStyle,

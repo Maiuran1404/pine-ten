@@ -125,10 +125,10 @@ export default function ChatPage() {
         setCurrentDraftId(draftParam)
       })
     } else if (messageParam && messageParam !== initialMessage) {
+      // Update initial message but keep the existing draft ID from useState initializer.
+      // Generating a new ID here causes a race with draft-loading in useDraftPersistence.
       startTransition(() => {
         setInitialMessage(messageParam)
-        const newId = generateDraftId()
-        setCurrentDraftId(newId)
       })
     }
   }, [draftParam, messageParam, hasUrlParams, initialMessage])

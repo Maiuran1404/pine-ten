@@ -510,9 +510,9 @@ function DashboardContent() {
                 delay: prefersReduced ? 0 : 0.04,
                 ease: [0.25, 0.1, 0.25, 1],
               }}
-              className="flex items-center justify-center gap-2 flex-wrap mb-4"
+              className="flex items-center gap-2 mb-4 w-full max-w-[780px] overflow-hidden"
             >
-              {recentActiveTasks.map((task) => {
+              {recentActiveTasks.slice(0, 3).map((task) => {
                 const config = statusConfig[task.status] || {
                   label: task.status,
                   colorClass: 'bg-muted-foreground',

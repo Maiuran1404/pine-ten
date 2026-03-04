@@ -623,47 +623,57 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Send notifications outside the transaction (includes Slack)
-      try {
-        await adminNotifications.newTaskCreated({
-          taskId: result.task.id,
-          taskTitle: title,
-          clientName: session.user.name || 'Unknown',
-          clientEmail: session.user.email || '',
-          category: category || 'General',
-          creditsUsed: result.task.creditsUsed,
-          deadline: deadline ? new Date(deadline) : undefined,
-          companyId: result.companyId || undefined,
-        })
-      } catch (error) {
-        logger.error(
-          { err: error, taskId: result.task.id },
-          'Failed to send admin email notification'
-        )
-      }
+      // Fire-and-forget: send all notifications in the background
+      // so the API response returns immediately after the DB transaction
+      const notificationPromises: Promise<unknown>[] = []
 
-      // Send WhatsApp notification to admin
-      try {
-        const whatsappMessage = adminWhatsAppTemplates.newTaskCreated({
-          taskTitle: title,
-          clientName: session.user.name || 'Unknown',
-          clientEmail: session.user.email || '',
-          category: category || 'General',
-          creditsUsed: result.task.creditsUsed,
-          taskUrl: `${config.app.url}/admin/tasks`,
-        })
-        await notifyAdminWhatsApp(whatsappMessage)
-      } catch (error) {
-        logger.error(
-          { err: error, taskId: result.task.id },
-          'Failed to send admin WhatsApp notification'
-        )
-      }
+      // Admin email notification
+      notificationPromises.push(
+        adminNotifications
+          .newTaskCreated({
+            taskId: result.task.id,
+            taskTitle: title,
+            clientName: session.user.name || 'Unknown',
+            clientEmail: session.user.email || '',
+            category: category || 'General',
+            creditsUsed: result.task.creditsUsed,
+            deadline: deadline ? new Date(deadline) : undefined,
+            companyId: result.companyId || undefined,
+          })
+          .catch((error) => {
+            logger.error(
+              { err: error, taskId: result.task.id },
+              'Failed to send admin email notification'
+            )
+          })
+      )
 
-      // Notify artist of the assignment
+      // Admin WhatsApp notification
+      notificationPromises.push(
+        Promise.resolve()
+          .then(() => {
+            const whatsappMessage = adminWhatsAppTemplates.newTaskCreated({
+              taskTitle: title,
+              clientName: session.user.name || 'Unknown',
+              clientEmail: session.user.email || '',
+              category: category || 'General',
+              creditsUsed: result.task.creditsUsed,
+              taskUrl: `${config.app.url}/admin/tasks`,
+            })
+            return notifyAdminWhatsApp(whatsappMessage)
+          })
+          .catch((error) => {
+            logger.error(
+              { err: error, taskId: result.task.id },
+              'Failed to send admin WhatsApp notification'
+            )
+          })
+      )
+
+      // Artist assignment + client notifications
       if (result.assignedTo) {
-        try {
-          await notify({
+        notificationPromises.push(
+          notify({
             userId: result.assignedTo.artist.userId,
             type: 'TASK_ASSIGNED',
             title: 'New Task Assigned',
@@ -674,26 +684,35 @@ export async function POST(request: NextRequest) {
               taskTitle: title,
               matchScore: result.assignedTo.totalScore.toString(),
             },
+          }).catch((error) => {
+            logger.error(
+              { err: error, artistId: result.assignedTo!.artist.userId },
+              'Failed to send artist assignment notification'
+            )
           })
-        } catch (error) {
-          logger.error(
-            { err: error, artistId: result.assignedTo.artist.userId },
-            'Failed to send artist assignment notification'
-          )
-        }
+        )
 
-        // Notify client that their task has been assigned
         const designerName = result.assignedTo.artist.name || 'A designer'
         const taskUrl = `${config.app.url}/dashboard/tasks/${result.task.id}`
-        await sendNotificationEmail({
-          userId: session.user.id,
-          template: (t, user) =>
-            t.taskAssignedToClient(user.name || 'there', title, designerName, taskUrl),
-          context: 'client assignment email',
-        })
+        notificationPromises.push(
+          sendNotificationEmail({
+            userId: session.user.id,
+            template: (t, user) =>
+              t.taskAssignedToClient(user.name || 'there', title, designerName, taskUrl),
+            context: 'client assignment email',
+          }).catch((error) => {
+            logger.error(
+              { err: error, taskId: result.task.id },
+              'Failed to send client assignment email'
+            )
+          })
+        )
       }
 
-      // PostHog server-side event
+      // Don't await — let notifications settle in the background
+      void Promise.allSettled(notificationPromises)
+
+      // PostHog server-side event (also fire-and-forget)
       captureServerEvent(session.user.id, PostHogEvents.TASK_CREATED, {
         task_id: result.task.id,
         category: category || null,

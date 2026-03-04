@@ -27,7 +27,6 @@ export interface ChatApiResponse {
   deliverableStyleMarker?: Message['deliverableStyleMarker']
   videoReferences?: Message['videoReferences']
   taskProposal?: TaskProposal
-  quickOptions?: Message['quickOptions']
   structureData?: StructureData
   strategicReviewData?: Message['strategicReviewData']
   globalStyles?: WebsiteGlobalStyles
@@ -142,7 +141,6 @@ export function useChatMessages({
         deliverableStyleMarker: data.deliverableStyleMarker,
         videoReferences: data.videoReferences,
         taskProposal: data.taskProposal,
-        quickOptions: data.quickOptions ?? undefined,
         structureData: resolvedStructureData,
         strategicReviewData: data.strategicReviewData ?? undefined,
         assetRequest: data.assetRequest ?? undefined,
@@ -222,7 +220,12 @@ export function useChatMessages({
           }),
         })
 
-        if (!response.ok) throw new Error('Failed to get response')
+        if (!response.ok) {
+          const status = response.status
+          if (status === 429) throw new Error('Rate limited — please wait a moment')
+          if (status === 401) throw new Error('Session expired — please refresh')
+          throw new Error(`Server error (${status})`)
+        }
 
         const data: ChatApiResponse = await response.json()
 
@@ -242,9 +245,11 @@ export function useChatMessages({
         }
 
         processApiResponse(data, resolvedStructureOverride)
-      } catch {
-        setLastSendError('Failed to send message. Please try again.')
-        toast.error('Failed to send message. Please try again.')
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to send message. Please try again.'
+        setLastSendError(message)
+        toast.error(message)
       } finally {
         setIsLoading(false)
         isLoadingRef.current = false
@@ -297,20 +302,29 @@ export function useChatMessages({
           }),
         })
 
-        if (!response.ok) throw new Error('Failed to get response')
+        if (!response.ok) {
+          const status = response.status
+          if (status === 429) throw new Error('Rate limited — please wait a moment')
+          if (status === 401) throw new Error('Session expired — please refresh')
+          throw new Error(`Server error (${status})`)
+        }
 
         const data: ChatApiResponse = await response.json()
 
-        // Re-attach storyboard when response lacks new storyboard data
+        // Re-attach storyboard only during structure-related stages
+        const currentStage = serializedBriefingStateRef.current?.stage
+        const isStructureRelated = currentStage === 'STRUCTURE' || currentStage === 'ELABORATE'
         let resolvedStructureOverride: StructureData | undefined
-        if (!data.structureData && latestStoryboardRef.current) {
+        if (isStructureRelated && !data.structureData && latestStoryboardRef.current) {
           resolvedStructureOverride = latestStoryboardRef.current
         }
 
         processApiResponse(data, resolvedStructureOverride)
-      } catch {
-        setLastSendError('Failed to send message. Please try again.')
-        toast.error('Failed to send message. Please try again.')
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to send message. Please try again.'
+        setLastSendError(message)
+        toast.error(message)
       } finally {
         setIsLoading(false)
         isLoadingRef.current = false
@@ -355,14 +369,21 @@ export function useChatMessages({
           }),
         })
 
-        if (!response.ok) throw new Error('Failed to get response')
+        if (!response.ok) {
+          const status = response.status
+          if (status === 429) throw new Error('Rate limited — please wait a moment')
+          if (status === 401) throw new Error('Session expired — please refresh')
+          throw new Error(`Server error (${status})`)
+        }
 
         const data: ChatApiResponse = await response.json()
         processApiResponse(data)
         return data
-      } catch {
-        setLastSendError('Failed to send message. Please try again.')
-        toast.error('Failed to send message. Please try again.')
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to send message. Please try again.'
+        setLastSendError(message)
+        toast.error(message)
         return null
       } finally {
         setIsLoading(false)
@@ -399,13 +420,20 @@ export function useChatMessages({
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to get response')
+      if (!response.ok) {
+        const status = response.status
+        if (status === 429) throw new Error('Rate limited — please wait a moment')
+        if (status === 401) throw new Error('Session expired — please refresh')
+        throw new Error(`Server error (${status})`)
+      }
 
       const data: ChatApiResponse = await response.json()
       processApiResponse(data)
-    } catch {
-      setLastSendError('Failed to continue conversation. Please try again.')
-      toast.error('Failed to continue conversation. Please try again.')
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to continue conversation. Please try again.'
+      setLastSendError(message)
+      toast.error(message)
     } finally {
       setIsLoading(false)
       isLoadingRef.current = false

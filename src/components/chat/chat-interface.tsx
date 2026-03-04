@@ -725,6 +725,7 @@ export function ChatInterface({
             onAddExternalLink={addExternalLink}
             lastSendError={lastSendError}
             onRetry={handleRetry}
+            isGeneratingImages={isGeneratingImages}
           />
 
           {/* Input area / Submit action bar — hidden after successful submission */}

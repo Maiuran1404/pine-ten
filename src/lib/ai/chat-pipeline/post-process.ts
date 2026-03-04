@@ -241,10 +241,15 @@ export async function runPostAiPipeline(input: PostProcessInput): Promise<PostPr
     strategicReviewData = retryResult.strategicReviewData ?? undefined
     videoNarrativeData = retryResult.videoNarrativeData ?? undefined
 
-    // Honor AI-declared stage for terminal stages (REVIEW/DEEPEN → SUBMIT).
-    // deriveStage() cannot exit REVIEW (exitWhen: () => false) or DEEPEN (no exitWhen).
-    // The only way to reach SUBMIT from these stages is via AI declaration or client dispatch.
-    const TERMINAL_STAGES: Set<BriefingStage> = new Set(['REVIEW', 'DEEPEN'])
+    // Honor AI-declared stage transitions for stages that deriveStage() cannot exit.
+    // STRATEGIC_REVIEW/MOODBOARD: client-dispatched (STAGE_RESPONSE action), but AI can also declare.
+    // REVIEW/DEEPEN: exitWhen is always false / missing — only AI declaration or client dispatch works.
+    const TERMINAL_STAGES: Set<BriefingStage> = new Set([
+      'STRATEGIC_REVIEW',
+      'MOODBOARD',
+      'REVIEW',
+      'DEEPEN',
+    ])
     if (
       briefMetaResult.success &&
       briefMetaResult.data?.stage &&

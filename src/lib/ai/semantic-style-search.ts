@@ -4,6 +4,7 @@ import { deliverableStyleReferences } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import Anthropic from '@anthropic-ai/sdk'
 import type { DeliverableType } from '@/lib/constants/reference-libraries'
+import { resolveStyleDisplayImage } from './deliverable-styles'
 import { logger } from '@/lib/logger'
 
 const anthropic = new Anthropic({
@@ -161,19 +162,25 @@ export async function searchStylesByQuery(
   }
 
   // Fetch all active styles (for small datasets, this is efficient enough)
-  const styles = await db
-    .select({
-      id: deliverableStyleReferences.id,
-      name: deliverableStyleReferences.name,
-      description: deliverableStyleReferences.description,
-      imageUrl: deliverableStyleReferences.imageUrl,
-      deliverableType: deliverableStyleReferences.deliverableType,
-      styleAxis: deliverableStyleReferences.styleAxis,
-      subStyle: deliverableStyleReferences.subStyle,
-      semanticTags: deliverableStyleReferences.semanticTags,
-    })
-    .from(deliverableStyleReferences)
-    .where(and(...conditions))
+  const styles = (
+    await db
+      .select({
+        id: deliverableStyleReferences.id,
+        name: deliverableStyleReferences.name,
+        description: deliverableStyleReferences.description,
+        imageUrl: deliverableStyleReferences.imageUrl,
+        styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
+        deliverableType: deliverableStyleReferences.deliverableType,
+        styleAxis: deliverableStyleReferences.styleAxis,
+        subStyle: deliverableStyleReferences.subStyle,
+        semanticTags: deliverableStyleReferences.semanticTags,
+      })
+      .from(deliverableStyleReferences)
+      .where(and(...conditions))
+  ).map(({ styleReferenceImages, ...rest }) => ({
+    ...rest,
+    imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+  }))
 
   // Score each style
   const scoredStyles: SemanticStyleResult[] = styles.map((style) => {
@@ -214,24 +221,30 @@ export async function aiEnhancedStyleSearch(
   limit: number = 6
 ): Promise<SemanticStyleResult[]> {
   // First, get all styles for this deliverable type
-  const styles = await db
-    .select({
-      id: deliverableStyleReferences.id,
-      name: deliverableStyleReferences.name,
-      description: deliverableStyleReferences.description,
-      imageUrl: deliverableStyleReferences.imageUrl,
-      deliverableType: deliverableStyleReferences.deliverableType,
-      styleAxis: deliverableStyleReferences.styleAxis,
-      subStyle: deliverableStyleReferences.subStyle,
-      semanticTags: deliverableStyleReferences.semanticTags,
-    })
-    .from(deliverableStyleReferences)
-    .where(
-      and(
-        eq(deliverableStyleReferences.deliverableType, deliverableType),
-        eq(deliverableStyleReferences.isActive, true)
+  const styles = (
+    await db
+      .select({
+        id: deliverableStyleReferences.id,
+        name: deliverableStyleReferences.name,
+        description: deliverableStyleReferences.description,
+        imageUrl: deliverableStyleReferences.imageUrl,
+        styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
+        deliverableType: deliverableStyleReferences.deliverableType,
+        styleAxis: deliverableStyleReferences.styleAxis,
+        subStyle: deliverableStyleReferences.subStyle,
+        semanticTags: deliverableStyleReferences.semanticTags,
+      })
+      .from(deliverableStyleReferences)
+      .where(
+        and(
+          eq(deliverableStyleReferences.deliverableType, deliverableType),
+          eq(deliverableStyleReferences.isActive, true)
+        )
       )
-    )
+  ).map(({ styleReferenceImages, ...rest }) => ({
+    ...rest,
+    imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+  }))
 
   if (styles.length === 0) {
     return []
@@ -530,24 +543,30 @@ export async function refineStyleSearch(
   ]
 
   // Fetch all styles for this deliverable type
-  const styles = await db
-    .select({
-      id: deliverableStyleReferences.id,
-      name: deliverableStyleReferences.name,
-      description: deliverableStyleReferences.description,
-      imageUrl: deliverableStyleReferences.imageUrl,
-      deliverableType: deliverableStyleReferences.deliverableType,
-      styleAxis: deliverableStyleReferences.styleAxis,
-      subStyle: deliverableStyleReferences.subStyle,
-      semanticTags: deliverableStyleReferences.semanticTags,
-    })
-    .from(deliverableStyleReferences)
-    .where(
-      and(
-        eq(deliverableStyleReferences.deliverableType, deliverableType),
-        eq(deliverableStyleReferences.isActive, true)
+  const styles = (
+    await db
+      .select({
+        id: deliverableStyleReferences.id,
+        name: deliverableStyleReferences.name,
+        description: deliverableStyleReferences.description,
+        imageUrl: deliverableStyleReferences.imageUrl,
+        styleReferenceImages: deliverableStyleReferences.styleReferenceImages,
+        deliverableType: deliverableStyleReferences.deliverableType,
+        styleAxis: deliverableStyleReferences.styleAxis,
+        subStyle: deliverableStyleReferences.subStyle,
+        semanticTags: deliverableStyleReferences.semanticTags,
+      })
+      .from(deliverableStyleReferences)
+      .where(
+        and(
+          eq(deliverableStyleReferences.deliverableType, deliverableType),
+          eq(deliverableStyleReferences.isActive, true)
+        )
       )
-    )
+  ).map(({ styleReferenceImages, ...rest }) => ({
+    ...rest,
+    imageUrl: resolveStyleDisplayImage({ imageUrl: rest.imageUrl, styleReferenceImages }),
+  }))
 
   // Score each style based on:
   // 1. Similarity to base style

@@ -394,6 +394,9 @@ export interface ChatMessageListProps {
   // Error state
   lastSendError?: string | null
   onRetry?: () => void
+
+  // Whether storyboard images are currently being generated
+  isGeneratingImages?: boolean
 }
 
 // =============================================================================
@@ -450,6 +453,7 @@ export const ChatMessageList = memo(function ChatMessageList({
   onAddExternalLink,
   lastSendError,
   onRetry,
+  isGeneratingImages = false,
 }: ChatMessageListProps) {
   // Screen reader announcement for new messages
   const [announcement, setAnnouncement] = useState('')
@@ -512,6 +516,17 @@ export const ChatMessageList = memo(function ChatMessageList({
             {messages.map((message, index) => {
               // Skip empty assistant messages (marker-only responses stripped to nothing)
               if (message.role === 'assistant' && !message.content?.trim()) {
+                return null
+              }
+
+              // While storyboard images are generating, hide the last assistant
+              // message (the one describing the storyboard) so chat + storyboard
+              // panel appear together once images are ready.
+              if (
+                isGeneratingImages &&
+                message.role === 'assistant' &&
+                message.structureData?.type === 'storyboard'
+              ) {
                 return null
               }
 
@@ -967,6 +982,34 @@ export const ChatMessageList = memo(function ChatMessageList({
           )}
           {/* eslint-enable react-hooks/refs */}
 
+          {/* Storyboard image generation indicator — shown while images are
+              being generated so the user sees progress before the full
+              storyboard + chat message are revealed together */}
+          {isGeneratingImages && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex justify-start mt-5"
+            >
+              <div className="flex items-start gap-3 max-w-[85%]">
+                <div className="lg:-ml-12 w-9 h-9 rounded-full bg-gradient-to-br from-crafted-forest to-crafted-green shadow-md flex items-center justify-center shrink-0">
+                  <img src="/craftedfigurewhite.png" alt="Crafted" className="h-4 w-4" />
+                </div>
+                <div className="flex items-center gap-2 py-3 px-4 rounded-2xl bg-card/60 border border-border/30">
+                  <div className="flex gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-crafted-sage animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-crafted-sage animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-crafted-sage animate-bounce [animation-delay:300ms]" />
+                  </div>
+                  <span className="text-sm text-muted-foreground ml-1">
+                    Generating storyboard visuals...
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Inline error banner for failed sends */}
           {lastSendError && !isLoading && (
             <motion.div
@@ -1026,6 +1069,7 @@ function chatMessageListAreEqual(prev: ChatMessageListProps, next: ChatMessageLi
   if (prev.structurePanelVisible !== next.structurePanelVisible) return false
   if (prev.isUploading !== next.isUploading) return false
   if (prev.lastSendError !== next.lastSendError) return false
+  if (prev.isGeneratingImages !== next.isGeneratingImages) return false
 
   // Reference-equality checks for arrays/objects that change identity
   if (prev.selectedStyles !== next.selectedStyles) return false

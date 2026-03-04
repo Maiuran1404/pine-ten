@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { TaskDetailData } from '@/components/task-detail/types'
@@ -15,8 +15,13 @@ export default function LaunchedPage() {
   const [previousCredits, setPreviousCredits] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Ref guard prevents React strict mode double-fire from redirecting away
+  const hasInitialized = useRef(false)
+
   useEffect(() => {
     if (!taskId) return
+    if (hasInitialized.current) return
+    hasInitialized.current = true
 
     // Check if already seen — redirect to task detail
     const seenKey = `task-${taskId}-launched-seen`
@@ -31,8 +36,10 @@ export default function LaunchedPage() {
       setPreviousCredits(parseInt(storedCredits, 10))
     }
 
-    // Mark as seen
-    sessionStorage.setItem(seenKey, 'true')
+    // Mark as seen only after a delay — ensures the page is visible first
+    setTimeout(() => {
+      sessionStorage.setItem(seenKey, 'true')
+    }, 2000)
 
     // Fetch task data
     const fetchTask = async () => {

@@ -26,6 +26,7 @@ import {
   type VideoMatchContext,
 } from '@/lib/ai/video-references'
 import { extractStyleContext } from '@/lib/ai/chat-context'
+import { resolveStyleDisplayImage } from '@/lib/ai/deliverable-styles'
 import { db } from '@/db'
 import { deliverableStyleReferences } from '@/db/schema'
 import { eq, ilike, and, asc } from 'drizzle-orm'
@@ -498,7 +499,7 @@ async function getStylePresets(
         id: preset.id,
         name: preset.name,
         description: preset.description,
-        imageUrl: preset.imageUrl,
+        imageUrl: resolveStyleDisplayImage(preset),
         deliverableType: preset.deliverableType,
         styleAxis: preset.styleAxis,
         subStyle: preset.subStyle,

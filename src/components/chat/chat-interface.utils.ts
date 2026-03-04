@@ -270,6 +270,17 @@ export function constructTaskFromConversation(
     }
   }
 
+  // Adjust for video duration
+  if (category === 'Video') {
+    const durationMatch = userContent.match(/(\d+)\s*(?:second|sec|s\b|minute|min)/i)
+    if (durationMatch) {
+      const seconds = userContent.match(/minute|min/i)
+        ? parseInt(durationMatch[1], 10) * 60
+        : parseInt(durationMatch[1], 10)
+      if (seconds > 30) creditsRequired += Math.floor((seconds - 30) / 15) * 5
+    }
+  }
+
   // Adjust for complexity indicators
   if (contentLower.includes('animation') || contentLower.includes('animated')) {
     creditsRequired += 10

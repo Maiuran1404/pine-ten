@@ -43,6 +43,7 @@ interface UseStoryboardOptions {
   handleSendOption: (text: string, stateOverrides?: Partial<SerializedBriefingState>) => void
   briefingState?: BriefingState | null
   setMessages?: React.Dispatch<React.SetStateAction<Message[]>>
+  onStructureChange?: (data: StructureData) => void
 }
 
 export function useStoryboard({
@@ -50,6 +51,7 @@ export function useStoryboard({
   handleSendOption,
   briefingState,
   setMessages,
+  onStructureChange,
 }: UseStoryboardOptions) {
   const { csrfFetch } = useCsrfContext()
   const [storyboardScenes, setStoryboardScenes] = useState<StructureData | null>(null)
@@ -125,11 +127,12 @@ export function useStoryboard({
   // at STRUCTURE stage (narrative panel), INSPIRATION stage (style selection),
   // ELABORATE stage (storyboard), OR for website projects
   // (websites show the InspirationPanel before structure data exists)
+  // When images are still generating, hide the storyboard panel so it only
+  // appears once all scene images are ready (avoids "Generating..." placeholders).
   const structurePanelVisible =
     briefingState?.stage === 'STRUCTURE' ||
     briefingState?.stage === 'INSPIRATION' ||
-    briefingState?.stage === 'ELABORATE' ||
-    storyboardScenes !== null ||
+    ((briefingState?.stage === 'ELABORATE' || storyboardScenes !== null) && !isGeneratingImages) ||
     videoNarrative !== null ||
     (briefingState?.deliverableCategory === 'website' && structureType === 'layout')
 
@@ -292,27 +295,37 @@ export function useStoryboard({
   )
 
   // Reorder layout sections via drag-and-drop
-  const handleSectionReorder = useCallback((sections: LayoutSection[]) => {
-    setStoryboardScenes((prev) => {
-      if (!prev || prev.type !== 'layout') return prev
-      const updated = { ...prev, sections }
-      latestStoryboardRef.current = updated
-      return updated
-    })
-  }, [])
+  const handleSectionReorder = useCallback(
+    (sections: LayoutSection[]) => {
+      setStoryboardScenes((prev) => {
+        if (!prev || prev.type !== 'layout') return prev
+        const updated = { ...prev, sections }
+        latestStoryboardRef.current = updated
+        onStructureChange?.(updated)
+        return updated
+      })
+    },
+    [onStructureChange]
+  )
 
   // Edit a layout section field directly (user typed a change)
-  const handleSectionEdit = useCallback((sectionIndex: number, field: string, value: string) => {
-    setStoryboardScenes((prev) => {
-      if (!prev || prev.type !== 'layout') return prev
-      const updated = {
-        ...prev,
-        sections: prev.sections.map((s, i) => (i === sectionIndex ? { ...s, [field]: value } : s)),
-      }
-      latestStoryboardRef.current = updated
-      return updated
-    })
-  }, [])
+  const handleSectionEdit = useCallback(
+    (sectionIndex: number, field: string, value: string) => {
+      setStoryboardScenes((prev) => {
+        if (!prev || prev.type !== 'layout') return prev
+        const updated = {
+          ...prev,
+          sections: prev.sections.map((s, i) =>
+            i === sectionIndex ? { ...s, [field]: value } : s
+          ),
+        }
+        latestStoryboardRef.current = updated
+        onStructureChange?.(updated)
+        return updated
+      })
+    },
+    [onStructureChange]
+  )
 
   // Push current state to history before making changes (#20)
   const pushHistory = useCallback((state: StructureData | null) => {
@@ -334,10 +347,11 @@ export function useStoryboard({
       isUndoRedoRef.current = true
       setStoryboardScenes(prevState)
       latestStoryboardRef.current = prevState
+      onStructureChange?.(prevState)
       isUndoRedoRef.current = false
       return { ...prev, index: prevIndex }
     })
-  }, [])
+  }, [onStructureChange])
 
   const redo = useCallback(() => {
     setHistory((prev) => {
@@ -348,10 +362,11 @@ export function useStoryboard({
       isUndoRedoRef.current = true
       setStoryboardScenes(nextState)
       latestStoryboardRef.current = nextState
+      onStructureChange?.(nextState)
       isUndoRedoRef.current = false
       return { ...prev, index: nextIndex }
     })
-  }, [])
+  }, [onStructureChange])
 
   const canUndo = history.index > 0
   const canRedo = history.index < history.stack.length - 1
@@ -371,10 +386,11 @@ export function useStoryboard({
           })),
         }
         latestStoryboardRef.current = updated
+        onStructureChange?.(updated)
         return updated
       })
     },
-    [pushHistory]
+    [pushHistory, onStructureChange]
   )
 
   // Edit a scene field directly (user typed a change)
@@ -390,10 +406,11 @@ export function useStoryboard({
           ),
         }
         latestStoryboardRef.current = updated
+        onStructureChange?.(updated)
         return updated
       })
     },
-    [pushHistory]
+    [pushHistory, onStructureChange]
   )
 
   // Trigger AI regeneration of whole storyboard
@@ -442,10 +459,11 @@ export function useStoryboard({
           ),
         }
         latestStoryboardRef.current = updated
+        onStructureChange?.(updated)
         return updated
       })
     },
-    []
+    [onStructureChange]
   )
 
   // Update structure data from API response

@@ -488,6 +488,8 @@ export function checkElaborationComplete(state: BriefingState): boolean {
       const elaboratedCount = scenes.filter(
         (s) => s.fullScript || s.directorNotes || (s.voiceover && s.voiceover.length > 30)
       ).length
+      // 60% threshold: requires most scenes to have detailed content before advancing.
+      // This prevents premature exit from ELABORATE when only a few scenes are fleshed out.
       const substantiallyElaborated = elaboratedCount >= Math.ceil(scenes.length * 0.6)
       return substantiallyElaborated
     }

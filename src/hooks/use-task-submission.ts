@@ -79,6 +79,9 @@ export function useTaskSubmission({
   const paymentProcessedRef = useRef(paymentProcessed)
   paymentProcessedRef.current = paymentProcessed
 
+  // Guard against duplicate submissions (ref-based for synchronous check)
+  const isSubmittingRef = useRef(false)
+
   const isTaskMode = !!taskData
   const assignedArtist = taskData?.freelancer
   const deliverables = taskData?.files?.filter((f) => f.isDeliverable) || []
@@ -87,6 +90,8 @@ export function useTaskSubmission({
   // Task confirmation handler
   const handleConfirmTask = useCallback(async () => {
     if (!pendingTask) return
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
 
     const normalizedTask = {
       ...pendingTask,
@@ -165,50 +170,7 @@ export function useTaskSubmission({
       setTaskSubmitted(true)
       deleteDraft(draftId)
       onDraftUpdate?.()
-
-      const successMessage: Message = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: `**Your task has been submitted!** You'll receive updates as your design progresses.`,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, successMessage])
-      setAnimatingMessageId(successMessage.id)
       setPendingTask(null)
-
-      try {
-        const taskResponse = await csrfFetch(`/api/tasks/${taskId}`)
-        if (taskResponse.ok) {
-          const taskResult = await taskResponse.json()
-          const fetchedTaskData: TaskData = {
-            id: taskResult.task.id,
-            title: taskResult.task.title,
-            description: taskResult.task.description,
-            status: taskResult.task.status,
-            creditsUsed: taskResult.task.creditsUsed,
-            maxRevisions: taskResult.task.maxRevisions,
-            revisionsUsed: taskResult.task.revisionsUsed,
-            estimatedHours: taskResult.task.estimatedHours,
-            deadline: taskResult.task.deadline,
-            assignedAt: taskResult.task.assignedAt,
-            completedAt: taskResult.task.completedAt,
-            createdAt: taskResult.task.createdAt,
-            freelancer: taskResult.task.freelancer
-              ? {
-                  id: taskResult.task.freelancer.id,
-                  name: taskResult.task.freelancer.name,
-                  email: '',
-                  image: taskResult.task.freelancer.image,
-                }
-              : null,
-            files: taskResult.task.files,
-            chatHistory: taskResult.task.chatHistory,
-          }
-          setTaskData(fetchedTaskData)
-        }
-      } catch {
-        // Task was created but we couldn't fetch details
-      }
 
       Sentry.addBreadcrumb({
         category: 'task-submission',
@@ -229,9 +191,10 @@ export function useTaskSubmission({
       dispatchCreditsUpdated(newCredits)
       onTaskCreated?.(taskId)
 
-      // Show celebration overlay instead of immediate redirect
       setSubmittedTaskId(taskId)
       setSubmittedAssignedArtist(result.data.assignedTo || null)
+
+      // Navigate to celebration page immediately — don't block on extra fetches
       router.push(`/dashboard/tasks/${taskId}/launched`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create task')
@@ -239,6 +202,7 @@ export function useTaskSubmission({
       // block resets isLoading so the UI recovers to a clickable state.
     } finally {
       setIsLoading(false)
+      isSubmittingRef.current = false
     }
   }, [
     pendingTask,
