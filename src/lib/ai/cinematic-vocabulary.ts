@@ -147,7 +147,9 @@ export function inferLighting(
     }
   }
 
-  return parts.length > 0 ? parts.join('. ') : 'Natural cinematic lighting with motivated sources'
+  return parts.length > 0
+    ? parts.join('. ')
+    : 'Available light with practical on-set sources, naturalistic falloff'
 }
 
 // ─── Color Grading ──────────────────────────────────────────────────────────

@@ -68,36 +68,43 @@ describe('buildScenePrompt with StyleMetadata (rich path)', () => {
   it('includes quality footer', () => {
     const result = buildScenePrompt(makeScene(), makeStyleMetadata())
 
-    expect(result).toContain('Editorial cinematography')
-    expect(result).toContain('Not a stock photo')
-    expect(result).toContain('No text, no watermarks')
+    expect(result).toContain('Captured on location with a cinema-grade camera')
+    expect(result).toContain('natural film grain')
+    expect(result).toContain('No text overlays')
+  })
+
+  it('includes photographic anchor', () => {
+    const result = buildScenePrompt(makeScene(), makeStyleMetadata())
+
+    expect(result).toContain('35mm film photograph')
+    expect(result).toContain('ARRI Alexa Mini')
   })
 
   it('includes visual DNA prefix for multi-scene batches', () => {
     const batch: BatchContext = { totalScenes: 3, sceneIndex: 1, isHeroFrame: false }
     const result = buildScenePrompt(makeScene(), makeStyleMetadata(), undefined, batch)
 
-    expect(result).toContain('Consistent cinematic series')
-    expect(result).toContain('same color grading')
+    expect(result).toContain('Consistent photo series')
+    expect(result).toContain('matching color grade')
   })
 
   it('includes visual DNA prefix for hero frame in multi-scene batch', () => {
     const batch: BatchContext = { totalScenes: 3, sceneIndex: 0, isHeroFrame: true }
     const result = buildScenePrompt(makeScene(), makeStyleMetadata(), undefined, batch)
 
-    expect(result).toContain('Consistent cinematic series')
+    expect(result).toContain('Consistent photo series')
   })
 
   it('omits visual DNA batch prefix for single-scene batch', () => {
     const batch: BatchContext = { totalScenes: 1, sceneIndex: 0 }
     const result = buildScenePrompt(makeScene(), makeStyleMetadata(), undefined, batch)
 
-    expect(result).not.toContain('Consistent cinematic series')
+    expect(result).not.toContain('Consistent photo series')
   })
 
   it('omits visual DNA batch prefix when no batch context', () => {
     const result = buildScenePrompt(makeScene(), makeStyleMetadata())
-    expect(result).not.toContain('Consistent cinematic series')
+    expect(result).not.toContain('Consistent photo series')
   })
 
   it('includes promptGuides content', () => {
@@ -293,25 +300,32 @@ describe('buildScenePrompt with string styleContext (legacy path)', () => {
     expect(result).toContain('Aerial shot')
   })
 
+  it('includes photographic anchor', () => {
+    const result = buildScenePrompt(makeScene(), 'cinematic')
+
+    expect(result).toContain('35mm film photograph')
+    expect(result).toContain('ARRI Alexa Mini')
+  })
+
   it('includes visual DNA prefix for multi-scene batches', () => {
     const batch: BatchContext = { totalScenes: 4, sceneIndex: 2 }
     const result = buildScenePrompt(makeScene(), 'cinematic', undefined, batch)
 
-    expect(result).toContain('Consistent cinematic series')
+    expect(result).toContain('Consistent photo series')
   })
 
   it('omits visual DNA prefix for single-scene batches', () => {
     const batch: BatchContext = { totalScenes: 1, sceneIndex: 0 }
     const result = buildScenePrompt(makeScene(), 'cinematic', undefined, batch)
 
-    expect(result).not.toContain('Consistent cinematic series')
+    expect(result).not.toContain('Consistent photo series')
   })
 
   it('includes quality footer', () => {
     const result = buildScenePrompt(makeScene(), 'minimal')
 
-    expect(result).toContain('Editorial cinematography')
-    expect(result).toContain('Not a stock photo')
+    expect(result).toContain('Captured on location with a cinema-grade camera')
+    expect(result).toContain('natural film grain')
   })
 
   it('enforces 1500 character prompt length limit', () => {
@@ -338,22 +352,22 @@ describe('buildScenePrompt — hero vs non-hero batch context', () => {
     const batch: BatchContext = { totalScenes: 5, sceneIndex: 0, isHeroFrame: true }
     const result = buildScenePrompt(makeScene(), makeStyleMetadata(), undefined, batch)
 
-    expect(result).toContain('Consistent cinematic series')
+    expect(result).toContain('Consistent photo series')
   })
 
   it('non-hero frame includes batch consistency prefix', () => {
     const batch: BatchContext = { totalScenes: 5, sceneIndex: 2, isHeroFrame: false }
     const result = buildScenePrompt(makeScene(), makeStyleMetadata(), undefined, batch)
 
-    expect(result).toContain('Consistent cinematic series')
-    expect(result).toContain('same color grading')
+    expect(result).toContain('Consistent photo series')
+    expect(result).toContain('matching color grade')
   })
 
   it('single scene batch has no consistency prefix', () => {
     const batch: BatchContext = { totalScenes: 1, sceneIndex: 0, isHeroFrame: true }
     const result = buildScenePrompt(makeScene(), makeStyleMetadata(), undefined, batch)
 
-    expect(result).not.toContain('Consistent cinematic series')
+    expect(result).not.toContain('Consistent photo series')
   })
 })
 
@@ -373,8 +387,8 @@ describe('buildScenePrompt with partial or empty StyleMetadata', () => {
     const result = buildScenePrompt(makeScene(), style)
 
     // Should still produce a valid prompt with quality footer
-    expect(result).toContain('Editorial cinematography')
-    expect(result).toContain('Not a stock photo')
+    expect(result).toContain('Captured on location with a cinema-grade camera')
+    expect(result).toContain('natural film grain')
     // Should not contain style-dependent content
     expect(result).not.toContain('Dominant palette')
   })
@@ -405,7 +419,7 @@ describe('buildScenePrompt with partial or empty StyleMetadata', () => {
     const result = buildScenePrompt(makeScene(), styleNoExtras)
 
     // Should still produce a valid prompt
-    expect(result).toContain('Editorial cinematography')
+    expect(result).toContain('Captured on location with a cinema-grade camera')
   })
 })
 

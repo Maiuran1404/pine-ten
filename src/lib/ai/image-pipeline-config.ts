@@ -73,11 +73,11 @@ export interface ImagePipelineConfig {
 export const DEFAULT_IMAGE_PIPELINE_CONFIG: ImagePipelineConfig = {
   prompts: {
     qualityFooter:
-      'Editorial cinematography, intentional composition with clear focal point. Not a stock photo — cinematic depth of field, motivated lighting, no generic office setups. No text, no watermarks.',
+      'Captured on location with a cinema-grade camera. Subtle natural film grain, authentic lens characteristics with slight chromatic aberration at edges. Practical lighting from real on-set sources. Lived-in composition — natural skin texture, creased fabrics, real environmental reflections. No text overlays.',
     batchPrefix:
-      'Consistent cinematic series — same color grading, same photographic style, same film stock.',
+      'Consistent photo series from the same production shoot — matching color grade, same camera and lens setup, identical lighting rig across all frames.',
     negativePrompt:
-      'text, watermark, logo, blurry, distorted, low quality, UI elements, buttons, interface, screenshot, words, letters, captions, subtitles, title cards, typography, readable text, overlay text, call to action, CTA button, free trial, sign up, subscribe',
+      'text, watermark, logo, blurry, distorted, low quality, UI elements, buttons, interface, screenshot, words, letters, captions, subtitles, title cards, typography, readable text, overlay text, call to action, CTA button, free trial, sign up, subscribe, AI-generated, 3D render, CGI, digital art, illustration, painting, smooth plastic skin, uncanny valley, symmetrical face, oversaturated, HDR',
     promptCap: 1500,
     subjectAnchorCap: 150,
   },

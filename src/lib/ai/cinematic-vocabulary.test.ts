@@ -410,17 +410,17 @@ describe('inferLighting', () => {
   describe('default fallback', () => {
     it('returns default natural cinematic lighting when nothing matches', () => {
       const result = inferLighting({})
-      expect(result).toBe('Natural cinematic lighting with motivated sources')
+      expect(result).toBe('Available light with practical on-set sources, naturalistic falloff')
     })
 
     it('returns default when voiceover contains no known sentiment', () => {
       const result = inferLighting({ voiceover: 'Welcome to our product overview' })
-      expect(result).toBe('Natural cinematic lighting with motivated sources')
+      expect(result).toBe('Available light with practical on-set sources, naturalistic falloff')
     })
 
     it('returns default with empty moodKeywords array', () => {
       const result = inferLighting({ moodKeywords: [] })
-      expect(result).toBe('Natural cinematic lighting with motivated sources')
+      expect(result).toBe('Available light with practical on-set sources, naturalistic falloff')
     })
   })
 })

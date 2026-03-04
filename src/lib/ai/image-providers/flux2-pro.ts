@@ -56,7 +56,7 @@ export const flux2ProProvider: ImageProvider = {
       prompt: request.prompt,
       image_size: mapAspectRatio(request.aspectRatio),
       num_inference_steps: 28,
-      guidance_scale: 5.0,
+      guidance_scale: 3.5,
       num_images: 1,
       safety_tolerance: '5',
     }

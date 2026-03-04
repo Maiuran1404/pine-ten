@@ -45,16 +45,18 @@ function ColorDots({ colors, size = 'sm' }: { colors: string[]; size?: 'sm' | 'm
   )
 }
 
-// ── Featured Hero Card ──────────────────────────────────────────────────────
+// ── Portrait Style Card ─────────────────────────────────────────────────────
 
-function FeaturedStyleCard({
+function PortraitStyleCard({
   style,
+  index,
   isSelected,
   isBestMatch,
   disabled,
   onClick,
 }: {
   style: DeliverableStyle
+  index: number
   isSelected: boolean
   isBestMatch: boolean
   disabled?: boolean
@@ -66,12 +68,15 @@ function FeaturedStyleCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{
+        opacity: { duration: 0.25, delay: index * 0.05 },
+        y: { duration: 0.25, delay: index * 0.05 },
+      }}
       className="min-w-0"
     >
       <motion.button
-        whileHover={disabled ? undefined : { scale: 1.01 }}
-        whileTap={disabled ? undefined : { scale: 0.99 }}
+        whileHover={disabled ? undefined : { scale: 1.02 }}
+        whileTap={disabled ? undefined : { scale: 0.98 }}
         onClick={disabled ? undefined : onClick}
         disabled={disabled}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
@@ -80,29 +85,34 @@ function FeaturedStyleCard({
           'transition-all duration-300',
           disabled && 'pointer-events-none opacity-60',
           isSelected
-            ? 'ring-2 ring-crafted-green'
-            : !disabled && 'ring-1 ring-border/40 hover:ring-border/70 cursor-pointer',
+            ? 'ring-2 ring-crafted-green shadow-md shadow-crafted-green/10'
+            : isBestMatch
+              ? 'ring-1 ring-crafted-green/50 hover:ring-crafted-green cursor-pointer'
+              : !disabled && 'ring-1 ring-border/40 hover:ring-border/70 cursor-pointer',
           !isSelected && disabled && 'ring-1 ring-border/40'
         )}
       >
-        {/* Image — landscape hero */}
-        <div className="relative aspect-[16/8] overflow-hidden">
+        {/* Portrait image */}
+        <div className="relative aspect-[3/4] overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={style.imageUrl}
             alt={style.name}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
             onError={(e) => {
-              ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/640x400?text=Style'
+              ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x400?text=Style'
             }}
           />
 
+          {/* Bottom gradient overlay for text */}
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+
           {/* Best match badge */}
           {isBestMatch && (
-            <div className="absolute top-2.5 left-2.5">
-              <div className="inline-flex items-center gap-1 px-2 py-1 bg-crafted-green/90 backdrop-blur-sm rounded-md text-[10px] text-white font-medium">
-                <Sparkles className="w-2.5 h-2.5" />
+            <div className="absolute top-2 left-2">
+              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-crafted-green/90 backdrop-blur-sm rounded-md text-[9px] text-white font-medium">
+                <Sparkles className="w-2 h-2" />
                 Best match
               </div>
             </div>
@@ -116,113 +126,7 @@ function FeaturedStyleCard({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                className="absolute top-2.5 right-2.5"
-              >
-                <div className="w-6 h-6 rounded-full bg-crafted-green flex items-center justify-center">
-                  <Check className="w-3.5 h-3.5 text-white" />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Text area below image */}
-        <div className="px-3.5 py-3 bg-card">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-base font-semibold text-foreground leading-tight truncate">
-                {style.name}
-              </p>
-              {style.description && (
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2 leading-snug">
-                  {style.description}
-                </p>
-              )}
-            </div>
-            {style.colorSamples && style.colorSamples.length > 0 && (
-              <div className="shrink-0 pt-0.5">
-                <ColorDots colors={style.colorSamples} size="lg" />
-              </div>
-            )}
-          </div>
-          {style.matchReason && (
-            <p className="text-xs text-crafted-sage mt-2 flex items-center gap-1.5 leading-snug">
-              <Sparkles className="w-3 h-3 shrink-0" />
-              <span className="line-clamp-1">{style.matchReason}</span>
-            </p>
-          )}
-        </div>
-      </motion.button>
-    </motion.div>
-  )
-}
-
-// ── Compact Secondary Card ──────────────────────────────────────────────────
-
-function CompactStyleCard({
-  style,
-  index,
-  isSelected,
-  disabled,
-  onClick,
-}: {
-  style: DeliverableStyle
-  index: number
-  isSelected: boolean
-  disabled?: boolean
-  onClick: () => void
-}) {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{
-        opacity: { duration: 0.2, delay: index * 0.05 },
-        y: { duration: 0.2, delay: index * 0.05 },
-      }}
-      className="min-w-0"
-    >
-      <motion.button
-        whileHover={disabled ? undefined : { scale: 1.02 }}
-        whileTap={disabled ? undefined : { scale: 0.98 }}
-        onClick={disabled ? undefined : onClick}
-        disabled={disabled}
-        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className={cn(
-          'relative w-full overflow-hidden rounded-lg group text-left',
-          'flex items-stretch',
-          'transition-all duration-300',
-          disabled && 'pointer-events-none opacity-60',
-          isSelected
-            ? 'ring-2 ring-crafted-green'
-            : !disabled && 'ring-1 ring-border/40 hover:ring-border/70 cursor-pointer',
-          !isSelected && disabled && 'ring-1 ring-border/40'
-        )}
-      >
-        {/* Square thumbnail */}
-        <div className="relative w-20 h-20 shrink-0 overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={style.imageUrl}
-            alt={style.name}
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"
-            onError={(e) => {
-              ;(e.target as HTMLImageElement).src = 'https://via.placeholder.com/80x80?text=Style'
-            }}
-          />
-
-          {/* Selection check */}
-          <AnimatePresence>
-            {isSelected && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                className="absolute inset-0 flex items-center justify-center bg-crafted-green/30"
+                className="absolute top-2 right-2"
               >
                 <div className="w-5 h-5 rounded-full bg-crafted-green flex items-center justify-center shadow-sm">
                   <Check className="w-3 h-3 text-white" />
@@ -230,23 +134,23 @@ function CompactStyleCard({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
 
-        {/* Text content */}
-        <div className="flex-1 min-w-0 px-3 py-2 bg-card flex flex-col justify-center">
-          <p className="text-sm font-semibold text-foreground leading-tight truncate">
-            {style.name}
-          </p>
-          {style.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
-              {style.description}
+          {/* Text overlay at bottom */}
+          <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 pt-8">
+            <p className="text-xs font-semibold text-white leading-tight truncate drop-shadow-sm">
+              {style.name}
             </p>
-          )}
-          {style.colorSamples && style.colorSamples.length > 0 && (
-            <div className="mt-1.5">
-              <ColorDots colors={style.colorSamples} size="md" />
-            </div>
-          )}
+            {style.matchReason && (
+              <p className="text-[10px] text-white/70 mt-0.5 line-clamp-2 leading-snug drop-shadow-sm">
+                {style.matchReason}
+              </p>
+            )}
+            {style.colorSamples && style.colorSamples.length > 0 && (
+              <div className="mt-1.5">
+                <ColorDots colors={style.colorSamples} size="sm" />
+              </div>
+            )}
+          </div>
         </div>
       </motion.button>
     </motion.div>
@@ -257,24 +161,11 @@ function CompactStyleCard({
 
 function SkeletonCards() {
   return (
-    <div className="px-5 space-y-3">
-      {/* Hero skeleton */}
-      <div className="rounded-xl overflow-hidden animate-pulse">
-        <div className="aspect-[16/8] bg-muted-foreground/10" />
-        <div className="px-3.5 py-3 bg-card space-y-2">
-          <div className="h-4 w-2/3 bg-muted-foreground/10 rounded" />
-          <div className="h-3 w-full bg-muted-foreground/8 rounded" />
-        </div>
-      </div>
-      {/* Compact skeletons */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {[1, 2].map((i) => (
-          <div key={i} className="rounded-lg overflow-hidden animate-pulse flex h-20">
-            <div className="w-20 shrink-0 bg-muted-foreground/10" />
-            <div className="flex-1 px-3 py-2 bg-card space-y-1.5">
-              <div className="h-3.5 w-3/4 bg-muted-foreground/10 rounded" />
-              <div className="h-2.5 w-full bg-muted-foreground/8 rounded" />
-            </div>
+    <div className="px-5">
+      <div className="grid grid-cols-3 gap-2.5">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl overflow-hidden animate-pulse">
+            <div className="aspect-[3/4] bg-muted-foreground/10" />
           </div>
         ))}
       </div>
@@ -364,9 +255,7 @@ export function StyleSelectionPanel({
   const hasMultiplePages = totalPages > 1
   const remainingCount = sortedStyles.length - (page + 1) * PAGE_SIZE
 
-  // Split into hero and compact cards
-  const heroStyle = pageStyles[0] ?? null
-  const compactStyles = pageStyles.slice(1)
+  // All cards rendered as equal portrait cards — no hero/compact split
 
   return (
     <div className={cn('flex flex-col h-full overflow-hidden bg-background', className)}>
@@ -436,32 +325,20 @@ export function StyleSelectionPanel({
                   }}
                   className="space-y-2.5"
                 >
-                  {/* Hero card */}
-                  {heroStyle && (
-                    <FeaturedStyleCard
-                      style={heroStyle}
-                      isSelected={isStyleSelected(heroStyle.id)}
-                      isBestMatch={heroStyle.id === bestMatchId}
-                      disabled={isLoading}
-                      onClick={() => handleCardClick(heroStyle)}
-                    />
-                  )}
-
-                  {/* Compact cards */}
-                  {compactStyles.length > 0 && (
-                    <div className="flex flex-col gap-2.5">
-                      {compactStyles.map((style, index) => (
-                        <CompactStyleCard
-                          key={style.id}
-                          style={style}
-                          index={index}
-                          isSelected={isStyleSelected(style.id)}
-                          disabled={isLoading}
-                          onClick={() => handleCardClick(style)}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  {/* 3 portrait cards side by side */}
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {pageStyles.map((style, index) => (
+                      <PortraitStyleCard
+                        key={style.id}
+                        style={style}
+                        index={index}
+                        isSelected={isStyleSelected(style.id)}
+                        isBestMatch={style.id === bestMatchId}
+                        disabled={isLoading}
+                        onClick={() => handleCardClick(style)}
+                      />
+                    ))}
+                  </div>
                 </motion.div>
               </AnimatePresence>
             </div>

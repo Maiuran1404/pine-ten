@@ -528,7 +528,17 @@ export function useStoryboard({
     (_editedNarrative?: VideoNarrative) => {
       setNarrativeApproved(true)
 
-      // UX-3: Inject optimistic acknowledgment before AI response
+      // The AI prompt already has the full narrative via state.videoNarrative,
+      // so the user message just needs a short approval — no need to echo narrative fields.
+      // IMPORTANT: User message must be added FIRST (via handleSendOption) before the
+      // optimistic ack. React batches both setMessages calls in enqueue order, so the
+      // user message will render before the ack in the chat.
+      handleSendOption(
+        'The story narrative looks great. Let\u2019s choose a visual style for the video.',
+        { narrativeApproved: true, stage: 'INSPIRATION', turnsInCurrentStage: 0 }
+      )
+
+      // UX-3: Inject optimistic acknowledgment AFTER user message
       if (setMessages) {
         const ackMessage: Message = {
           id: crypto.randomUUID(),
@@ -538,13 +548,6 @@ export function useStoryboard({
         }
         setMessages((prev) => [...prev, ackMessage])
       }
-
-      // The AI prompt already has the full narrative via state.videoNarrative,
-      // so the user message just needs a short approval — no need to echo narrative fields.
-      handleSendOption(
-        'The story narrative looks great. Let\u2019s choose a visual style for the video.',
-        { narrativeApproved: true, stage: 'INSPIRATION', turnsInCurrentStage: 0 }
-      )
     },
     [handleSendOption, setMessages]
   )

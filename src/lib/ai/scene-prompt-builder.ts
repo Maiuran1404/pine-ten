@@ -25,9 +25,10 @@ import {
 } from './cinematic-vocabulary'
 
 const DEFAULT_QUALITY_FOOTER =
-  'Editorial cinematography, intentional composition with clear focal point. Not a stock photo — cinematic depth of field, motivated lighting, no generic office setups. No text, no watermarks.'
+  'Captured on location with a cinema-grade camera. Subtle natural film grain, authentic lens characteristics with slight chromatic aberration at edges. Practical lighting from real on-set sources. Lived-in composition — natural skin texture, creased fabrics, real environmental reflections. No text overlays.'
 const DEFAULT_BATCH_PREFIX =
-  'Consistent cinematic series — same color grading, same photographic style, same film stock.'
+  'Consistent photo series from the same production shoot — matching color grade, same camera and lens setup, identical lighting rig across all frames.'
+const PHOTOGRAPHIC_ANCHOR = '35mm film photograph, shot on ARRI Alexa Mini with Cooke S4 lenses.'
 const DEFAULT_PROMPT_CAP = 1500
 const DEFAULT_SUBJECT_ANCHOR_CAP = 150
 
@@ -109,6 +110,9 @@ export function buildScenePrompt(
   if (dnaPrefix) {
     parts.push(dnaPrefix)
   }
+
+  // ── 1b. PHOTOGRAPHIC ANCHOR — primes model for film-like output ──
+  parts.push(PHOTOGRAPHIC_ANCHOR)
 
   // ── 2. SUBJECT + CONTENT — the actual scene (1-2 sentences) ──
   if (scene.imageGenerationPrompt) {
@@ -253,6 +257,9 @@ function buildLegacyPrompt(
   if (batchContext && batchContext.totalScenes > 1) {
     parts.push(config?.prompts.batchPrefix ?? DEFAULT_BATCH_PREFIX)
   }
+
+  // Photographic anchor — primes model for film-like output
+  parts.push(PHOTOGRAPHIC_ANCHOR)
 
   // Subject + content
   const subjectAnchor = extractSubjectAnchor(scene, config)
