@@ -943,8 +943,12 @@ export function useChatInterfaceData({
     const lastMsg = msgs[msgs.length - 1]
     const aiSignalsReady = lastMsg?.role === 'assistant' && hasReadyIndicator(lastMsg.content)
 
+    // REVIEW stage = the brief IS ready by definition. Don't gate on AI regex.
+    // DEEPEN still requires the AI to explicitly signal readiness.
     const baseReady =
-      stage === 'SUBMIT' || ((stage === 'REVIEW' || stage === 'DEEPEN') && aiSignalsReady)
+      stage === 'SUBMIT' ||
+      (stage === 'REVIEW' && lastMsg?.role === 'assistant') ||
+      ((stage === 'REVIEW' || stage === 'DEEPEN') && aiSignalsReady)
 
     // For video projects, also require storyboard reviewed + images done.
     // When stage is SUBMIT or the AI explicitly signals readiness, bypass

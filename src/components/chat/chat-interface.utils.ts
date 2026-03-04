@@ -57,6 +57,13 @@ export const READY_PATTERNS = [
   /here's your.*brief/i,
   /ready to get started/i,
   /want (me|us) to (submit|create|proceed)/i,
+  // Catch-all: "brief" within 40 chars of a completion keyword
+  /\bbrief\b.{0,40}\b(complete|locked|finalized|all set|wrapped up|done)\b/i,
+  /locked and loaded/i,
+  /ready to get this built/i,
+  /ready to (have|get) (this|it|your)/i,
+  /bring.*to life/i,
+  /\bfinal brief\b/i,
 ]
 
 /** Check if a message indicates the AI is ready to create a task. */

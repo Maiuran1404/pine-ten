@@ -415,7 +415,20 @@ function resolveDeliverableTypeForMarker(state: BriefingState): string {
     return categoryMap[state.deliverableCategory]
   }
   const topic = (state.brief.topic.value ?? '').toLowerCase()
-  if (topic.includes('video') || topic.includes('cinematic')) return 'launch_video'
+  // Video keywords checked FIRST — "reel", "tiktok" etc. are video deliverables
+  if (
+    topic.includes('video') ||
+    topic.includes('cinematic') ||
+    topic.includes('reel') ||
+    topic.includes('tiktok') ||
+    topic.includes('motion') ||
+    topic.includes('animation') ||
+    topic.includes('explainer') ||
+    topic.includes('walkthrough') ||
+    topic.includes('demo video') ||
+    topic.includes('promo video')
+  )
+    return 'launch_video'
   if (topic.includes('website') || topic.includes('landing')) return 'landing_page'
   if (topic.includes('logo') || topic.includes('brand')) return 'brand_identity'
   return 'launch_video'
