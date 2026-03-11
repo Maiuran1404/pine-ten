@@ -314,7 +314,6 @@ export function AIUploader<TClassification extends object>({
               <div className="flex gap-4">
                 {/* Preview image */}
                 <div className="w-32 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={upload.preview}
                     alt={upload.file.name}

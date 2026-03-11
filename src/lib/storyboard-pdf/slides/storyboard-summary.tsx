@@ -103,7 +103,6 @@ export function StoryboardSummary({
           </div>
         </div>
         {logoSrc && (
-          /* eslint-disable-next-line @next/next/no-img-element */
           <img src={logoSrc} alt="Crafted" style={{ height: 42, objectFit: 'contain' }} />
         )}
       </div>

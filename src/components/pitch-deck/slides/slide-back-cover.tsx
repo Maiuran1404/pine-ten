@@ -43,7 +43,6 @@ export function SlideBackCover({ data, logoSrc }: SlideBackCoverProps) {
       {/* Large Crafted logo top right */}
       {logoSrc && (
         <div style={{ position: 'absolute', top: 80, right: 100 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={logoSrc}
             alt="Crafted"

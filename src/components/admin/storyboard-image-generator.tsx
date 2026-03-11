@@ -559,7 +559,6 @@ export function StoryboardImageGenerator() {
                 {/* Image Preview */}
                 <div className="aspect-video bg-muted/30 flex items-center justify-center relative overflow-hidden rounded-t-lg">
                   {imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={imageUrl} alt={scene.title} className="w-full h-full object-cover" />
                   ) : status === 'generating' ? (
                     <div className="flex flex-col items-center gap-2">

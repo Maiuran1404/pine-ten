@@ -317,7 +317,6 @@ export function BiggedKeywordScraper({ onUploadComplete }: BiggedKeywordScraperP
                   {successfulResults.map((result, idx) => (
                     <div key={idx} className="space-y-1">
                       <div className="aspect-square rounded-lg overflow-hidden bg-muted relative group">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={result.url}
                           alt={result.name || ''}

@@ -119,7 +119,6 @@ const GalleryCard = memo(function GalleryCard({
             <span className="text-[10px] text-muted-foreground/50">{getHostname(item.url)}</span>
           </div>
         ) : (
-          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={item.screenshotUrl}
             alt={item.name}
@@ -242,7 +241,6 @@ function SitePreview({
             {!iframeLoaded && (
               <>
                 {item.screenshotUrl && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={item.screenshotUrl}
                     alt=""
@@ -334,7 +332,6 @@ function SelectedWebsiteCard({
         {/* Thumbnail */}
         <div className="shrink-0 w-14 h-10 rounded overflow-hidden bg-muted">
           {item.screenshotUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={item.screenshotUrl}
               alt={item.name}
@@ -386,7 +383,6 @@ function SelectedWebsiteCard({
       {/* Expanded screenshot preview */}
       {isExpanded && item.screenshotUrl && (
         <div className="border-t border-border/30 max-h-[420px] overflow-hidden bg-muted/20">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.screenshotUrl}
             alt={item.name}
@@ -421,7 +417,6 @@ function ComparisonView({
             <div className="rounded-lg overflow-hidden border border-border/40 bg-muted">
               <div className="aspect-[4/3]">
                 {item.screenshotUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={item.screenshotUrl}
                     alt={item.name}
@@ -482,7 +477,6 @@ function SimilarResultsGrid({
           }
         >
           <div className="aspect-[4/3] bg-muted">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={result.inspiration.screenshotUrl}
               alt={result.inspiration.name}

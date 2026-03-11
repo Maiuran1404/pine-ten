@@ -222,7 +222,6 @@ export function QuickDesignModal({ open, onOpenChange }: QuickDesignModalProps) 
                         {/* Preview Image */}
                         <div className="aspect-video relative bg-muted">
                           {template.previewImageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={template.previewImageUrl}
                               alt={template.name}

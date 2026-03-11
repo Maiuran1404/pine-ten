@@ -81,7 +81,6 @@ export function BrandCardPreviewPanel({ brandData }: { brandData: BrandData }) {
                 }}
               >
                 {(brandData.logoUrl || brandData.faviconUrl) && !logoErr ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={brandData.logoUrl || brandData.faviconUrl}
                     alt=""

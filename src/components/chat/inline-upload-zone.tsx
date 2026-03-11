@@ -312,7 +312,6 @@ export function InlineUploadZone({
               onClick={(e) => e.stopPropagation()}
             >
               {file.fileType?.startsWith('image/') ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={file.fileUrl}
                   alt={file.fileName}

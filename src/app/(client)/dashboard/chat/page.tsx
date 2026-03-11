@@ -197,7 +197,6 @@ export default function ChatPage() {
           {/* User avatar */}
           <div className="w-10 h-10 rounded-full border border-border bg-white dark:bg-card overflow-hidden flex items-center justify-center">
             {session?.user?.image ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={session.user.image}
                 alt={session.user.name || 'User'}

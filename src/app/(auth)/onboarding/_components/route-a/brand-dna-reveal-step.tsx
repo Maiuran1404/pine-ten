@@ -287,7 +287,6 @@ export function BrandDNARevealStep({
               }}
             >
               {(brandData.logoUrl || brandData.faviconUrl) && !logoError ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={brandData.logoUrl || brandData.faviconUrl}
                   alt={brandData.name || 'Brand logo'}

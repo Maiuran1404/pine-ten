@@ -101,7 +101,6 @@ export function SlideCover({ data, figureLogoSrc }: SlideCoverProps) {
             zIndex: 1,
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={figureLogoSrc}
             alt="Crafted figure"

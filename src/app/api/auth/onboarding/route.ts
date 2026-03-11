@@ -4,13 +4,7 @@ import { requireAuth } from '@/lib/require-auth'
 import { db } from '@/db'
 import { users, freelancerProfiles, companies, audiences } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import {
-  adminNotifications,
-  sendEmail,
-  emailTemplates,
-  notifyAdminWhatsApp,
-  adminWhatsAppTemplates,
-} from '@/lib/notifications'
+import { adminNotifications, sendEmail, emailTemplates } from '@/lib/notifications'
 import { config } from '@/lib/config'
 import { withRateLimit } from '@/lib/rate-limit'
 import { inferAudiencesFromBrand } from '@/lib/ai/infer-audiences'

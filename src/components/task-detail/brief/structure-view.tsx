@@ -121,7 +121,7 @@ function CompactStoryboardGrid({
 
 function CompactSceneCard({
   scene,
-  index,
+  index: _index,
   isFirst,
   timestamp,
 }: {
@@ -140,7 +140,6 @@ function CompactSceneCard({
       {/* Thumbnail */}
       {scene.resolvedImageUrl ? (
         <div className="aspect-video w-full overflow-hidden bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={scene.resolvedImageUrl}
             alt={scene.title}

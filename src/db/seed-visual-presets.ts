@@ -530,7 +530,7 @@ Think Richard Avedon's portrait work meets Peter Lindbergh's editorial style mee
 async function seedVisualPresets() {
   const { db } = await import('./index')
   const { deliverableStyleReferences } = await import('./schema')
-  const { eq, and } = await import('drizzle-orm')
+  const { eq } = await import('drizzle-orm')
 
   console.log('Seeding visual style presets (UPSERT mode)...\n')
 

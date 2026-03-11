@@ -583,7 +583,6 @@ function DashboardContent() {
                           className="relative group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50"
                         >
                           {file.fileType?.startsWith('image/') ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={file.fileUrl}
                               alt={file.fileName}
@@ -1235,7 +1234,6 @@ function DashboardContent() {
                               {/* Thumbnail */}
                               {templateImageMap.get(option.optionKey) && (
                                 <div className="shrink-0 w-11 h-11 rounded-lg overflow-hidden bg-muted/40">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={templateImageMap.get(option.optionKey)}
                                     alt=""

@@ -280,7 +280,6 @@ function OnboardingPreview({
                         key={`${index}-${imgIndex}`}
                         className="w-full h-[130px] rounded-lg overflow-hidden flex-shrink-0"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={ref.imageUrl} alt="" className="w-full h-full object-cover" />
                       </div>
                     ))}
@@ -939,7 +938,6 @@ export default function BrandReferencesPage() {
                       )}
                       onClick={() => openEditDialog(ref)}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={ref.imageUrl}
                         alt={ref.name}
@@ -1089,7 +1087,6 @@ export default function BrandReferencesPage() {
                                     )}
                                     onClick={() => openEditDialog(ref)}
                                   >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                       src={ref.imageUrl}
                                       alt={ref.name}
@@ -1373,7 +1370,6 @@ export default function BrandReferencesPage() {
               />
               {formState.imageUrl && (
                 <div className="mt-2 aspect-video max-w-xs rounded-lg overflow-hidden bg-muted">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={formState.imageUrl}
                     alt="Preview"

@@ -431,7 +431,6 @@ function SceneCard({
       {/* Scene image */}
       {scene.resolvedImageUrl && (
         <div className="aspect-video w-full overflow-hidden rounded-t-lg bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={scene.resolvedImageUrl}
             alt={scene.title}
@@ -738,7 +737,6 @@ function SceneThumbnail({
       {imageUrl && !isGenerating ? (
         isGif ? (
           // Native <img> for GIFs — Next.js Image strips animation
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}
             alt={`Scene ${scene.sceneNumber} thumbnail`}
@@ -747,7 +745,6 @@ function SceneThumbnail({
         ) : (
           // Plain <img> for all scene thumbnails — these are external, uncontrolled URLs
           // where next/image would throw on unwhitelisted hostnames
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}
             alt={`Scene ${scene.sceneNumber} thumbnail`}
@@ -1152,7 +1149,7 @@ export function RichStoryboardPanel({
   onChangeStyle,
   styleSelectionStyles,
   confirmedStyleIds,
-  onStyleShowMore,
+  onStyleShowMore: _onStyleShowMore,
   onStyleShowDifferent,
   isStyleLoading,
   onOpenStyleSheet,

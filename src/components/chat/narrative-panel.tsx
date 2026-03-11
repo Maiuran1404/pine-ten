@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, type ReactNode } from 'react'
-import { Film, ArrowRight, Check, Pencil, Sparkles, Loader2 } from 'lucide-react'
+import { Film, ArrowRight, Check, Pencil, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'

@@ -271,7 +271,6 @@ export function SubmitActionBar({
                         whileHover={{ scale: 1.05 }}
                         className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-border/50 shrink-0"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={item.imageUrl}
                           alt={item.name}

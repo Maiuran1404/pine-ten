@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { requireAdmin } from '@/lib/require-auth'
-import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
+import { withErrorHandling, successResponse } from '@/lib/errors'
 import { buildScenePrompt } from '@/lib/ai/scene-prompt-builder'
 import type { ImagePipelineConfig } from '@/lib/ai/image-pipeline-config'
 import { DEFAULT_IMAGE_PIPELINE_CONFIG } from '@/lib/ai/image-pipeline-config'

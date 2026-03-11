@@ -523,7 +523,7 @@ export function StructurePanel({
   onRetryGeneration,
   onEditNarrative,
   imageGenerationProgress,
-  isGeneratingImages,
+  isGeneratingImages: _isGeneratingImages,
   onRegenerateImage,
   styleSelectionStyles,
   confirmedStyleIds,

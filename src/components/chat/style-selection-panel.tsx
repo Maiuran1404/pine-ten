@@ -94,7 +94,6 @@ function PortraitStyleCard({
       >
         {/* Portrait image */}
         <div className="relative aspect-[3/4] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={style.imageUrl}
             alt={style.name}

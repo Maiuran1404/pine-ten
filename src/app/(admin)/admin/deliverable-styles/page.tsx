@@ -529,7 +529,6 @@ export default function DeliverableStylesPage() {
                 />
                 {formState.imageUrl && (
                   <div className="mt-2 aspect-video max-w-xs rounded-lg overflow-hidden bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={formState.imageUrl}
                       alt="Preview"
@@ -794,7 +793,6 @@ export default function DeliverableStylesPage() {
                       <div className="grid grid-cols-3 gap-2">
                         {formState.styleReferenceImages.map((url, i) => (
                           <div key={i} className="relative group">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={url}
                               alt={`Reference ${i + 1}`}
@@ -1293,7 +1291,6 @@ export default function DeliverableStylesPage() {
                               className={`overflow-hidden ${!style.isActive ? 'opacity-60' : ''}`}
                             >
                               <div className="aspect-square relative bg-muted">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={style.imageUrl}
                                   alt={style.name}

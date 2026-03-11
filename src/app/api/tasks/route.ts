@@ -13,12 +13,7 @@ import {
 } from '@/db/schema'
 import { eq, ne, desc, and, sql, count, inArray, like } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
-import {
-  notify,
-  adminNotifications,
-  notifyAdminWhatsApp,
-  adminWhatsAppTemplates,
-} from '@/lib/notifications'
+import { notify, adminNotifications } from '@/lib/notifications'
 import { sendNotificationEmail } from '@/lib/notifications/safe-send'
 import { config } from '@/lib/config'
 import { createTaskSchema } from '@/lib/validations'

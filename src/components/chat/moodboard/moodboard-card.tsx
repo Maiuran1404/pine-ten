@@ -126,7 +126,6 @@ export function MoodboardCard({
         // Image display
         <div className="aspect-square bg-muted relative">
           {!imageError && item.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={item.imageUrl}
               alt={item.name}

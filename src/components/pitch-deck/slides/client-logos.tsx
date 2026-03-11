@@ -23,7 +23,6 @@ export function ClientLogos({ logoBasePath = '/', logoDataMap }: ClientLogosProp
       }}
     >
       {CLIENT_LOGOS.map((logo) => (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           key={logo.alt}
           src={logoDataMap?.[logo.src] ?? `${logoBasePath}${logo.src}`}

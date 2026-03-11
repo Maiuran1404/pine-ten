@@ -28,7 +28,6 @@ export function TabStyles({ styleDetails }: TabStylesProps) {
             {/* Thumbnail */}
             <div className="aspect-square bg-muted overflow-hidden">
               {style.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img src={style.imageUrl} alt={style.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">

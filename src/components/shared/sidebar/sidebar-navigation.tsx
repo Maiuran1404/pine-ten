@@ -126,7 +126,7 @@ export function SidebarGroupedNavigation({
 
   return (
     <div className="space-y-1">
-      {groups.map((group, groupIndex) => {
+      {groups.map((group, _groupIndex) => {
         const hasActive = groupHasActiveItem(group)
         // All groups start open — users collapse what they don't need
         const defaultOpen = true

@@ -417,9 +417,9 @@ export const ChatMessageList = memo(function ChatMessageList({
   lastStyleMessageIndex,
   moodboardStyleIds,
   moodboardItems,
-  pendingTask,
-  isTaskMode,
-  showManualSubmit,
+  pendingTask: _pendingTask,
+  isTaskMode: _isTaskMode,
+  showManualSubmit: _showManualSubmit,
   userCredits,
   lastUserMessageIndex: _lastUserMessageIndex,
   scrollAreaRef,
@@ -437,7 +437,7 @@ export const ChatMessageList = memo(function ChatMessageList({
   handleSelectVideo,
   handleOpenSubmissionModal: _handleOpenSubmissionModal,
   handleRejectTask: _handleRejectTask,
-  handleRequestTaskSummary,
+  handleRequestTaskSummary: _handleRequestTaskSummary,
   onStrategicReviewAction,
   briefingStage,
   structureType,
@@ -644,7 +644,6 @@ export const ChatMessageList = memo(function ChatMessageList({
                                         {/* Image */}
                                         <div className="aspect-[4/3] bg-muted overflow-hidden">
                                           {style.imageUrl ? (
-                                            /* eslint-disable-next-line @next/next/no-img-element */
                                             <img
                                               src={style.imageUrl}
                                               alt={style.name}
@@ -920,7 +919,6 @@ export const ChatMessageList = memo(function ChatMessageList({
                         {/* Selected style image - shows above the text when style was selected */}
                         {message.selectedStyle && message.selectedStyle.imageUrl && (
                           <div className="mb-2 rounded-xl overflow-hidden max-w-[200px] border-2 border-crafted-sage dark:border-crafted-green/50 shadow-sm">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={message.selectedStyle.imageUrl}
                               alt={message.selectedStyle.name}

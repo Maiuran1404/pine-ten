@@ -81,7 +81,6 @@ export function TabMoodboard({ moodboardItems }: TabMoodboardProps) {
                   >
                     <div className="aspect-square bg-muted overflow-hidden">
                       {item.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={item.imageUrl}
                           alt={item.name}

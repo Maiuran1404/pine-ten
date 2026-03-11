@@ -334,7 +334,6 @@ function ImageSlot({
         />
         {imageUrlInput && (
           <div className="relative aspect-video rounded overflow-hidden bg-muted">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={imageUrlInput} alt="Preview" className="w-full h-full object-cover" />
           </div>
         )}
@@ -354,7 +353,6 @@ function ImageSlot({
     return (
       <div className="group relative border rounded-lg overflow-hidden">
         <div className="aspect-video bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image.imageUrl} alt={label} className="w-full h-full object-cover" />
         </div>
         <div className="p-2">

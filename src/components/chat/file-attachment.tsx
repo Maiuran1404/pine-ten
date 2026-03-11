@@ -29,7 +29,6 @@ export function FileAttachment({ file, showPreview = true, onRemove }: FileAttac
     return (
       <div className="relative group">
         <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={file.fileUrl}
             alt={file.fileName}

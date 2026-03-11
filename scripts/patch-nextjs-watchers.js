@@ -39,7 +39,7 @@ let patchCount = 0
  * Helper: replace a string, incrementing patchCount on success.
  * Returns true if replacement happened.
  */
-function patch(from, to, label) {
+function patch(from, to, _label) {
   if (content.includes(from)) {
     content = content.replace(from, to)
     patchCount++

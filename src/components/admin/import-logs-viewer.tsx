@@ -360,7 +360,6 @@ export function ImportLogsViewer({
                                 className="relative aspect-square rounded-lg overflow-hidden bg-muted group cursor-pointer"
                                 onClick={() => setSelectedLog(log)}
                               >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                   src={item.imageUrl}
                                   alt={item.name}
@@ -504,7 +503,6 @@ export function ImportLogsViewer({
                       {selectedLog.importedItems.map((item, idx) => (
                         <div key={idx} className="space-y-1">
                           <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={item.imageUrl}
                               alt={item.name}

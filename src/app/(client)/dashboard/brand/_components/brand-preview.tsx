@@ -40,7 +40,6 @@ function CompanyPreview({ brand }: { brand: BrandData }) {
     <div className="rounded-2xl overflow-hidden shadow-2xl border border-border bg-card">
       <div className="p-6 flex items-center gap-4 border-b border-border">
         {brand.logoUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={brand.logoUrl}
             alt=""
@@ -362,7 +361,6 @@ function SocialPreview({ brand }: { brand: BrandData }) {
         <div className="px-6 -mt-8 pb-4">
           <div className="flex items-end gap-4">
             {brand.logoUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={brand.logoUrl}
                 alt=""

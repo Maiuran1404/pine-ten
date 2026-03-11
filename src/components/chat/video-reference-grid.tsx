@@ -198,7 +198,6 @@ function VideoCard({
         className="relative overflow-hidden rounded-2xl cursor-pointer group aspect-video"
       >
         {/* Thumbnail image */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={thumbnailUrl}
           alt={video.name}

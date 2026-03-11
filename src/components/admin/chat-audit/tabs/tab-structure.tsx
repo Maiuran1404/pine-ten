@@ -87,7 +87,6 @@ function StoryboardView({ scenes }: { scenes: StoryboardScene[] }) {
             {/* Image */}
             {scene.resolvedImageUrl && (
               <div className="aspect-video bg-muted relative overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={scene.resolvedImageUrl}
                   alt={scene.title}

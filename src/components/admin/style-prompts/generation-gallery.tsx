@@ -43,7 +43,7 @@ const STATUS_ORDER: Record<GenerationStatus, number> = {
 export function GenerationGallery({
   presets,
   subject,
-  cardStates,
+  cardStates: _cardStates,
   getCardState,
   onClose,
   onViewDetails,
@@ -61,7 +61,7 @@ export function GenerationGallery({
       result[state.status]++
     }
     return result
-  }, [presets, getCardState, cardStates])
+  }, [presets, getCardState])
 
   // Filter and sort presets
   const displayPresets = useMemo(() => {
@@ -75,7 +75,7 @@ export function GenerationGallery({
       const statusB = getCardState(b.id).status
       return STATUS_ORDER[statusA] - STATUS_ORDER[statusB]
     })
-  }, [presets, statusFilter, getCardState, cardStates])
+  }, [presets, statusFilter, getCardState])
 
   const handleSave = async (id: string) => {
     setSavingIds((prev) => new Set(prev).add(id))

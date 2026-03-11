@@ -587,7 +587,6 @@ export default function OrshotTemplatesPage() {
                   >
                     <div className="aspect-video relative bg-muted">
                       {template.previewImageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={template.previewImageUrl}
                           alt={template.name}

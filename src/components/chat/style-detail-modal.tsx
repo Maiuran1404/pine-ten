@@ -52,7 +52,6 @@ export function StyleDetailModal({
       <DialogContent className="sm:max-w-md p-0 overflow-hidden">
         {/* Image */}
         <div className="relative aspect-square bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={style.imageUrl}
             alt={style.name}

@@ -585,7 +585,6 @@ https://youtu.be/xyz789
                           /(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/
                         )?.[1]
                         return videoId ? (
-                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
                             alt="Video thumbnail"
@@ -823,7 +822,6 @@ https://youtu.be/xyz789
                     className="aspect-video relative bg-muted cursor-pointer"
                     onClick={() => setPreviewVideo(video)}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={video.videoThumbnailUrl || video.imageUrl}
                       alt={video.name}

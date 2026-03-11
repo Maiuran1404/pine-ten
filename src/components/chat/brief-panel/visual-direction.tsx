@@ -50,7 +50,6 @@ function SelectedStyles({ styles, onRemoveStyle }: SelectedStylesProps) {
               </p>
             </div>
           ) : (
-            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={style.imageUrl}
               alt={style.name}

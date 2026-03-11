@@ -17,13 +17,11 @@ export function Header({
   return (
     <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 sm:p-6 md:p-8">
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/craftedcombinedwhite.png"
           alt="Crafted"
           className={`h-6 sm:h-8 w-auto ${forceWhiteLogo ? 'block' : 'hidden dark:block'}`}
         />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/craftedcombintedblack.png"
           alt="Crafted"

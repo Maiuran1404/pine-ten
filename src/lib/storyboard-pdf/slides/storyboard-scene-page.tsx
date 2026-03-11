@@ -136,7 +136,6 @@ function SceneCard({ scene }: { scene: StoryboardPdfScene }) {
               </div>
             </div>
             {hasImage && (
-              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={scene.resolvedImageUrl}
                 alt={scene.title}
@@ -366,7 +365,6 @@ export function StoryboardScenePage({
           </span>
         </div>
         {logoSrc && (
-          /* eslint-disable-next-line @next/next/no-img-element */
           <img src={logoSrc} alt="Crafted" style={{ height: 32, objectFit: 'contain' }} />
         )}
       </div>

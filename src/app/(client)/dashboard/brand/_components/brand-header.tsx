@@ -125,7 +125,6 @@ export function BrandHeader({
           {/* Left: brand identity cluster */}
           <div className="flex items-center gap-3 min-w-0">
             {brand.logoUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={brand.logoUrl}
                 alt=""

@@ -81,7 +81,6 @@ export function InlineCollection({
                     className="relative shrink-0 group"
                   >
                     <div className="w-16 h-16 rounded-lg overflow-hidden border border-border bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={item.imageUrl}
                         alt={item.name}

@@ -50,7 +50,7 @@ function chainableSelect(result: unknown[]) {
 }
 
 // db.select().from(table) — no where/limit (resolves from .from())
-function chainableSelectFromOnly(result: unknown[]) {
+function _chainableSelectFromOnly(result: unknown[]) {
   return {
     from: vi.fn().mockResolvedValue(result),
   }

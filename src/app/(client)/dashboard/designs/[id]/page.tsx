@@ -269,7 +269,6 @@ export default function DesignResultPage() {
         >
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="relative bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={design.imageUrl}
                 alt={design.templateName}

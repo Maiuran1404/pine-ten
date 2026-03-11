@@ -123,7 +123,6 @@ export function SlideHeader({ date, clientName, logoSrc }: SlideHeaderProps) {
       </div>
       {logoSrc && (
         <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={logoSrc} alt="Crafted" style={{ height: 52, objectFit: 'contain' }} />
         </div>
       )}
