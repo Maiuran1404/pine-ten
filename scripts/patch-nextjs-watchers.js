@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * Post-install patch for Next.js to fix EMFILE "too many open files" on macOS.
  *
