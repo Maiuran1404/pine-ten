@@ -1,6 +1,6 @@
 # Crafted (Pine Ten)
 
-Professional design services platform connecting clients with freelance designers. Clients submit design tasks through an AI-powered chat interface, and the platform automatically matches them with the best-fit freelancer using a scoring algorithm.
+AI-powered interior design marketplace connecting clients with freelance designers. Clients describe projects through an AI-driven creative briefing flow, and the platform automatically matches them with the best-fit freelancer using a scoring algorithm. Freelancers deliver work through a structured review pipeline, and admins oversee the entire lifecycle.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
@@ -9,18 +9,24 @@ Professional design services platform connecting clients with freelance designer
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript (strict mode)
-- **Database:** PostgreSQL via Drizzle ORM (hosted on Supabase)
-- **Auth:** Better Auth (email/password + Google OAuth)
-- **Styling:** Tailwind CSS v4, shadcn/ui
-- **Payments:** Stripe (checkout + Connect for artist payouts)
-- **AI:** Anthropic Claude (chat-based task intake)
-- **Email:** Resend
-- **Messaging:** Twilio (WhatsApp), Slack
-- **Testing:** Vitest (unit/integration), Playwright (E2E)
-- **State:** TanStack React Query
-- **Deployment:** Vercel
+| Category      | Technology                                                            |
+| ------------- | --------------------------------------------------------------------- |
+| Framework     | Next.js 16 (App Router)                                               |
+| Language      | TypeScript (strict mode)                                              |
+| Database      | PostgreSQL via Drizzle ORM (hosted on Supabase)                       |
+| Auth          | Better Auth (email/password + Google OAuth)                           |
+| Styling       | Tailwind CSS v4, shadcn/ui, Framer Motion                             |
+| Payments      | Stripe (Checkout + Connect for artist payouts)                        |
+| AI            | Anthropic Claude (briefing chat), Google Gemini, FAL/Flux (image gen) |
+| Email         | Resend (transactional email with queue system)                        |
+| Messaging     | Twilio (WhatsApp), Slack (bot + notifications)                        |
+| Storage       | Supabase Storage (task files, deliverables, attachments)              |
+| Analytics     | PostHog (event tracking), Vercel Analytics & Speed Insights           |
+| Monitoring    | Sentry (error tracking + profiling)                                   |
+| Rate Limiting | Upstash Redis                                                         |
+| Testing       | Vitest (unit/integration), Playwright (E2E)                           |
+| State         | TanStack React Query v5                                               |
+| Deployment    | Vercel                                                                |
 
 ## Quick Start
 
@@ -29,7 +35,7 @@ Professional design services platform connecting clients with freelance designer
 git clone <repo-url>
 cd pine-ten
 
-# Install dependencies (requires pnpm)
+# Install dependencies
 pnpm install
 
 # Copy environment variables
@@ -43,128 +49,274 @@ pnpm db:push
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Dev URLs use subdomain routing:
+
+- `app.localhost:3000` -- Client dashboard
+- `artist.localhost:3000` -- Freelancer portal
+- `superadmin.localhost:3000` -- Admin dashboard
 
 ## Project Structure
 
 ```
 src/
-  app/                    # Next.js App Router pages and API routes
-    (admin)/              # Admin dashboard route group
-    (auth)/               # Auth pages (login, signup, etc.)
-    (client)/             # Client dashboard route group
-    (freelancer)/         # Freelancer portal route group
-    api/                  # API routes (tasks, auth, chat, brand, etc.)
-  components/             # React components
-    ui/                   # shadcn/ui primitives
-    shared/               # Shared components across route groups
-    admin/                # Admin-specific components
-    chat/                 # AI chat interface components
-    onboarding/           # Onboarding flow components
-    dashboard/            # Dashboard components
-    freelancer/           # Freelancer portal components
-  db/                     # Database layer
-    schema.ts             # Drizzle ORM schema (all tables, enums, relations)
-    index.ts              # Database client, connection pool, withTransaction
-    migrations/           # Generated Drizzle migrations
-  hooks/                  # Custom React hooks
-  lib/                    # Shared utilities and business logic
-    ai/                   # Claude AI integration (chat, prompts)
-    validations/          # Zod schemas for API request validation
-    errors.ts             # Error handling (APIError, withErrorHandling, Errors)
-    auth.ts               # Better Auth server configuration
-    auth-client.ts        # Better Auth client (useSession, signIn, signOut)
-    require-auth.ts       # Auth guards (requireAuth, requireRole, requireAdmin)
-    config.ts             # App configuration constants
-    env.ts                # Environment variable validation (Zod)
-    rate-limit.ts         # In-memory rate limiter
-    stripe.ts             # Stripe checkout integration
-    stripe-connect.ts     # Stripe Connect (artist payouts)
-    assignment-algorithm.ts  # Freelancer matching/scoring algorithm
-    notifications/        # Email, WhatsApp, Slack notification senders
-    slack/                # Slack bot integration
-  test/                   # Test infrastructure
-    setup.tsx             # Vitest global setup (mocks for Next.js, DOM APIs)
-    factories.ts          # Mock data factories (createMockUser, etc.)
-    utils.ts              # Test helpers (renderWithProviders, createMockSupabaseClient)
-    mocks/                # Module mocks (Supabase client)
-  types/                  # TypeScript type definitions
+  app/                        # Next.js App Router
+    (admin)/                  #   Admin dashboard (30+ management pages)
+    (auth)/                   #   Auth pages (login, register, onboarding, early-access)
+    (client)/                 #   Client dashboard (chat, tasks, designs, brand)
+    (freelancer)/             #   Freelancer portal (board, tasks, payouts, settings)
+    api/                      #   260+ API route handlers
+  components/                 # 241 React components
+    ui/                       #   shadcn/ui primitives
+    chat/                     #   AI briefing interface (52 files)
+    admin/                    #   Admin dashboards & management
+    freelancer/               #   Freelancer portal components
+    client/                   #   Client-specific UI
+    onboarding/               #   Registration & onboarding flow
+    dashboard/                #   Dashboard layouts
+    shared/                   #   Cross-portal shared components
+    task-detail/              #   Task viewing & editing
+    task-launch/              #   Task submission modal
+    creative-intake/          #   Structured creative brief
+    website-flow/             #   Website design flow
+    linear-board/             #   Kanban board interface
+    pitch-deck/               #   Presentation generator
+    settings/                 #   User settings panels
+  db/                         # Database layer
+    schema.ts                 #   Drizzle schema (35+ tables, 35 enums)
+    index.ts                  #   Connection pool, withTransaction
+    migrations/               #   Generated Drizzle migrations
+    seed-*.ts                 #   Seed scripts (styles, skills, visual presets)
+  hooks/                      # 38 custom React hooks
+  lib/                        # Shared utilities & business logic
+    ai/                       #   AI integration (78 files)
+      chat.ts                 #     Claude briefing system prompt
+      extractors/             #     Structured data extractors
+      image/                  #     Image gen providers (FAL, Flux, Imagen, Gemini)
+      scrapers/               #     Image search (Behance, Dribbble, Pexels, etc.)
+    notifications/            #   Email (Resend), WhatsApp (Twilio), queue system
+    slack/                    #   Slack bot, channels, block builders
+    supabase/                 #   Supabase clients (browser + server)
+    validations/              #   Zod schemas for API validation
+    website/                  #   Website design engine
+    pitch-deck/               #   Pitch deck PDF generation
+    storyboard-pdf/           #   Storyboard PDF export
+    errors.ts                 #   Error handling (APIError, withErrorHandling)
+    auth.ts                   #   Better Auth server config
+    auth-client.ts            #   Better Auth client (useSession, signIn)
+    require-auth.ts           #   Auth guards (requireAuth, requireRole, requireAdmin)
+    assignment-algorithm.ts   #   Freelancer matching & scoring
+    stripe.ts                 #   Stripe Checkout integration
+    stripe-connect.ts         #   Stripe Connect (artist payouts)
+    rate-limit.ts             #   Upstash Redis rate limiter
+    env.ts                    #   Environment variable validation (Zod)
+    audit.ts                  #   Activity audit logging
+    cache.ts                  #   Caching utilities
+    logger.ts                 #   Structured logging (Pino)
+    storage.ts                #   Supabase Storage helpers
+    posthog.ts                #   PostHog analytics client
+  providers/                  # Context providers
+    query-provider.tsx        #   React Query
+    csrf-provider.tsx         #   CSRF token management
+    posthog-provider.tsx      #   PostHog analytics
+    credit-provider.tsx       #   Credit balance context
+    sentry-provider.tsx       #   Sentry error tracking
+  test/                       # Test infrastructure
+    setup.tsx                 #   Vitest global setup
+    factories.ts              #   Mock data factories
+    utils.ts                  #   Test helpers (renderWithProviders)
+    mocks/                    #   Module mocks (Supabase, etc.)
+  types/                      # TypeScript type definitions
+  fonts/                      # Custom fonts (Satoshi, Geist)
 ```
 
 ## Available Scripts
 
-| Script               | Description                             |
-| -------------------- | --------------------------------------- |
-| `pnpm dev`           | Start development server                |
-| `pnpm build`         | Production build                        |
-| `pnpm start`         | Start production server                 |
-| `pnpm lint`          | Run ESLint                              |
-| `pnpm lint:fix`      | Run ESLint with auto-fix                |
-| `pnpm typecheck`     | TypeScript type checking (no emit)      |
-| `pnpm test`          | Run unit/integration tests (Vitest)     |
-| `pnpm test:watch`    | Run tests in watch mode                 |
-| `pnpm test:coverage` | Run tests with coverage report          |
-| `pnpm test:e2e`      | Run end-to-end tests (Playwright)       |
-| `pnpm db:generate`   | Generate Drizzle migrations from schema |
-| `pnpm db:migrate`    | Apply pending migrations                |
-| `pnpm db:push`       | Push schema changes directly (dev only) |
-| `pnpm db:studio`     | Open Drizzle Studio (database GUI)      |
-| `pnpm validate`      | Run lint + typecheck + tests            |
+| Script                        | Description                             |
+| ----------------------------- | --------------------------------------- |
+| `pnpm dev`                    | Start development server                |
+| `pnpm build`                  | Production build                        |
+| `pnpm start`                  | Start production server                 |
+| `pnpm lint`                   | Run ESLint                              |
+| `pnpm lint:fix`               | Run ESLint with auto-fix                |
+| `pnpm typecheck`              | TypeScript type checking (no emit)      |
+| `pnpm test`                   | Run unit/integration tests (Vitest)     |
+| `pnpm test:watch`             | Run tests in watch mode                 |
+| `pnpm test:coverage`          | Run tests with coverage report          |
+| `pnpm test:e2e`               | Run end-to-end tests (Playwright)       |
+| `pnpm db:generate`            | Generate Drizzle migrations from schema |
+| `pnpm db:migrate`             | Apply pending migrations                |
+| `pnpm db:push`                | Push schema changes directly (dev only) |
+| `pnpm db:studio`              | Open Drizzle Studio (database GUI)      |
+| `pnpm db:seed`                | Run main database seed                  |
+| `pnpm db:seed:styles`         | Seed deliverable style references       |
+| `pnpm db:seed:skills`         | Seed freelancer skills                  |
+| `pnpm db:seed:visual-presets` | Seed visual presets                     |
+| `pnpm db:apply-rls`           | Apply row-level security policies       |
+| `pnpm validate`               | Run lint + typecheck + tests            |
 
-## Architecture Overview
+## Architecture
 
-### Route Groups
+### Subdomain Routing
 
-The app uses Next.js route groups to separate concerns:
+| Subdomain                  | Route Group    | Role Required | Purpose                        |
+| -------------------------- | -------------- | ------------- | ------------------------------ |
+| `app.getcrafted.ai`        | `(client)`     | CLIENT        | Task creation, tracking, brand |
+| `artist.getcrafted.ai`     | `(freelancer)` | FREELANCER    | Task delivery, payouts         |
+| `superadmin.getcrafted.ai` | `(admin)`      | ADMIN         | Full platform management       |
 
-- **(admin)** -- Admin dashboard for managing freelancers, tasks, settings, brand references, and security
-- **(auth)** -- Login, signup, password reset, role selection
-- **(client)** -- Client dashboard with AI chat for task creation, task tracking, brand management
-- **(freelancer)** -- Freelancer portal for viewing assigned tasks, submitting deliverables
+### Auth (Defense-in-Depth, 3 layers)
+
+1. **Middleware** -- Edge-level session cookie check + rate limiting (20/min auth, 100/min API)
+2. **Layouts** -- Client-side `useEffect` role checks with redirects (gated on hydration)
+3. **API Routes** -- Server-side guards: `requireAuth()`, `requireRole()`, `requireAdmin()`, `requireFreelancer()`, `requireClient()`, `requireOwnerOrAdmin()`, `requireApprovedFreelancer()`
+
+Better Auth handles sessions with email/password and Google OAuth. Sessions last 7 days with daily refresh. Cookies are shared across subdomains in production.
 
 ### API Pattern
 
-All API routes follow a consistent pattern:
+All 260+ API routes follow a consistent pattern:
 
-1. Rate limiting via `checkRateLimit()`
-2. Wrap handler in `withErrorHandling()` for consistent error responses
-3. Auth check via `auth.api.getSession()` or `requireAuth()`/`requireRole()`
-4. Request validation with Zod schemas from `src/lib/validations/`
-5. Business logic with Drizzle ORM queries
-6. Return via `successResponse()` or throw from `Errors.*`
+```typescript
+import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
 
-### Key Patterns
+export async function POST(request: NextRequest) {
+  return withErrorHandling(async () => {
+    const body = someSchema.parse(await request.json())
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) throw Errors.unauthorized()
+    return successResponse(data, 201)
+  })
+}
+```
 
-- **ActionResult<T>** -- Standardized result type: `{ data: T; error: null } | { data: null; error: string }`
-- **withErrorHandling** -- Wraps async handlers to catch ZodError, APIError, and unknown errors
-- **Errors.\*** -- Shorthand error factories (`Errors.unauthorized()`, `Errors.notFound()`, etc.)
-- **withTransaction** -- Database transaction wrapper with automatic rollback
+Key patterns: `withErrorHandling` (error wrapper), `Errors.*` (error factories), `ActionResult<T>` (server action return type), `withTransaction` (DB transaction wrapper).
 
-### Authentication Flow
+### AI-Powered Briefing Flow
 
-Better Auth handles sessions with email/password and Google OAuth. Sessions last 7 days with daily refresh. Cookies are shared across subdomains in production (app, artist, superadmin subdomains). Auth guards (`requireAuth`, `requireRole`, `requireAdmin`, etc.) protect API routes.
+The core product flow is a Claude-driven creative intake with an 11-stage state machine:
 
-### Assignment Algorithm
+```
+EXTRACT -> TASK_TYPE -> INTENT -> INSPIRATION -> STRUCTURE -> ELABORATE
+  -> STRATEGIC_REVIEW -> MOODBOARD -> REVIEW -> DEEPEN -> SUBMIT
+```
+
+Hook composition architecture:
+
+```
+ChatInterface (render layer)
+  -> useChatInterfaceData (facade hook)
+       |-- useChatMessages          # message history + streaming
+       |-- useBriefingStateMachine  # 11-stage state machine
+       |-- useBrief                 # brief panel state
+       |-- useMoodboard            # visual reference collection
+       |-- useStyleSelection       # design style picker
+       |-- useTaskSubmission       # task creation + credits
+       |-- useFileUpload           # drag-drop attachments
+       |-- useSmartCompletion      # predictive text (~60 regex patterns)
+       |-- useStoryboard           # video/content scene structure
+       '-- useDraftPersistence     # localStorage + server sync
+```
+
+Claude is configured as a "senior creative director" that makes proactive recommendations and outputs structured markers for UI components.
+
+### Task Lifecycle
+
+```
+PENDING -> OFFERED -> ASSIGNED -> IN_PROGRESS -> PENDING_ADMIN_REVIEW -> IN_REVIEW -> COMPLETED
+                                              \-> REVISION_REQUESTED -/           \-> CANCELLED
+                                                                                   \-> UNASSIGNABLE
+```
+
+### Freelancer Matching
 
 When a client creates a task, the system scores available freelancers based on skill match, timezone fit, experience level, workload balance, and performance history. Weights are admin-configurable. Falls back to any approved freelancer if no scored match is found.
 
+### Credit System
+
+- `users.credits` -- integer balance
+- `creditTransactions` -- tracks PURCHASE / USAGE / REFUND / BONUS
+- Pricing varies by deliverable type: Social (15), Video (30), Logo (40), Branding (60), adjusted for quantity, animation, multi-platform, and urgency
+
+## Key Features
+
+- **AI Creative Briefing** -- Claude-driven 11-stage intake with smart completions and quick options
+- **Freelancer Matching** -- Scoring algorithm (skills, timezone, workload, performance)
+- **Storyboard Builder** -- Scene-based video planning with PDF export
+- **Website Design Flow** -- Skeleton generation, similarity engine, fidelity levels
+- **Moodboard & Style DNA** -- Visual reference collection and design style profiling
+- **Kanban Board** -- Drag-and-drop task management for freelancers
+- **Image Generation Pipeline** -- Multiple AI providers (FAL, Flux, Imagen, Gemini) with fallbacks
+- **Image Search** -- Aggregated search across Behance, Dribbble, Pexels, and 7+ sources
+- **Brand Extraction** -- Automated brand asset extraction via Firecrawl
+- **Credit System** -- Task-based pricing with transaction tracking
+- **Stripe Connect** -- Artist payouts via connected accounts
+- **Multi-Channel Notifications** -- Email (Resend), WhatsApp (Twilio), Slack
+- **Admin Tools** -- 30+ management pages for tasks, freelancers, security, and configuration
+- **Pitch Deck Generator** -- AI-generated presentation PDFs
+- **PDF Exports** -- Storyboards, pitch decks, deliverable summaries
+- **Analytics** -- PostHog event tracking (50+ events), Vercel Analytics, Sentry error monitoring
+- **Security Testing** -- Built-in automated security audit framework
+
+## Database
+
+PostgreSQL via Drizzle ORM with 35+ tables and 35 custom enums. Key domains:
+
+- **Users & Auth** -- users, sessions, accounts, companies, freelancerProfiles, artistSkills
+- **Tasks** -- tasks, taskFiles, taskMessages, taskOffers, taskActivityLog, taskCategories
+- **Design** -- styleReferences, brandReferences, deliverableStyleReferences, skills
+- **Billing** -- creditTransactions, payouts, stripeConnectAccounts, subscriptions
+- **Content** -- contentTemplates, contentBatches, contentItems, websiteProjects
+- **Admin** -- assignmentAlgorithmConfig, platformSettings, auditLogs, securityTests
+
+### Migration Workflow
+
+```bash
+# 1. Edit src/db/schema.ts
+# 2. Generate migration
+pnpm db:generate
+# 3. Review the generated SQL (check for accidental DROPs)
+# 4. Apply migration
+pnpm db:migrate
+# 5. Verify types
+pnpm typecheck
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env.local` and fill in values. Key groups:
+
+| Group         | Variables                                                          |
+| ------------- | ------------------------------------------------------------------ |
+| Core          | `DATABASE_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_BASE_DOMAIN`   |
+| Supabase      | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`            |
+| Auth          | `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`   |
+| Payments      | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`                       |
+| AI            | `ANTHROPIC_API_KEY`, `FAL_KEY`, `GEMINI_API_KEY`, `ORSHOT_API_KEY` |
+| Email         | `RESEND_API_KEY`                                                   |
+| WhatsApp      | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`                          |
+| Analytics     | `POSTHOG_KEY`, `POSTHOG_API_KEY`                                   |
+| Rate Limiting | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`               |
+| Web Scraping  | `FIRECRAWL_API_KEY`                                                |
+| Slack         | Bot credentials + channel IDs (see `.env.example`)                 |
+
 ## Deployment
 
-The app is deployed on Vercel with the following subdomain structure:
+Deployed on Vercel with subdomain routing:
 
-- `app.getcrafted.ai` -- Client-facing application
+- `app.getcrafted.ai` -- Client application
 - `artist.getcrafted.ai` -- Freelancer portal
 - `superadmin.getcrafted.ai` -- Admin dashboard
 
-Database is hosted on Supabase (PostgreSQL). File storage uses Supabase Storage. Stripe handles payments and artist payouts via Stripe Connect.
+Database hosted on Supabase (PostgreSQL). File storage via Supabase Storage. Payments via Stripe + Stripe Connect. Error monitoring via Sentry. Analytics via PostHog + Vercel Analytics.
 
 ## Contributing
 
 1. Create a feature branch from `main`
-2. Run `pnpm validate` before committing (lint + typecheck + tests)
-3. Pre-commit hooks (Husky + lint-staged) run ESLint and Prettier automatically
-4. Follow existing code patterns -- use `withErrorHandling`, Zod validation, and `ActionResult`
-5. Write tests for new validation schemas and API routes
+2. Follow conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`
+3. Run `pnpm validate` before committing (lint + typecheck + tests)
+4. Pre-commit hooks (Husky + lint-staged) run ESLint and Prettier automatically
+5. Follow existing code patterns -- use `withErrorHandling`, Zod validation, `csrfFetch()` for mutations
+6. Write tests for new API routes and Zod schemas
 
 ## Agent Documentation
 
