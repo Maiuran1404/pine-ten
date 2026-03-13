@@ -110,6 +110,78 @@ export const artistInviteStatusEnum = pgEnum('artist_invite_status', [
 // Early access enums
 export const waitlistStatusEnum = pgEnum('waitlist_status', ['PENDING', 'INVITED', 'REGISTERED'])
 
+// Content subscription enums
+export const contentTypeEnum = pgEnum('content_type', [
+  'SOCIAL_POST',
+  'STORY',
+  'REEL',
+  'CAROUSEL',
+  'VIDEO',
+  'EMAIL',
+  'BLOG',
+])
+
+export const contentPlatformEnum = pgEnum('content_platform', [
+  'INSTAGRAM',
+  'LINKEDIN',
+  'FACEBOOK',
+  'X',
+  'YOUTUBE',
+  'TIKTOK',
+  'EMAIL',
+])
+
+export const contentItemStatusEnum = pgEnum('content_item_status', [
+  'DRAFT',
+  'GENERATED',
+  'REVIEWING',
+  'APPROVED',
+  'SCHEDULED',
+  'PUBLISHED',
+  'FAILED',
+])
+
+export const contentBatchStatusEnum = pgEnum('content_batch_status', [
+  'PENDING',
+  'GENERATING',
+  'REVIEW',
+  'APPROVED',
+  'SCHEDULED',
+  'PUBLISHED',
+])
+
+export const subscriptionStatusEnum = pgEnum('subscription_status', [
+  'ACTIVE',
+  'PAST_DUE',
+  'CANCELLED',
+  'TRIALING',
+  'PAUSED',
+])
+
+export const upsellProductTypeEnum = pgEnum('upsell_product_type', [
+  'WEBSITE_BASIC',
+  'WEBSITE_PRO',
+  'VIDEO_NARRATIVE',
+  'VIDEO_ANIMATED',
+])
+
+export const upsellOrderStatusEnum = pgEnum('upsell_order_status', [
+  'PENDING',
+  'PAID',
+  'IN_PROGRESS',
+  'DELIVERED',
+  'CANCELLED',
+])
+
+export const kanbanCategoryEnum = pgEnum('kanban_category', ['DIY', 'UPSELL', 'STRATEGIC'])
+
+export const kanbanTaskStatusEnum = pgEnum('kanban_task_status', [
+  'SUGGESTED',
+  'IN_PROGRESS',
+  'DONE',
+  'DISMISSED',
+])
+
 // Early access codes
 export const earlyAccessCodes = pgTable(
   'early_access_codes',
@@ -1136,6 +1208,191 @@ export const templateImages = pgTable(
   ]
 )
 
+// Content templates (CRF-004)
+export const contentTemplates = pgTable(
+  'content_templates',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: text('name').notNull(),
+    contentType: contentTypeEnum('content_type').notNull(),
+    platform: contentPlatformEnum('platform').notNull(),
+    templateBody: text('template_body').notNull(), // Handlebars/React template source
+    thumbnailUrl: text('thumbnail_url'),
+    variables: jsonb('variables'), // Schema of expected template variables
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('ct_content_type_idx').on(table.contentType),
+    index('ct_platform_idx').on(table.platform),
+  ]
+)
+
+// Content batches (CRF-003)
+export const contentBatches = pgTable(
+  'content_batches',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+    weekStart: timestamp('week_start').notNull(), // Monday of the target week
+    status: contentBatchStatusEnum('status').notNull().default('PENDING'),
+    approvedAt: timestamp('approved_at'),
+    approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('cb_company_id_idx').on(table.companyId),
+    index('cb_week_start_idx').on(table.weekStart),
+    index('cb_status_idx').on(table.status),
+  ]
+)
+
+// Content items (CRF-002)
+export const contentItems = pgTable(
+  'content_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    batchId: uuid('batch_id').references(() => contentBatches.id, { onDelete: 'set null' }),
+    templateId: uuid('template_id').references(() => contentTemplates.id, {
+      onDelete: 'set null',
+    }),
+    contentType: contentTypeEnum('content_type').notNull(),
+    platform: contentPlatformEnum('platform').notNull(),
+    status: contentItemStatusEnum('status').notNull().default('DRAFT'),
+    title: text('title'),
+    body: text('body'), // Generated / edited copy
+    mediaUrls: jsonb('media_urls').$type<string[]>(), // Array of asset URLs
+    metadata: jsonb('metadata'), // Platform-specific metadata (hashtags, alt text, etc.)
+    scheduledAt: timestamp('scheduled_at'),
+    publishedAt: timestamp('published_at'),
+    aiPrompt: text('ai_prompt'), // Prompt used to generate this item
+    aiModelId: text('ai_model_id'), // Model version used
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('ci_company_id_idx').on(table.companyId),
+    index('ci_batch_id_idx').on(table.batchId),
+    index('ci_status_idx').on(table.status),
+    index('ci_platform_idx').on(table.platform),
+    index('ci_scheduled_at_idx').on(table.scheduledAt),
+  ]
+)
+
+// Subscriptions (CRF-005)
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    stripeSubscriptionId: text('stripe_subscription_id').notNull().unique(),
+    stripePriceId: text('stripe_price_id').notNull(),
+    status: subscriptionStatusEnum('status').notNull().default('ACTIVE'),
+    currentPeriodStart: timestamp('current_period_start').notNull(),
+    currentPeriodEnd: timestamp('current_period_end').notNull(),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+    cancelledAt: timestamp('cancelled_at'),
+    trialStart: timestamp('trial_start'),
+    trialEnd: timestamp('trial_end'),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('sub_user_id_idx').on(table.userId),
+    uniqueIndex('sub_stripe_id_idx').on(table.stripeSubscriptionId),
+    index('sub_status_idx').on(table.status),
+  ]
+)
+
+// Upsell orders (CRF-006)
+export const upsellOrders = pgTable(
+  'upsell_orders',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    orderedBy: text('ordered_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    productType: upsellProductTypeEnum('product_type').notNull(),
+    status: upsellOrderStatusEnum('status').notNull().default('PENDING'),
+    priceInCents: integer('price_in_cents').notNull(),
+    stripePaymentIntentId: text('stripe_payment_intent_id'),
+    assignedTo: text('assigned_to').references(() => users.id, { onDelete: 'set null' }),
+    deliverableUrl: text('deliverable_url'),
+    briefData: jsonb('brief_data'), // Captured requirements
+    paidAt: timestamp('paid_at'),
+    deliveredAt: timestamp('delivered_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('uo_company_id_idx').on(table.companyId),
+    index('uo_ordered_by_idx').on(table.orderedBy),
+    index('uo_status_idx').on(table.status),
+    index('uo_product_type_idx').on(table.productType),
+  ]
+)
+
+// Competitors (CRF-007)
+export const competitors = pgTable(
+  'competitors',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    website: text('website'),
+    socialHandles: jsonb('social_handles').$type<Record<string, string>>(), // { instagram: "@x", linkedin: "..." }
+    notes: text('notes'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('comp_company_id_idx').on(table.companyId)]
+)
+
+// Kanban tasks (CRF-008)
+export const kanbanTasks = pgTable(
+  'kanban_tasks',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    category: kanbanCategoryEnum('category').notNull(),
+    status: kanbanTaskStatusEnum('status').notNull().default('SUGGESTED'),
+    title: text('title').notNull(),
+    description: text('description'),
+    upsellOrderId: uuid('upsell_order_id').references(() => upsellOrders.id, {
+      onDelete: 'set null',
+    }),
+    dueDate: timestamp('due_date'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('kt_company_id_idx').on(table.companyId),
+    index('kt_category_idx').on(table.category),
+    index('kt_status_idx').on(table.status),
+  ]
+)
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   freelancerProfile: one(freelancerProfiles, {
@@ -1158,10 +1415,16 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [stripeConnectAccounts.freelancerId],
   }),
   websiteProjects: many(websiteProjects),
+  subscriptions: many(subscriptions),
 }))
 
 export const companiesRelations = relations(companies, ({ many }) => ({
   members: many(users),
+  contentItems: many(contentItems),
+  contentBatches: many(contentBatches),
+  upsellOrders: many(upsellOrders),
+  competitors: many(competitors),
+  kanbanTasks: many(kanbanTasks),
 }))
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
@@ -1806,6 +2069,14 @@ export const auditActionTypeEnum = pgEnum('audit_action_type', [
   // Security
   'SECURITY_TEST_RUN',
   'SECURITY_ALERT',
+  // Content operations (CRF-009)
+  'CONTENT_APPROVE',
+  'CONTENT_REJECT',
+  'CONTENT_EDIT',
+  'BATCH_APPROVE',
+  'BATCH_REJECT',
+  'UPSELL_ASSIGN',
+  'UPSELL_COMPLETE',
 ])
 
 // Audit logs table
@@ -2571,3 +2842,94 @@ export const websiteProjectsRelations = relations(websiteProjects, ({ one }) => 
 
 // Website inspirations relations (standalone, no FKs to other tables)
 export const websiteInspirationsRelations = relations(websiteInspirations, () => ({}))
+
+// Content templates relations (CRF-004)
+export const contentTemplatesRelations = relations(contentTemplates, ({ many }) => ({
+  contentItems: many(contentItems),
+}))
+
+// Content batches relations (CRF-003)
+export const contentBatchesRelations = relations(contentBatches, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [contentBatches.companyId],
+    references: [companies.id],
+  }),
+  creator: one(users, {
+    fields: [contentBatches.createdBy],
+    references: [users.id],
+    relationName: 'batchCreator',
+  }),
+  approver: one(users, {
+    fields: [contentBatches.approvedBy],
+    references: [users.id],
+    relationName: 'batchApprover',
+  }),
+  contentItems: many(contentItems),
+}))
+
+// Content items relations (CRF-002)
+export const contentItemsRelations = relations(contentItems, ({ one }) => ({
+  company: one(companies, {
+    fields: [contentItems.companyId],
+    references: [companies.id],
+  }),
+  batch: one(contentBatches, {
+    fields: [contentItems.batchId],
+    references: [contentBatches.id],
+  }),
+  template: one(contentTemplates, {
+    fields: [contentItems.templateId],
+    references: [contentTemplates.id],
+  }),
+  creator: one(users, {
+    fields: [contentItems.createdBy],
+    references: [users.id],
+  }),
+}))
+
+// Subscriptions relations (CRF-005)
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [subscriptions.userId],
+    references: [users.id],
+  }),
+}))
+
+// Upsell orders relations (CRF-006)
+export const upsellOrdersRelations = relations(upsellOrders, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [upsellOrders.companyId],
+    references: [companies.id],
+  }),
+  orderer: one(users, {
+    fields: [upsellOrders.orderedBy],
+    references: [users.id],
+    relationName: 'upsellOrderer',
+  }),
+  assignee: one(users, {
+    fields: [upsellOrders.assignedTo],
+    references: [users.id],
+    relationName: 'upsellAssignee',
+  }),
+  kanbanTasks: many(kanbanTasks),
+}))
+
+// Competitors relations (CRF-007)
+export const competitorsRelations = relations(competitors, ({ one }) => ({
+  company: one(companies, {
+    fields: [competitors.companyId],
+    references: [companies.id],
+  }),
+}))
+
+// Kanban tasks relations (CRF-008)
+export const kanbanTasksRelations = relations(kanbanTasks, ({ one }) => ({
+  company: one(companies, {
+    fields: [kanbanTasks.companyId],
+    references: [companies.id],
+  }),
+  upsellOrder: one(upsellOrders, {
+    fields: [kanbanTasks.upsellOrderId],
+    references: [upsellOrders.id],
+  }),
+}))

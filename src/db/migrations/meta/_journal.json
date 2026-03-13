@@ -288,6 +288,13 @@
       "when": 1772490471207,
       "tag": "0040_lonely_inhumans",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1773425647883,
+      "tag": "0041_pale_zuras",
+      "breakpoints": true
     }
   ]
 }
