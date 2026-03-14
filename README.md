@@ -1,6 +1,6 @@
 # Crafted (Pine Ten)
 
-AI-powered interior design marketplace connecting clients with freelance designers. Clients describe projects through an AI-driven creative briefing flow, and the platform automatically matches them with the best-fit freelancer using a scoring algorithm. Freelancers deliver work through a structured review pipeline, and admins oversee the entire lifecycle.
+AI-powered creative design marketplace connecting clients with freelance designers. Clients describe projects through an AI-driven creative briefing flow, and the platform automatically matches them with the best-fit freelancer using a scoring algorithm. Freelancers deliver work through a structured review pipeline, and admins oversee the entire lifecycle.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
@@ -11,11 +11,12 @@ AI-powered interior design marketplace connecting clients with freelance designe
 
 | Category      | Technology                                                            |
 | ------------- | --------------------------------------------------------------------- |
-| Framework     | Next.js 16 (App Router)                                               |
+| Framework     | Next.js 16.0.10 (App Router), React 19                                |
 | Language      | TypeScript (strict mode)                                              |
-| Database      | PostgreSQL via Drizzle ORM (hosted on Supabase)                       |
+| Database      | PostgreSQL via Drizzle ORM 0.45 (hosted on Supabase)                  |
 | Auth          | Better Auth (email/password + Google OAuth)                           |
-| Styling       | Tailwind CSS v4, shadcn/ui, Framer Motion                             |
+| Styling       | Tailwind CSS v4, shadcn/ui (Radix UI), Framer Motion                  |
+| Forms         | React Hook Form + Zod                                                 |
 | Payments      | Stripe (Checkout + Connect for artist payouts)                        |
 | AI            | Anthropic Claude (briefing chat), Google Gemini, FAL/Flux (image gen) |
 | Email         | Resend (transactional email with queue system)                        |
@@ -60,14 +61,14 @@ Dev URLs use subdomain routing:
 ```
 src/
   app/                        # Next.js App Router
-    (admin)/                  #   Admin dashboard (30+ management pages)
+    (admin)/                  #   Admin dashboard (33 pages)
     (auth)/                   #   Auth pages (login, register, onboarding, early-access)
     (client)/                 #   Client dashboard (chat, tasks, designs, brand)
     (freelancer)/             #   Freelancer portal (board, tasks, payouts, settings)
-    api/                      #   260+ API route handlers
-  components/                 # 241 React components
-    ui/                       #   shadcn/ui primitives
-    chat/                     #   AI briefing interface (52 files)
+    api/                      #   147 API route handlers
+  components/                 # 241 React components (16 component groups)
+    ui/                       #   shadcn/ui primitives (Radix-based)
+    chat/                     #   AI briefing interface (61 files)
     admin/                    #   Admin dashboards & management
     freelancer/               #   Freelancer portal components
     client/                   #   Client-specific UI
@@ -76,26 +77,34 @@ src/
     shared/                   #   Cross-portal shared components
     task-detail/              #   Task viewing & editing
     task-launch/              #   Task submission modal
+    tasks/                    #   Task list & management
     creative-intake/          #   Structured creative brief
     website-flow/             #   Website design flow
     linear-board/             #   Kanban board interface
     pitch-deck/               #   Presentation generator
     settings/                 #   User settings panels
   db/                         # Database layer
-    schema.ts                 #   Drizzle schema (35+ tables, 35 enums)
+    schema.ts                 #   Drizzle schema (56 tables, 35 enums)
     index.ts                  #   Connection pool, withTransaction
     migrations/               #   Generated Drizzle migrations
     seed-*.ts                 #   Seed scripts (styles, skills, visual presets)
-  hooks/                      # 38 custom React hooks
+  hooks/                      # 36 custom React hooks
   lib/                        # Shared utilities & business logic
-    ai/                       #   AI integration (78 files)
+    adapters/                 #   External API adapters
+    ai/                       #   AI integration (91 files)
       chat.ts                 #     Claude briefing system prompt
       extractors/             #     Structured data extractors
       image/                  #     Image gen providers (FAL, Flux, Imagen, Gemini)
       scrapers/               #     Image search (Behance, Dribbble, Pexels, etc.)
+    constants/                #   Application constants
+    creative-intake/          #   Briefing flow logic
+    hooks/                    #   Utility hooks
+    image/                    #   Image processing utilities
     notifications/            #   Email (Resend), WhatsApp (Twilio), queue system
+    scrapers/                 #   Web scraping utilities
     slack/                    #   Slack bot, channels, block builders
     supabase/                 #   Supabase clients (browser + server)
+    utils/                    #   General utilities
     validations/              #   Zod schemas for API validation
     website/                  #   Website design engine
     pitch-deck/               #   Pitch deck PDF generation
@@ -134,6 +143,7 @@ src/
 | Script                        | Description                             |
 | ----------------------------- | --------------------------------------- |
 | `pnpm dev`                    | Start development server                |
+| `pnpm dev:clean`              | Clean start (clear .next cache)         |
 | `pnpm build`                  | Production build                        |
 | `pnpm start`                  | Start production server                 |
 | `pnpm lint`                   | Run ESLint                              |
@@ -142,7 +152,10 @@ src/
 | `pnpm test`                   | Run unit/integration tests (Vitest)     |
 | `pnpm test:watch`             | Run tests in watch mode                 |
 | `pnpm test:coverage`          | Run tests with coverage report          |
+| `pnpm test:ui`                | Open Vitest UI                          |
 | `pnpm test:e2e`               | Run end-to-end tests (Playwright)       |
+| `pnpm test:e2e:ui`            | Run E2E tests with Playwright UI        |
+| `pnpm test:e2e:headed`        | Run E2E tests in headed browser mode    |
 | `pnpm db:generate`            | Generate Drizzle migrations from schema |
 | `pnpm db:migrate`             | Apply pending migrations                |
 | `pnpm db:push`                | Push schema changes directly (dev only) |
@@ -174,7 +187,7 @@ Better Auth handles sessions with email/password and Google OAuth. Sessions last
 
 ### API Pattern
 
-All 260+ API routes follow a consistent pattern:
+All 147 API routes follow a consistent pattern:
 
 ```typescript
 import { withErrorHandling, successResponse, Errors } from '@/lib/errors'
@@ -251,15 +264,15 @@ When a client creates a task, the system scores available freelancers based on s
 - **Credit System** -- Task-based pricing with transaction tracking
 - **Stripe Connect** -- Artist payouts via connected accounts
 - **Multi-Channel Notifications** -- Email (Resend), WhatsApp (Twilio), Slack
-- **Admin Tools** -- 30+ management pages for tasks, freelancers, security, and configuration
+- **Admin Tools** -- 33 management pages for tasks, freelancers, security, and configuration
 - **Pitch Deck Generator** -- AI-generated presentation PDFs
 - **PDF Exports** -- Storyboards, pitch decks, deliverable summaries
 - **Analytics** -- PostHog event tracking (50+ events), Vercel Analytics, Sentry error monitoring
-- **Security Testing** -- Built-in automated security audit framework
+- **Security** -- CSRF protection, rate limiting, RLS policies, CSP headers, automated security audit framework
 
 ## Database
 
-PostgreSQL via Drizzle ORM with 35+ tables and 35 custom enums. Key domains:
+PostgreSQL via Drizzle ORM with 56 tables and 35 custom enums. Key domains:
 
 - **Users & Auth** -- users, sessions, accounts, companies, freelancerProfiles, artistSkills
 - **Tasks** -- tasks, taskFiles, taskMessages, taskOffers, taskActivityLog, taskCategories
@@ -283,7 +296,7 @@ pnpm typecheck
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in values. Key groups:
+Copy `.env.example` to `.env.local` and fill in values. 42 configuration variables across these groups:
 
 | Group         | Variables                                                          |
 | ------------- | ------------------------------------------------------------------ |
@@ -292,12 +305,13 @@ Copy `.env.example` to `.env.local` and fill in values. Key groups:
 | Auth          | `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`   |
 | Payments      | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`                       |
 | AI            | `ANTHROPIC_API_KEY`, `FAL_KEY`, `GEMINI_API_KEY`, `ORSHOT_API_KEY` |
-| Email         | `RESEND_API_KEY`                                                   |
+| Email         | `RESEND_API_KEY`, `ADMIN_EMAIL`                                    |
 | WhatsApp      | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`                          |
-| Analytics     | `POSTHOG_KEY`, `POSTHOG_API_KEY`                                   |
+| Analytics     | `POSTHOG_KEY`, `POSTHOG_API_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`       |
 | Rate Limiting | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`               |
 | Web Scraping  | `FIRECRAWL_API_KEY`                                                |
-| Slack         | Bot credentials + channel IDs (see `.env.example`)                 |
+| Logging       | `LOG_LEVEL`                                                        |
+| Slack         | Bot credentials + channel IDs (7 vars, see `.env.example`)         |
 
 ## Deployment
 
@@ -308,6 +322,13 @@ Deployed on Vercel with subdomain routing:
 - `superadmin.getcrafted.ai` -- Admin dashboard
 
 Database hosted on Supabase (PostgreSQL). File storage via Supabase Storage. Payments via Stripe + Stripe Connect. Error monitoring via Sentry. Analytics via PostHog + Vercel Analytics.
+
+### Infrastructure Highlights
+
+- Security headers (CSP, HSTS, X-Frame-Options) configured in `next.config.ts`
+- PostHog reverse proxy for ad blocker bypass
+- 50MB request body size limit for file uploads
+- Optimized package imports for 17+ libraries
 
 ## Contributing
 
