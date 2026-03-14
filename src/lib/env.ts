@@ -89,6 +89,9 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 
+  // Upstash Redis TCP (optional — BullMQ job queues disabled without this)
+  UPSTASH_REDIS_URL: z.string().url().optional(),
+
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),

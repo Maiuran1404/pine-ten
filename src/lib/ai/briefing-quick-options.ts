@@ -120,15 +120,54 @@ const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOption
     }
   },
 
-  INSPIRATION: () => ({
-    question: 'What do you think?',
-    options: ['I like this direction', 'Show me more', 'Something different'],
-  }),
+  INSPIRATION: (state) => {
+    // Website-specific inspiration options
+    if (state.deliverableCategory === 'website') {
+      const hasInspirations = (state.websiteInspirations?.length ?? 0) > 0
+      const styleConfirmed = state.websiteStyleConfirmed === true
 
-  STRUCTURE: () => ({
-    question: 'How does this look?',
-    options: ['Looks good, continue', 'I want to adjust this', 'Different approach'],
-  }),
+      if (!hasInspirations) {
+        return {
+          question: 'Find inspiration',
+          options: ['Browse gallery', 'I have a reference URL', 'Skip inspirations'],
+        }
+      }
+
+      if (!styleConfirmed) {
+        return {
+          question: 'Ready for styles?',
+          options: ['Pick a style', 'Show me variants', 'Add more references'],
+        }
+      }
+
+      return {
+        question: 'What do you think?',
+        options: ['I like this direction', 'Show me more', 'Something different'],
+      }
+    }
+
+    // Default for non-website deliverables
+    return {
+      question: 'What do you think?',
+      options: ['I like this direction', 'Show me more', 'Something different'],
+    }
+  },
+
+  STRUCTURE: (state) => {
+    // Website-specific structure options (goal chips)
+    if (state.deliverableCategory === 'website') {
+      return {
+        question: "What's the primary goal?",
+        options: ['Book consultations', 'Build authority', 'Generate leads'],
+      }
+    }
+
+    // Default for non-website deliverables
+    return {
+      question: 'How does this look?',
+      options: ['Looks good, continue', 'I want to adjust this', 'Different approach'],
+    }
+  },
 
   STRATEGIC_REVIEW: () => ({
     question: 'Your call',
@@ -156,6 +195,22 @@ const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOption
 
   ELABORATE: (state) => {
     const isFirstTurn = state.turnsInCurrentStage === 0
+    const category = state.deliverableCategory
+
+    // Website-specific elaborate options (Section Studio)
+    if (category === 'website') {
+      if (isFirstTurn) {
+        return {
+          question: 'Section studio',
+          options: ['Generate all copy', 'Edit specific section', 'Good enough, review'],
+        }
+      }
+      return {
+        question: 'What needs work?',
+        options: ['Generate all copy', 'Edit specific section', 'Good enough, review'],
+      }
+    }
+
     if (isFirstTurn) {
       return {
         question: 'How does the detail look?',
@@ -163,17 +218,11 @@ const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOption
       }
     }
     // Subsequent turns: deliverable-specific refinement
-    const category = state.deliverableCategory
     switch (category) {
       case 'video':
         return {
           question: 'What needs work?',
           options: ['Rewrite a scene script', 'Adjust director notes', 'Good enough, move on'],
-        }
-      case 'website':
-        return {
-          question: 'What needs work?',
-          options: ['Rewrite a section', 'Adjust the hero copy', 'Good enough, move on'],
         }
       case 'content':
         return {

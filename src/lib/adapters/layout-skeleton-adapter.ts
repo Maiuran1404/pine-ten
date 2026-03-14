@@ -60,16 +60,29 @@ export function detectSectionType(sectionName: string): SectionType {
 /**
  * Map briefing stage to skeleton fidelity level.
  * Earlier stages show wireframes, later stages show styled content.
+ *
+ * For websites with a confirmed style, INSPIRATION returns 'mid' (styled wireframe).
+ * ELABORATE returns 'high' for websites (content + style in section studio).
  */
-export function getFidelityForStage(stage: BriefingStage): 'low' | 'mid' | 'high' {
+export function getFidelityForStage(
+  stage: BriefingStage,
+  options?: { websiteStyleConfirmed?: boolean; deliverableCategory?: string | null }
+): 'low' | 'mid' | 'high' {
+  const isWebsite = options?.deliverableCategory === 'website'
+
   switch (stage) {
     case 'EXTRACT':
     case 'TASK_TYPE':
     case 'INTENT':
-    case 'INSPIRATION':
     case 'STRUCTURE':
       return 'low'
+    case 'INSPIRATION':
+      // Website with confirmed style: show styled wireframe (mid fidelity)
+      if (isWebsite && options?.websiteStyleConfirmed) return 'mid'
+      return 'low'
     case 'ELABORATE':
+      // Website section studio: full fidelity with content + style
+      if (isWebsite) return 'high'
       return 'mid'
     case 'STRATEGIC_REVIEW':
     case 'MOODBOARD':

@@ -40,6 +40,7 @@ interface LayoutPreviewProps {
   mode?: 'readonly' | 'interactive'
   onSectionReorder?: (sections: LayoutSection[]) => void
   onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
+  onGenerateSectionContent?: (sectionIndex: number) => void
   className?: string
 }
 
@@ -596,6 +597,100 @@ function AddSectionDivider({ onClick }: { onClick: () => void }) {
 }
 
 // =============================================================================
+// SECTION FIDELITY DOTS
+// =============================================================================
+
+function SectionFidelityDots({ section }: { section: LayoutSection }) {
+  const hasHeadline = !!section.headline
+  const hasDraftContent = !!section.draftContent
+  const hasCtaText = !!section.ctaText
+
+  return (
+    <div className="flex items-center gap-0.5" title="Content completeness">
+      <div
+        className={cn(
+          'w-1.5 h-1.5 rounded-full',
+          hasHeadline ? 'bg-crafted-green' : 'bg-muted-foreground/20'
+        )}
+      />
+      <div
+        className={cn(
+          'w-1.5 h-1.5 rounded-full',
+          hasDraftContent ? 'bg-crafted-green' : 'bg-muted-foreground/20'
+        )}
+      />
+      <div
+        className={cn(
+          'w-1.5 h-1.5 rounded-full',
+          hasCtaText ? 'bg-crafted-green' : 'bg-muted-foreground/20'
+        )}
+      />
+    </div>
+  )
+}
+
+// =============================================================================
+// INLINE EDIT FIELD (ghost input for click-to-edit)
+// =============================================================================
+
+function InlineEditField({
+  value,
+  placeholder,
+  onSave,
+  multiline,
+}: {
+  value: string
+  placeholder: string
+  onSave: (value: string) => void
+  multiline?: boolean
+}) {
+  const [localValue, setLocalValue] = useState(value)
+
+  // Sync from parent when value changes externally
+  useEffect(() => {
+    setLocalValue(value)
+  }, [value])
+
+  const handleBlur = () => {
+    if (localValue !== value) {
+      onSave(localValue)
+    }
+  }
+
+  const sharedClassName = cn(
+    'w-full resize-none bg-transparent text-xs leading-relaxed',
+    'placeholder:text-muted-foreground/40 text-foreground',
+    'border border-transparent rounded-md px-2.5 py-1.5',
+    'hover:border-border/40 focus:border-primary/30 focus:bg-muted/30',
+    'outline-none transition-colors'
+  )
+
+  if (multiline) {
+    return (
+      <textarea
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        rows={2}
+        className={cn(sharedClassName, 'overflow-hidden')}
+      />
+    )
+  }
+
+  return (
+    <input
+      type="text"
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={handleBlur}
+      placeholder={placeholder}
+      className={sharedClassName}
+    />
+  )
+}
+
+// =============================================================================
 // INTERACTIVE SECTION BLOCK (redesigned)
 // =============================================================================
 
@@ -616,6 +711,8 @@ interface InteractiveSectionBlockProps {
   onRename: (newName: string) => void
   onDelete: () => void
   onNoteChange?: (value: string) => void
+  onFieldEdit?: (field: string, value: string) => void
+  onGenerateContent?: () => void
 }
 
 function InteractiveSectionBlock({
@@ -635,6 +732,8 @@ function InteractiveSectionBlock({
   onRename,
   onDelete,
   onNoteChange,
+  onFieldEdit,
+  onGenerateContent,
 }: InteractiveSectionBlockProps) {
   const type = detectSectionType(section.sectionName)
   const friendlyName = getFriendlyName(section.sectionName)
@@ -686,8 +785,21 @@ function InteractiveSectionBlock({
           <EditableSectionLabel name={friendlyName} onRename={onRename} />
         </div>
 
-        {/* Collapse toggle + delete */}
-        <div className="flex items-center gap-0.5 shrink-0">
+        {/* Fidelity dots + actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <SectionFidelityDots section={section} />
+          {onGenerateContent && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onGenerateContent()
+              }}
+              className="p-1 rounded hover:bg-primary/10 text-muted-foreground/0 group-hover/section:text-muted-foreground/40 hover:!text-primary transition-colors"
+              title="Generate copy"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -737,6 +849,28 @@ function InteractiveSectionBlock({
                 {renderSectionWireframe(type, section.sectionName, true)}
               </div>
 
+              {/* Inline edit fields (click-to-edit) */}
+              {onFieldEdit && (
+                <div className="space-y-1.5">
+                  <InlineEditField
+                    value={section.headline ?? ''}
+                    placeholder="Headline"
+                    onSave={(v) => onFieldEdit('headline', v)}
+                  />
+                  <InlineEditField
+                    value={section.draftContent ?? ''}
+                    placeholder="Body / draft content"
+                    onSave={(v) => onFieldEdit('draftContent', v)}
+                    multiline
+                  />
+                  <InlineEditField
+                    value={section.ctaText ?? ''}
+                    placeholder="CTA text"
+                    onSave={(v) => onFieldEdit('ctaText', v)}
+                  />
+                </div>
+              )}
+
               {/* User notes textarea */}
               {onNoteChange && (
                 <SectionNoteInput
@@ -746,8 +880,8 @@ function InteractiveSectionBlock({
                 />
               )}
 
-              {/* AI Draft preview (elaboration content) */}
-              {hasElaboration && (
+              {/* AI Draft preview (elaboration content) — shown only when inline edit is not active */}
+              {!onFieldEdit && hasElaboration && (
                 <div className="rounded-md border border-border/30 bg-muted/20 px-3 py-2 space-y-1">
                   <div className="flex items-center gap-1 mb-1">
                     <Sparkles className="h-3 w-3 text-primary/50" />
@@ -823,6 +957,7 @@ export function LayoutPreview({
   mode = 'readonly',
   onSectionReorder,
   onSectionEdit,
+  onGenerateSectionContent,
   className,
 }: LayoutPreviewProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
@@ -1023,6 +1158,16 @@ export function LayoutPreview({
                   onNoteChange={
                     onSectionEdit
                       ? (value) => onSectionEdit(findSortedIndex(index), 'userNotes', value)
+                      : undefined
+                  }
+                  onFieldEdit={
+                    onSectionEdit
+                      ? (field, value) => onSectionEdit(findSortedIndex(index), field, value)
+                      : undefined
+                  }
+                  onGenerateContent={
+                    onGenerateSectionContent
+                      ? () => onGenerateSectionContent(findSortedIndex(index))
                       : undefined
                   }
                 />

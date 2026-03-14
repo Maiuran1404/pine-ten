@@ -76,6 +76,8 @@ interface InspirationPanelProps {
   canFindSimilar?: boolean
   // Comparison & notes
   onUpdateInspirationNotes?: (id: string, notes: string) => void
+  /** Compact mode: horizontal scroll, no header, smaller cards */
+  compact?: boolean
   className?: string
 }
 
@@ -522,6 +524,7 @@ export function InspirationPanel({
   isFindingSimilar,
   canFindSimilar,
   onUpdateInspirationNotes,
+  compact,
   className,
 }: InspirationPanelProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -529,6 +532,96 @@ export function InspirationPanel({
   const [viewMode, setViewMode] = useState<'gallery' | 'comparison'>('gallery')
 
   const showComparisonToggle = selectedInspirations.length >= 2
+
+  // ── Compact mode — horizontal scroll layout ──
+  if (compact) {
+    return (
+      <div className={cn('flex flex-col max-h-[200px]', className)}>
+        {/* Selected pills */}
+        {selectedInspirations.length > 0 && (
+          <div className="shrink-0 flex items-center gap-1.5 px-2 py-1.5 overflow-x-auto">
+            {selectedInspirations.map((item) => (
+              <div
+                key={item.id}
+                className="shrink-0 flex items-center gap-1.5 rounded-full bg-card border border-border/40 pl-0.5 pr-2 py-0.5"
+              >
+                <div className="w-5 h-5 rounded-full overflow-hidden bg-muted shrink-0">
+                  {item.screenshotUrl ? (
+                    <img
+                      src={item.screenshotUrl}
+                      alt={item.name}
+                      className="w-full h-full object-cover object-top"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Globe className="w-3 h-3 text-muted-foreground/30" />
+                    </div>
+                  )}
+                </div>
+                <span className="text-[10px] font-medium text-foreground truncate max-w-[60px]">
+                  {item.name}
+                </span>
+                <button
+                  onClick={() => onRemoveInspiration(item.id)}
+                  className="p-0.5 rounded-full hover:bg-destructive/10 transition-colors"
+                >
+                  <X className="h-2.5 w-2.5 text-muted-foreground" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Horizontal gallery + URL input */}
+        <div className="flex-1 overflow-y-auto px-2 pb-2">
+          <div className="flex items-start gap-2 overflow-x-auto pb-1">
+            {isGalleryLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="shrink-0 w-[120px] aspect-[3/2] rounded-lg" />
+                ))
+              : inspirationGallery.map((item) => (
+                  <div
+                    key={item.id}
+                    className="shrink-0 w-[120px] relative rounded-lg overflow-hidden cursor-pointer group border border-border/40 hover:border-border transition-colors"
+                    onClick={() =>
+                      onSelectGalleryItem({
+                        id: item.id,
+                        name: item.name,
+                        url: item.url,
+                        screenshotUrl: item.screenshotUrl,
+                      })
+                    }
+                  >
+                    <div className="aspect-[3/2] bg-muted">
+                      <img
+                        src={item.screenshotUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover object-top"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/70 to-transparent flex items-end px-1.5 pb-1">
+                      <span className="text-[10px] font-medium text-white leading-tight truncate">
+                        {item.name}
+                      </span>
+                    </div>
+                    {selectedIds.includes(item.id) && (
+                      <div className="absolute inset-0 ring-2 ring-inset ring-crafted-green rounded-lg pointer-events-none" />
+                    )}
+                  </div>
+                ))}
+          </div>
+
+          {/* Inline URL input */}
+          {onCaptureScreenshot && (
+            <div className="mt-1.5">
+              <UrlInput onSubmit={onCaptureScreenshot} isLoading={isCapturingScreenshot} />
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   // ── Preview mode — full-panel takeover ──
   if (previewingItem) {

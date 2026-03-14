@@ -72,6 +72,8 @@ const nextConfig: NextConfig = {
     'resend',
     'stripe',
     '@google/genai',
+    'bullmq',
+    'ioredis',
   ],
 
   // Increase body size limit for file uploads (default 10MB)

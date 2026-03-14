@@ -14,6 +14,7 @@ import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { UnifiedPanel } from './unified-panel'
 import { StructurePanel, type StructurePanelProps } from './structure-panel'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
+import { WEBSITE_STAGE_DESCRIPTIONS } from '@/lib/chat-progress'
 
 interface ChatLayoutProps {
   children: ReactNode
@@ -137,6 +138,17 @@ export function ChatLayout({
     ? STRUCTURE_ICONS[structurePanelProps.structureType] || Film
     : Film
 
+  // Website-specific progress labels
+  const websiteStageLabels =
+    deliverableCategory === 'website'
+      ? {
+          brief: WEBSITE_STAGE_DESCRIPTIONS.brief,
+          style: WEBSITE_STAGE_DESCRIPTIONS.style,
+          storyboard: WEBSITE_STAGE_DESCRIPTIONS.storyboard,
+          review: WEBSITE_STAGE_DESCRIPTIONS.review,
+        }
+      : undefined
+
   return (
     <div className={cn('flex flex-col h-full relative', className)}>
       {/* Main Content Area */}
@@ -192,6 +204,7 @@ export function ChatLayout({
                         completedStages={completedStages}
                         progressPercentage={progressPercentage}
                         stageDescription={stageDescription}
+                        stageLabels={websiteStageLabels}
                       />
                     )}
                     {structurePanelProps && <StructurePanel {...structurePanelProps} />}
@@ -295,6 +308,7 @@ export function ChatLayout({
                         completedStages={completedStages}
                         progressPercentage={progressPercentage}
                         stageDescription={stageDescription}
+                        stageLabels={websiteStageLabels}
                       />
                     )}
 

@@ -47,6 +47,8 @@ interface LabeledProgressBarProps {
   completedStages: ChatStage[]
   progressPercentage: number
   stageDescription?: string
+  /** Override per-stage labels (e.g. website-specific "Blueprint", "Studio") */
+  stageLabels?: Record<string, string>
   className?: string
 }
 
@@ -54,8 +56,10 @@ export function LabeledProgressBar({
   currentStage,
   completedStages,
   stageDescription,
+  stageLabels,
   className,
 }: LabeledProgressBarProps) {
+  const effectiveLabels = stageLabels ?? STAGE_LABELS
   const currentIndex = BRIEFING_CHAT_STAGES.indexOf(currentStage)
   const progress = (currentIndex / Math.max(BRIEFING_CHAT_STAGES.length - 1, 1)) * 100
 
@@ -100,7 +104,7 @@ export function LabeledProgressBar({
                     !completed && !current && 'text-muted-foreground/50'
                   )}
                 >
-                  {STAGE_LABELS[stage] ?? stage}
+                  {effectiveLabels[stage] ?? stage}
                 </span>
               </div>
               {!isLast && (

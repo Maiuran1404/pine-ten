@@ -4,7 +4,11 @@ import {
   type TaskProposal,
   type ChatMessage,
 } from '@/components/chat/types'
-import type { BriefingStage, VideoNarrative } from '@/lib/ai/briefing-state-machine'
+import type {
+  BriefingStage,
+  VideoNarrative,
+  WebsiteInspiration,
+} from '@/lib/ai/briefing-state-machine'
 
 interface ProgressState {
   messages: ChatMessage[]
@@ -40,6 +44,14 @@ export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
   submit: 'Submit for creation',
 }
 
+export const WEBSITE_STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
+  ...STAGE_DESCRIPTIONS,
+  brief: 'Blueprint',
+  style: 'Style',
+  storyboard: 'Studio',
+  review: 'Review',
+}
+
 /**
  * Stages used when the briefing state machine is enabled.
  */
@@ -52,11 +64,49 @@ export const BRIEFING_CHAT_STAGES: ChatStage[] = [
 ]
 
 /**
+ * Stages used for website deliverables.
+ * Maps to: Blueprint → Style (Inspiration + Style variant) → Studio → Review
+ */
+export const WEBSITE_CHAT_STAGES: ChatStage[] = ['brief', 'style', 'storyboard', 'review']
+
+/**
  * Map a BriefingStage (state machine) to a ChatStage (progress UI).
  * Multiple BriefingStages collapse into a single ChatStage so the
  * progress bar stays simple.
+ *
+ * When `deliverableCategory` is 'website', uses a website-specific mapping:
+ *   EXTRACT/TASK_TYPE/INTENT/STRUCTURE → 'brief' (Blueprint)
+ *   INSPIRATION → 'style' (Inspiration + Style variant)
+ *   ELABORATE → 'storyboard' (Section Studio)
+ *   REVIEW+ → 'review'
  */
-export function mapBriefingStageToChat(stage: BriefingStage): ChatStage {
+export function mapBriefingStageToChat(
+  stage: BriefingStage,
+  deliverableCategory?: string | null
+): ChatStage {
+  if (deliverableCategory === 'website') {
+    switch (stage) {
+      case 'EXTRACT':
+      case 'TASK_TYPE':
+      case 'INTENT':
+      case 'STRUCTURE':
+        return 'brief'
+      case 'INSPIRATION':
+        return 'style'
+      case 'ELABORATE':
+        return 'storyboard'
+      case 'STRATEGIC_REVIEW':
+      case 'MOODBOARD':
+        return 'storyboard'
+      case 'REVIEW':
+      case 'DEEPEN':
+      case 'SUBMIT':
+        return 'review'
+      default:
+        return 'brief'
+    }
+  }
+
   switch (stage) {
     case 'EXTRACT':
     case 'TASK_TYPE':
@@ -85,25 +135,41 @@ export function mapBriefingStageToChat(stage: BriefingStage): ChatStage {
  * Calculate progress from a BriefingStage.
  * Returns a ProgressResult compatible with the existing progress UI.
  */
-export function calculateChatStageFromBriefing(briefingStage: BriefingStage): ProgressResult {
-  const chatStage = mapBriefingStageToChat(briefingStage)
-  const stageIndex = BRIEFING_CHAT_STAGES.indexOf(chatStage)
+export function calculateChatStageFromBriefing(
+  briefingStage: BriefingStage,
+  deliverableCategory?: string | null
+): ProgressResult {
+  const chatStage = mapBriefingStageToChat(briefingStage, deliverableCategory)
+  const stages = deliverableCategory === 'website' ? WEBSITE_CHAT_STAGES : BRIEFING_CHAT_STAGES
+  const stageIndex = stages.indexOf(chatStage)
 
-  const completedStages = BRIEFING_CHAT_STAGES.slice(0, stageIndex)
-  const basePercentage = Math.round((stageIndex / (BRIEFING_CHAT_STAGES.length - 1)) * 100)
+  const completedStages = stages.slice(0, stageIndex)
+  const basePercentage = Math.round((stageIndex / (stages.length - 1)) * 100)
 
   // Add sub-stage progress within the "brief" stage so it doesn't stay at 0%
   let subStageBonus = 0
   if (chatStage === 'brief') {
-    const subStageMap: Record<string, number> = { EXTRACT: 0, TASK_TYPE: 3, INTENT: 7 }
-    subStageBonus = subStageMap[briefingStage] ?? 0
+    if (deliverableCategory === 'website') {
+      // Website blueprint: EXTRACT=0, TASK_TYPE=3, INTENT=5, STRUCTURE=10
+      const subStageMap: Record<string, number> = {
+        EXTRACT: 0,
+        TASK_TYPE: 3,
+        INTENT: 5,
+        STRUCTURE: 10,
+      }
+      subStageBonus = subStageMap[briefingStage] ?? 0
+    } else {
+      const subStageMap: Record<string, number> = { EXTRACT: 0, TASK_TYPE: 3, INTENT: 7 }
+      subStageBonus = subStageMap[briefingStage] ?? 0
+    }
   }
 
   return {
     currentStage: chatStage,
     completedStages,
     progressPercentage: Math.min(100, basePercentage + subStageBonus),
-    stageDescriptions: STAGE_DESCRIPTIONS,
+    stageDescriptions:
+      deliverableCategory === 'website' ? WEBSITE_STAGE_DESCRIPTIONS : STAGE_DESCRIPTIONS,
   }
 }
 
@@ -317,6 +383,8 @@ export function getContextualStageDescription(
     structure?: unknown
     videoNarrative?: VideoNarrative | null
     narrativeApproved?: boolean
+    websiteInspirations?: WebsiteInspiration[]
+    websiteStyleConfirmed?: boolean
   }
 ): string {
   switch (briefingStage) {
@@ -330,16 +398,22 @@ export function getContextualStageDescription(
         if (!context.narrativeApproved) return 'Review story concept'
         return 'Story concept approved'
       }
-      if (context?.deliverableCategory === 'website') return 'Page layout'
+      if (context?.deliverableCategory === 'website') return 'Generating page layout'
       if (context?.deliverableCategory === 'content') return 'Content plan'
       return 'Define your structure'
     case 'INSPIRATION':
+      if (context?.deliverableCategory === 'website') {
+        if ((context.websiteInspirations?.length ?? 0) === 0) return 'Choose inspirations'
+        if (!context.websiteStyleConfirmed) return 'Select visual style'
+        return 'Style confirmed'
+      }
       return 'Choose your visual style'
     case 'ELABORATE':
       if (context?.deliverableCategory === 'video') {
         if (context?.structure) return 'Storyboard ready'
         return 'Building storyboard'
       }
+      if (context?.deliverableCategory === 'website') return 'Section studio'
       return 'Refine details'
     case 'STRATEGIC_REVIEW':
       return 'Strategic review'

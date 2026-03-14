@@ -17,6 +17,7 @@ import type {
   BriefingState,
   SerializedBriefingState,
   WebsiteGlobalStyles,
+  WebsiteStyleVariant,
   VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
 import type { ImageSource, ImageMediaType } from '@/lib/ai/storyboard-image-types'
@@ -145,8 +146,11 @@ export function useStoryboard({
   const currentStage = briefingState?.stage
   const websiteFidelity = useMemo(() => {
     if (!currentStage) return 'low' as const
-    return getFidelityForStage(currentStage)
-  }, [currentStage])
+    return getFidelityForStage(currentStage, {
+      websiteStyleConfirmed: briefingState?.websiteStyleConfirmed,
+      deliverableCategory: briefingState?.deliverableCategory,
+    })
+  }, [currentStage, briefingState?.websiteStyleConfirmed, briefingState?.deliverableCategory])
 
   // Helper: process multi-source scene image matches from API response
   const processSceneImageMatches = useCallback(
@@ -845,6 +849,18 @@ export function useStoryboard({
     [csrfFetch, handleSceneImageReplace]
   )
 
+  // Confirm a website style variant — sets globalStyles + marks confirmed on briefing state
+  const handleConfirmWebsiteStyle = useCallback(
+    (variant: WebsiteStyleVariant) => {
+      setGlobalStyles(variant.globalStyles)
+      handleSendOption(`I've chosen the "${variant.name}" style for the website.`, {
+        websiteGlobalStyles: variant.globalStyles,
+        websiteStyleConfirmed: true,
+      })
+    },
+    [handleSendOption]
+  )
+
   // Retry all failed scene image generations
   const retryFailedImages = useCallback(
     async (
@@ -921,5 +937,7 @@ export function useStoryboard({
     handleApproveStoryboard,
     handleNarrativeFieldEdit,
     handleRegenerateNarrative,
+    // Website style variants
+    handleConfirmWebsiteStyle,
   }
 }

@@ -41,7 +41,7 @@ interface UnifiedPanelProps {
   className?: string
 }
 
-type SectionKey = 'brief' | 'moodboard' | 'visual' | 'outline'
+type SectionKey = 'brief' | 'moodboard' | 'visual' | 'outline' | 'website_summary'
 
 interface SectionConfig {
   key: SectionKey
@@ -183,21 +183,34 @@ function getSectionsForStage(
 
     case 'review':
     case 'deepen':
-      sections = [
-        { key: 'brief', label: 'Brief', defaultOpen: true },
-        ...visualIfPopulated,
-        ...(showOutline
-          ? [
-              {
-                key: 'outline' as SectionKey,
-                label: 'Content Plan',
-                defaultOpen: true,
-                itemCount: outlineCount || undefined,
-              },
-            ]
-          : []),
-        ...moodboardIfPopulated,
-      ]
+      if (deliverableCategory === 'website') {
+        sections = [
+          {
+            key: 'website_summary' as SectionKey,
+            label: 'Website Overview',
+            defaultOpen: true,
+          },
+          { key: 'brief', label: 'Brief', defaultOpen: false },
+          ...visualIfPopulated,
+          ...moodboardIfPopulated,
+        ]
+      } else {
+        sections = [
+          { key: 'brief', label: 'Brief', defaultOpen: true },
+          ...visualIfPopulated,
+          ...(showOutline
+            ? [
+                {
+                  key: 'outline' as SectionKey,
+                  label: 'Content Plan',
+                  defaultOpen: true,
+                  itemCount: outlineCount || undefined,
+                },
+              ]
+            : []),
+          ...moodboardIfPopulated,
+        ]
+      }
       break
 
     case 'submit':
@@ -389,6 +402,7 @@ export function UnifiedPanel({
     moodboard: undefined,
     visual: undefined,
     outline: undefined,
+    website_summary: undefined,
   })
 
   // Track which sections have appeared before (for first-appearance defaultOpen)
@@ -405,6 +419,7 @@ export function UnifiedPanel({
     moodboard: 0,
     visual: 0,
     outline: 0,
+    website_summary: 0,
   })
 
   // Update seen sections when new ones appear
@@ -519,6 +534,70 @@ export function UnifiedPanel({
           </div>
         )
 
+      case 'website_summary':
+        return (
+          <div className="px-4 pb-4 space-y-3">
+            {/* Goal summary */}
+            {brief?.taskSummary.value && (
+              <div>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 block mb-1">
+                  Goal
+                </span>
+                <p className="text-xs text-foreground leading-relaxed">{brief.taskSummary.value}</p>
+              </div>
+            )}
+            {/* Style summary */}
+            {brief?.visualDirection && (
+              <div>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 block mb-1">
+                  Style
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {brief.visualDirection.selectedStyles.map((style) => (
+                    <span
+                      key={style.id}
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-crafted-green/10 text-crafted-green"
+                    >
+                      {style.name}
+                    </span>
+                  ))}
+                  {brief.visualDirection.colorPalette.map((color) => (
+                    <span
+                      key={color}
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+                    >
+                      {color}
+                    </span>
+                  ))}
+                </div>
+                {/* Typography */}
+                {(brief.visualDirection.typography.primary ||
+                  brief.visualDirection.typography.secondary) && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {[
+                      brief.visualDirection.typography.primary,
+                      brief.visualDirection.typography.secondary,
+                    ]
+                      .filter(Boolean)
+                      .join(' / ')}
+                  </p>
+                )}
+              </div>
+            )}
+            {/* Audience */}
+            {brief?.audience.value?.name && (
+              <div>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60 block mb-1">
+                  Target Audience
+                </span>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {brief.audience.value.name}
+                </p>
+              </div>
+            )}
+          </div>
+        )
+
       default:
         return null
     }
@@ -555,7 +634,7 @@ export function UnifiedPanel({
         {isReady && onRequestSubmit ? (
           <Button size="sm" className="w-full gap-2" onClick={onRequestSubmit}>
             <Send className="h-3.5 w-3.5" />
-            Submit for design
+            {deliverableCategory === 'website' ? 'Craft It' : 'Submit for design'}
           </Button>
         ) : (
           <p className="text-[11px] text-muted-foreground/50 text-center">{nextActionText}</p>

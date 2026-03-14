@@ -20,7 +20,7 @@ export function getStripe(): Stripe {
       throw new Error('Invalid STRIPE_SECRET_KEY format')
     }
     stripeInstance = new Stripe(secretKey, {
-      apiVersion: '2025-11-17.clover',
+      apiVersion: '2026-02-25.clover',
     })
   }
   return stripeInstance

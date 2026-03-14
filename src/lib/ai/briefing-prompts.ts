@@ -103,6 +103,12 @@ export function buildSystemPrompt(state: BriefingState, brandContext?: BrandCont
     sections.push(inspirationContext)
   }
 
+  // Website-specific flow injection (Phases 1 & 2)
+  const websiteFlowPrompt = buildWebsiteFlowPrompt(state, brandContext)
+  if (websiteFlowPrompt) {
+    sections.push(websiteFlowPrompt)
+  }
+
   // Closing instruction (stage-specific)
   sections.push(buildClosingInstruction(state.stage))
 
@@ -941,6 +947,151 @@ function buildWebsiteInspirationContext(state: BriefingState): string | null {
 ${lines.join('\n')}
 
 Reference these inspirations when recommending section structure and design approach. Extract visual patterns (layout density, color usage, typography choices) from these references to inform the design direction.`
+}
+
+// =============================================================================
+// WEBSITE FLOW — INSTANT BLUEPRINT (Phase 1) & INSPIRATION (Phase 2)
+// =============================================================================
+
+function buildWebsiteFlowPrompt(state: BriefingState, brandContext?: BrandContext): string | null {
+  const isWebsite = state.deliverableCategory === 'website' || isWebsiteFromContext(state)
+
+  if (!isWebsite) return null
+
+  const parts: string[] = []
+
+  // Phase 1: Instant Blueprint — EXTRACT/TASK_TYPE/INTENT stages
+  // When the user's first message mentions a website, skip clarifying questions
+  // and immediately generate a section layout + fill all brief fields.
+  if (['EXTRACT', 'TASK_TYPE', 'INTENT'].includes(state.stage)) {
+    const companyName = brandContext?.companyName || 'the company'
+    const industry = brandContext?.industry || null
+    const brandDesc = brandContext?.brandDescription || null
+
+    parts.push(`== WEBSITE INSTANT BLUEPRINT ==
+You are in the Website Instant Blueprint flow. When the user mentions a website, landing page, or site, do NOT ask clarifying questions about company name, industry, or basic goals. Instead, make smart assumptions from the message and brand context, then immediately generate a full layout.
+
+KNOWN BRAND CONTEXT:
+- Company: ${companyName}${industry ? `\n- Industry: ${industry}` : ''}${brandDesc ? `\n- Description: ${brandDesc}` : ''}
+
+YOUR TASK:
+1. Extract the company name, industry, and primary goal from the user's message combined with brand context. If any piece is missing, make a reasonable assumption based on what you DO know. Never ask "What industry are you in?" when the brand profile already tells you.
+2. Immediately generate a [LAYOUT] block with 5-7 sections (hero, features/services, social proof, about, CTA, footer, plus industry-appropriate sections).
+3. Include a [BRIEF_META] block that sets ALL fields in one shot:
+   - stage: "STRUCTURE"
+   - fieldsExtracted: { taskType: "website", intent: "<inferred goal>", deliverableCategory: "website", platform: "web", topic: "<project description>" }
+4. Each section in the [LAYOUT] MUST have a headline and subheadline that uses the actual company name and value proposition. No generic "Transform Your Business" filler.
+
+QUICK OPTIONS: After the layout, provide goal-based quick options derived from the industry:
+[QUICK_OPTIONS]{"question":"What is the primary goal?","options":${JSON.stringify(getWebsiteGoalChips(industry))}}[/QUICK_OPTIONS]
+
+Be opinionated. Pick the most likely layout for this type of business and present it with confidence. The user can adjust from there.`)
+  }
+
+  // Phase 2: Inspiration — when at INSPIRATION stage with website deliverable
+  if (state.stage === 'INSPIRATION') {
+    const hasInspirations = (state.websiteInspirations?.length ?? 0) > 0
+    const styleConfirmed = state.websiteStyleConfirmed === true
+
+    if (!hasInspirations) {
+      parts.push(`== WEBSITE INSPIRATION PHASE ==
+The user is now in the inspiration phase for their website. They can browse a gallery of reference sites, paste their own reference URLs, or skip this step entirely.
+
+YOUR TASK:
+- Briefly introduce the inspiration step: "Let's find some reference sites that match the direction you're going for."
+- Do NOT show [DELIVERABLE_STYLES] markers. The website inspiration gallery is handled by the UI system, not by style cards.
+- If the user provides a reference URL, acknowledge it and extract the design principles (layout density, color palette, typography, whitespace usage).
+- Keep your response short. The UI handles the gallery display.`)
+    } else if (!styleConfirmed) {
+      const inspirationNames = state.websiteInspirations?.map((insp) => insp.name).join(', ') ?? ''
+
+      parts.push(`== WEBSITE INSPIRATION — ANALYZE REFERENCES ==
+The user has selected reference sites: ${inspirationNames}.
+
+YOUR TASK:
+1. Analyze the selected references and extract common design patterns: layout structure, color usage, typography weight, whitespace density, section ordering.
+2. Use these patterns to update the existing [LAYOUT] block. Reorder sections, adjust content guidance, or add/remove sections to better match the reference aesthetic.
+3. Output the updated [LAYOUT] with a brief explanation of what changed and why.
+4. Suggest moving to style selection where they will see 3 style variants.
+
+Do NOT regenerate from scratch. Evolve the existing layout based on inspiration insights.`)
+    }
+  }
+
+  // Phase 2.5: ELABORATE with globalStyles context for copy generation
+  if (state.stage === 'ELABORATE' && state.websiteGlobalStyles) {
+    const gs = state.websiteGlobalStyles
+    const styleParts: string[] = []
+    if (gs.primaryColor) styleParts.push(`Primary color: ${gs.primaryColor}`)
+    if (gs.secondaryColor) styleParts.push(`Secondary color: ${gs.secondaryColor}`)
+    if (gs.fontPrimary) styleParts.push(`Primary font: ${gs.fontPrimary}`)
+    if (gs.fontSecondary) styleParts.push(`Secondary font: ${gs.fontSecondary}`)
+    if (gs.layoutDensity) styleParts.push(`Layout density: ${gs.layoutDensity}`)
+
+    if (styleParts.length > 0) {
+      parts.push(`== WEBSITE GLOBAL STYLES CONTEXT ==
+The user has confirmed a style direction for their website:
+${styleParts.join('\n')}
+
+When writing section copy (headlines, subheadlines, body text, CTAs), match the aesthetic implied by these style choices:
+- ${gs.layoutDensity === 'compact' ? 'Keep copy concise and punchy. Short headlines, minimal body text.' : gs.layoutDensity === 'spacious' ? 'Allow copy room to breathe. Slightly longer, more editorial headlines. Generous whitespace between ideas.' : 'Balance brevity with clarity. Medium-length headlines, focused body copy.'}
+- Write CTAs that feel native to the style (e.g., a minimal site gets "Get started" not "Start your incredible journey today").`)
+    }
+  }
+
+  return parts.length > 0 ? parts.join('\n\n') : null
+}
+
+/**
+ * Detect if the conversation is about a website from context clues,
+ * even before deliverableCategory is formally set.
+ */
+function isWebsiteFromContext(state: BriefingState): boolean {
+  const topic = (state.brief.topic.value ?? '').toLowerCase()
+  const taskType = (state.brief.taskType.value ?? '').toLowerCase()
+  return (
+    topic.includes('website') ||
+    topic.includes('landing page') ||
+    topic.includes('site') ||
+    taskType.includes('website') ||
+    taskType.includes('landing page')
+  )
+}
+
+/**
+ * Generate goal-based quick option chips for website projects,
+ * derived from the industry when available.
+ */
+function getWebsiteGoalChips(industry: string | null): string[] {
+  const industryGoals: Record<string, string[]> = {
+    SaaS: ['Drive free trials', 'Book demos', 'Generate leads'],
+    saas: ['Drive free trials', 'Book demos', 'Generate leads'],
+    Agency: ['Showcase portfolio', 'Book consultations', 'Build authority'],
+    agency: ['Showcase portfolio', 'Book consultations', 'Build authority'],
+    'E-Commerce': ['Sell products', 'Build email list', 'Drive repeat purchases'],
+    ecommerce: ['Sell products', 'Build email list', 'Drive repeat purchases'],
+    'Law Firm': ['Book consultations', 'Build authority', 'Generate leads'],
+    'law-firm': ['Book consultations', 'Build authority', 'Generate leads'],
+    Healthcare: ['Book appointments', 'Build trust', 'Educate patients'],
+    healthcare: ['Book appointments', 'Build trust', 'Educate patients'],
+    Finance: ['Generate leads', 'Build trust', 'Schedule consultations'],
+    finance: ['Generate leads', 'Build trust', 'Schedule consultations'],
+    'Real Estate': ['Generate listings', 'Book viewings', 'Build authority'],
+    'real-estate': ['Generate listings', 'Book viewings', 'Build authority'],
+    Education: ['Drive enrollments', 'Build authority', 'Showcase programs'],
+    education: ['Drive enrollments', 'Build authority', 'Showcase programs'],
+    Restaurant: ['Drive reservations', 'Showcase menu', 'Build local presence'],
+    restaurant: ['Drive reservations', 'Showcase menu', 'Build local presence'],
+    Portfolio: ['Showcase work', 'Get hired', 'Build personal brand'],
+    portfolio: ['Showcase work', 'Get hired', 'Build personal brand'],
+  }
+
+  if (industry && industryGoals[industry]) {
+    return industryGoals[industry]
+  }
+
+  // Generic website goals when industry is unknown
+  return ['Book consultations', 'Build authority', 'Generate leads']
 }
 
 // =============================================================================

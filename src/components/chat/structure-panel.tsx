@@ -23,6 +23,7 @@ import type {
   BriefingStage,
   WebsiteGlobalStyles,
   WebsiteInspiration,
+  WebsitePhase,
   VideoNarrative,
 } from '@/lib/ai/briefing-state-machine'
 import type { SceneImageData } from '@/hooks/use-storyboard'
@@ -63,6 +64,7 @@ export interface StructurePanelProps {
   onSectionReorder?: (sections: LayoutSection[]) => void
   onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
   // Website-specific props
+  websitePhase?: WebsitePhase | null
   websiteGlobalStyles?: WebsiteGlobalStyles | null
   websiteInspirations?: WebsiteInspiration[]
   websiteInspirationIds?: string[]
@@ -498,6 +500,7 @@ export function StructurePanel({
   targetDurationSeconds,
   onSectionReorder,
   onSectionEdit,
+  websitePhase,
   websiteGlobalStyles,
   websiteInspirations,
   websiteInspirationIds,
@@ -552,10 +555,13 @@ export function StructurePanel({
   // INSPIRATION stage: show StyleSelectionPanel or cinematic loading.
   // Also catch the transitional state where narrative is approved but
   // briefingStage hasn't updated from STRUCTURE yet (API in-flight).
+  // Website projects (structureType === 'layout') skip the generic StyleSelectionPanel
+  // and fall through to WebsiteStructurePanel which handles the dual-zone layout
+  // with inspiration gallery + wireframe + style variants.
   const isInspirationPhase =
     briefingStage === 'INSPIRATION' ||
     (narrativeApproved && briefingStage === 'STRUCTURE' && structureType === 'storyboard')
-  if (isInspirationPhase) {
+  if (isInspirationPhase && structureType !== 'layout') {
     // After style confirmation, show cinematic loading while AI generates structure
     if (styleConfirming && isChatLoading && structureType) {
       return (
@@ -589,6 +595,7 @@ export function StructurePanel({
           sections={structureData?.type === 'layout' ? structureData.sections : null}
           briefingStage={(briefingStage as BriefingStage) ?? undefined}
           globalStyles={websiteGlobalStyles}
+          websitePhase={websitePhase}
           onSectionReorder={onSectionReorder}
           onSectionEdit={onSectionEdit}
           websiteInspirations={websiteInspirations ?? []}

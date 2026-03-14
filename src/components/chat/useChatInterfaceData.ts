@@ -20,6 +20,7 @@ import {
   calculateChatStageFromBriefing,
   getContextualStageDescription,
   BRIEFING_CHAT_STAGES,
+  WEBSITE_CHAT_STAGES,
 } from '@/lib/chat-progress'
 import { useBriefingStateMachine } from '@/hooks/use-briefing-state-machine'
 import { useChatMessages } from '@/hooks/use-chat-messages'
@@ -515,28 +516,33 @@ export function useChatInterfaceData({
 
   const progressState = useMemo(() => {
     if (_briefingState) {
-      const result = calculateChatStageFromBriefing(_briefingState.stage)
-      const stageIndex = BRIEFING_CHAT_STAGES.indexOf(result.currentStage)
+      const delCat = _briefingState.deliverableCategory
+      const result = calculateChatStageFromBriefing(_briefingState.stage, delCat)
+      const activeStages = delCat === 'website' ? WEBSITE_CHAT_STAGES : BRIEFING_CHAT_STAGES
+      const stageIndex = activeStages.indexOf(result.currentStage)
 
       // Clamp: never go below the high-water mark
       if (stageIndex >= 0 && stageIndex < progressHighWaterRef.current) {
-        const hwStage = BRIEFING_CHAT_STAGES[progressHighWaterRef.current]
+        const hwStage = activeStages[progressHighWaterRef.current]
         const hwResult = calculateChatStageFromBriefing(
           // Map chat stage back — use the high-water stage for progress display
-          _briefingState.stage
+          _briefingState.stage,
+          delCat
         )
         const hwPercentage = Math.round(
-          (progressHighWaterRef.current / (BRIEFING_CHAT_STAGES.length - 1)) * 100
+          (progressHighWaterRef.current / (activeStages.length - 1)) * 100
         )
         return {
           ...hwResult,
           currentStage: hwStage,
           progressPercentage: Math.min(100, hwPercentage),
           stageDescription: getContextualStageDescription(_briefingState.stage, {
-            deliverableCategory: _briefingState.deliverableCategory,
+            deliverableCategory: delCat,
             structure: _briefingState.structure,
             videoNarrative: _briefingState.videoNarrative,
             narrativeApproved: _briefingState.narrativeApproved,
+            websiteInspirations: _briefingState.websiteInspirations,
+            websiteStyleConfirmed: _briefingState.websiteStyleConfirmed,
           }),
         }
       }
@@ -548,10 +554,12 @@ export function useChatInterfaceData({
       return {
         ...result,
         stageDescription: getContextualStageDescription(_briefingState.stage, {
-          deliverableCategory: _briefingState.deliverableCategory,
+          deliverableCategory: delCat,
           structure: _briefingState.structure,
           videoNarrative: _briefingState.videoNarrative,
           narrativeApproved: _briefingState.narrativeApproved,
+          websiteInspirations: _briefingState.websiteInspirations,
+          websiteStyleConfirmed: _briefingState.websiteStyleConfirmed,
         }),
       }
     }
@@ -572,6 +580,8 @@ export function useChatInterfaceData({
     _briefingState?.structure,
     _briefingState?.videoNarrative,
     _briefingState?.narrativeApproved,
+    _briefingState?.websiteInspirations,
+    _briefingState?.websiteStyleConfirmed,
     chatMessages.messages,
     styleSelection.selectedStyles,
     styleSelection.selectedDeliverableStyles,

@@ -37,6 +37,7 @@ import {
   GalleryThumbnails,
   Eye,
   Clapperboard,
+  Layers,
 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import {
@@ -194,6 +195,11 @@ const navigationGroups: NavigationGroup[] = [
   {
     label: 'System',
     items: [
+      {
+        name: 'Job Queues',
+        href: '/admin/queues',
+        icon: Layers,
+      },
       {
         name: 'Notifications',
         href: '/admin/notifications',

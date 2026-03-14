@@ -28,6 +28,8 @@ export const queryKeys = {
     chatLogs: (filters?: Record<string, string>) =>
       [...queryKeys.admin.all, 'chat-logs', filters] as const,
     chatLogDetail: (id: string) => [...queryKeys.admin.all, 'chat-log-detail', id] as const,
+    queues: () => [...queryKeys.admin.all, 'queues'] as const,
+    queueDetail: (name: string) => [...queryKeys.admin.all, 'queue-detail', name] as const,
   },
   // Freelancer queries
   freelancer: {

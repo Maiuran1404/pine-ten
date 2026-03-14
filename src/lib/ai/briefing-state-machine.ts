@@ -220,6 +220,15 @@ export interface WebsiteGlobalStyles {
   layoutDensity?: 'compact' | 'balanced' | 'spacious'
 }
 
+export type WebsitePhase = 'blueprint' | 'inspiration' | 'style' | 'studio' | 'review'
+
+export interface WebsiteStyleVariant {
+  id: string
+  name: string
+  description: string
+  globalStyles: WebsiteGlobalStyles
+}
+
 // =============================================================================
 // BRIEFING STATE (Composes LiveBrief)
 // =============================================================================
@@ -252,6 +261,8 @@ export interface BriefingState {
   // Website-specific (only populated for website deliverables)
   websiteInspirations?: WebsiteInspiration[]
   websiteGlobalStyles?: WebsiteGlobalStyles
+  websiteStyleConfirmed?: boolean
+  websiteStyleVariants?: WebsiteStyleVariant[]
 }
 
 // =============================================================================
@@ -319,6 +330,10 @@ const STAGE_DEFINITIONS: StageDefinition[] = [
   {
     stage: 'INSPIRATION',
     exitWhen: (s) => {
+      // Website: requires both inspirations selected AND style variant confirmed
+      if (s.deliverableCategory === 'website') {
+        return (s.websiteInspirations?.length ?? 0) > 0 && s.websiteStyleConfirmed === true
+      }
       // Style selection after structure is built.
       // Video needs it for DALL-E image generation style context at ELABORATE.
       return (s.brief.visualDirection?.selectedStyles?.length ?? 0) > 0
@@ -430,6 +445,21 @@ export function deriveStage(state: BriefingState): BriefingStage {
 }
 
 /**
+ * Derive the website-specific phase from briefing state.
+ * Returns null for non-website deliverables.
+ * Used to drive website-specific UI (dual-zone panel, style variants, section studio).
+ */
+export function deriveWebsitePhase(state: BriefingState): WebsitePhase | null {
+  if (state.deliverableCategory !== 'website') return null
+
+  if (!state.structure) return 'blueprint'
+  if ((state.websiteInspirations?.length ?? 0) === 0) return 'inspiration'
+  if (!state.websiteStyleConfirmed) return 'style'
+  if (!checkElaborationComplete(state)) return 'studio'
+  return 'review'
+}
+
+/**
  * Returns the set of stages that are legal next states from the given stage.
  * Used to validate AI-declared stage transitions via [BRIEF_META].
  */
@@ -462,6 +492,7 @@ export function createInitialBriefingState(briefId?: string): BriefingState {
     narrativeApproved: false,
     storyboardReviewed: false,
     targetDurationSeconds: null,
+    websiteStyleConfirmed: false,
   }
 }
 
@@ -540,12 +571,14 @@ export function goBackTo(state: BriefingState, targetStage: BriefingStage): Brie
   }
 
   // Clear fields based on target stage
-  // Going back to INSPIRATION or earlier: clears visualDirection
+  // Going back to INSPIRATION or earlier: clears visualDirection + website style
   if (targetIndex <= STAGE_ORDER.indexOf('INSPIRATION')) {
     newState.brief = {
       ...newState.brief,
       visualDirection: null,
     }
+    newState.websiteStyleConfirmed = false
+    newState.websiteStyleVariants = undefined
   }
 
   // Going back to INTENT or earlier: clears intent + all downstream
@@ -640,6 +673,8 @@ export function pivotCategory(
     narrativeApproved: false,
     storyboardReviewed: false,
     turnsInCurrentStage: 0,
+    websiteStyleConfirmed: false,
+    websiteStyleVariants: undefined,
   }
 }
 
@@ -669,6 +704,8 @@ export interface SerializedBriefingState {
   targetDurationSeconds: number | null
   websiteInspirations?: WebsiteInspiration[]
   websiteGlobalStyles?: WebsiteGlobalStyles
+  websiteStyleConfirmed?: boolean
+  websiteStyleVariants?: WebsiteStyleVariant[]
 }
 
 interface SerializedLiveBrief extends Omit<LiveBrief, 'createdAt' | 'updatedAt'> {
