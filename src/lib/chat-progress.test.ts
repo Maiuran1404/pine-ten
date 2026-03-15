@@ -3,7 +3,6 @@ import { describe, it, expect } from 'vitest'
 // Zero mocks - these are pure functions
 import {
   CHAT_STAGES,
-  STAGE_DESCRIPTIONS,
   BRIEFING_CHAT_STAGES,
   mapBriefingStageToChat,
   calculateChatStageFromBriefing,
@@ -98,7 +97,10 @@ describe('calculateChatStageFromBriefing', () => {
 
   it('includes stage descriptions', () => {
     const result = calculateChatStageFromBriefing('EXTRACT')
-    expect(result.stageDescriptions).toEqual(STAGE_DESCRIPTIONS)
+    // Stage descriptions are now derived from config registry + defaults
+    expect(result.stageDescriptions).toBeDefined()
+    expect(result.stageDescriptions.brief).toBeDefined()
+    expect(result.stageDescriptions.review).toBeDefined()
   })
 })
 

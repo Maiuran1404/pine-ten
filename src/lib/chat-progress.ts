@@ -9,6 +9,7 @@ import type {
   VideoNarrative,
   WebsiteInspiration,
 } from '@/lib/ai/briefing-state-machine'
+import { getDeliverableConfig } from '@/lib/deliverables/registry'
 
 interface ProgressState {
   messages: ChatMessage[]
@@ -44,6 +45,7 @@ export const STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
   submit: 'Submit for creation',
 }
 
+/** @deprecated Use `getDeliverableConfig('website').stageLabels` from deliverables registry instead. */
 export const WEBSITE_STAGE_DESCRIPTIONS: Record<ChatStage, string> = {
   ...STAGE_DESCRIPTIONS,
   brief: 'Blueprint',
@@ -66,6 +68,7 @@ export const BRIEFING_CHAT_STAGES: ChatStage[] = [
 /**
  * Stages used for website deliverables.
  * Maps to: Blueprint → Style (Inspiration + Style variant) → Studio → Review
+ * @deprecated Use `getDeliverableConfig('website').chatStages` from deliverables registry instead.
  */
 export const WEBSITE_CHAT_STAGES: ChatStage[] = ['brief', 'style', 'storyboard', 'review']
 
@@ -84,51 +87,8 @@ export function mapBriefingStageToChat(
   stage: BriefingStage,
   deliverableCategory?: string | null
 ): ChatStage {
-  if (deliverableCategory === 'website') {
-    switch (stage) {
-      case 'EXTRACT':
-      case 'TASK_TYPE':
-      case 'INTENT':
-      case 'STRUCTURE':
-        return 'brief'
-      case 'INSPIRATION':
-        return 'style'
-      case 'ELABORATE':
-        return 'storyboard'
-      case 'STRATEGIC_REVIEW':
-      case 'MOODBOARD':
-        return 'storyboard'
-      case 'REVIEW':
-      case 'DEEPEN':
-      case 'SUBMIT':
-        return 'review'
-      default:
-        return 'brief'
-    }
-  }
-
-  switch (stage) {
-    case 'EXTRACT':
-    case 'TASK_TYPE':
-    case 'INTENT':
-      return 'brief'
-    case 'STRUCTURE':
-      return 'narrative'
-    case 'INSPIRATION':
-      return 'style'
-    case 'ELABORATE':
-      return 'storyboard'
-    case 'STRATEGIC_REVIEW':
-    case 'MOODBOARD':
-      return 'storyboard'
-    case 'REVIEW':
-    case 'DEEPEN':
-      return 'review'
-    case 'SUBMIT':
-      return 'review'
-    default:
-      return 'brief'
-  }
+  const config = getDeliverableConfig(deliverableCategory)
+  return config.mapBriefingStageToChat(stage)
 }
 
 /**
@@ -139,42 +99,35 @@ export function calculateChatStageFromBriefing(
   briefingStage: BriefingStage,
   deliverableCategory?: string | null
 ): ProgressResult {
-  const chatStage = mapBriefingStageToChat(briefingStage, deliverableCategory)
-  const stages = deliverableCategory === 'website' ? WEBSITE_CHAT_STAGES : BRIEFING_CHAT_STAGES
+  const config = getDeliverableConfig(deliverableCategory)
+  const chatStage = config.mapBriefingStageToChat(briefingStage)
+  const stages = config.chatStages
   const stageIndex = stages.indexOf(chatStage)
 
   const completedStages = stages.slice(0, stageIndex)
   const basePercentage = Math.round((stageIndex / (stages.length - 1)) * 100)
 
   // Add sub-stage progress within the "brief" stage so it doesn't stay at 0%
-  let subStageBonus = 0
-  if (chatStage === 'brief') {
-    if (deliverableCategory === 'website') {
-      // Website blueprint: EXTRACT=0, TASK_TYPE=3, INTENT=5, STRUCTURE=10
-      const subStageMap: Record<string, number> = {
-        EXTRACT: 0,
-        TASK_TYPE: 3,
-        INTENT: 5,
-        STRUCTURE: 10,
-      }
-      subStageBonus = subStageMap[briefingStage] ?? 0
-    } else {
-      const subStageMap: Record<string, number> = { EXTRACT: 0, TASK_TYPE: 3, INTENT: 7 }
-      subStageBonus = subStageMap[briefingStage] ?? 0
-    }
+  const subStageBonus = chatStage === 'brief' ? config.getSubStageBonus(briefingStage) : 0
+
+  // Build stage descriptions from config labels (matching the Record<ChatStage, string> shape)
+  const stageDescriptions: Record<ChatStage, string> = {
+    ...STAGE_DESCRIPTIONS,
+    ...config.stageLabels,
   }
 
   return {
     currentStage: chatStage,
     completedStages,
     progressPercentage: Math.min(100, basePercentage + subStageBonus),
-    stageDescriptions:
-      deliverableCategory === 'website' ? WEBSITE_STAGE_DESCRIPTIONS : STAGE_DESCRIPTIONS,
+    stageDescriptions,
   }
 }
 
 /**
- * Calculate the current chat stage based on conversation state
+ * Calculate the current chat stage based on conversation state.
+ * @deprecated The briefing state machine is always active. Use calculateChatStageFromBriefing() instead.
+ * This legacy path is preserved as a fallback but should never be reached in production.
  */
 export function calculateChatStage(state: ProgressState): ProgressResult {
   const { messages, selectedStyles, moodboardItems, pendingTask, taskSubmitted } = state
@@ -387,44 +340,17 @@ export function getContextualStageDescription(
     websiteStyleConfirmed?: boolean
   }
 ): string {
-  switch (briefingStage) {
-    case 'EXTRACT':
-    case 'TASK_TYPE':
-    case 'INTENT':
-      return 'Describe your project'
-    case 'STRUCTURE':
-      if (context?.deliverableCategory === 'video') {
-        if (!context.videoNarrative) return 'Building story concept'
-        if (!context.narrativeApproved) return 'Review story concept'
-        return 'Story concept approved'
-      }
-      if (context?.deliverableCategory === 'website') return 'Generating page layout'
-      if (context?.deliverableCategory === 'content') return 'Content plan'
-      return 'Define your structure'
-    case 'INSPIRATION':
-      if (context?.deliverableCategory === 'website') {
-        if ((context.websiteInspirations?.length ?? 0) === 0) return 'Choose inspirations'
-        if (!context.websiteStyleConfirmed) return 'Select visual style'
-        return 'Style confirmed'
-      }
-      return 'Choose your visual style'
-    case 'ELABORATE':
-      if (context?.deliverableCategory === 'video') {
-        if (context?.structure) return 'Storyboard ready'
-        return 'Building storyboard'
-      }
-      if (context?.deliverableCategory === 'website') return 'Section studio'
-      return 'Refine details'
-    case 'STRATEGIC_REVIEW':
-      return 'Strategic review'
-    case 'MOODBOARD':
-      return 'Building your brief'
-    case 'REVIEW':
-    case 'DEEPEN':
-      return 'Review your brief'
-    case 'SUBMIT':
-      return 'Ready to submit'
-    default:
-      return 'Building your brief'
-  }
+  const config = getDeliverableConfig(context?.deliverableCategory)
+  return config.stageDescriptions(briefingStage, {
+    deliverableCategory:
+      (context?.deliverableCategory as import('@/lib/ai/briefing-state-machine').DeliverableCategory) ??
+      null,
+    structure:
+      (context?.structure as import('@/lib/ai/briefing-state-machine').StructureData | null) ??
+      null,
+    videoNarrative: context?.videoNarrative ?? null,
+    narrativeApproved: context?.narrativeApproved,
+    websiteInspirations: context?.websiteInspirations ?? null,
+    websiteStyleConfirmed: context?.websiteStyleConfirmed,
+  })
 }

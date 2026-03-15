@@ -29,6 +29,7 @@ import { SubmissionSuccess } from './submission-success'
 import { useChatInterfaceData } from './useChatInterfaceData'
 import { ChatMessageList } from './chat-message-list'
 import { ChatInputArea } from './chat-input-area'
+import { BriefingProvider } from '@/providers/briefing-provider'
 
 // Task data types for when viewing an active task
 export interface TaskFile {
@@ -188,6 +189,7 @@ export function ChatInterface({
     progressState,
     briefingStage,
     deliverableCategory,
+    websitePhase,
     setDeliverableCategory,
     estimatedCredits,
     targetDurationSeconds,
@@ -327,6 +329,9 @@ export function ChatInterface({
     uploadFiles,
     refreshCredits: _refreshCredits,
     scrollToBottom: _scrollToBottom,
+
+    // Briefing state (for BriefingProvider)
+    briefingState,
   } = useChatInterfaceData({
     draftId,
     onDraftUpdate,
@@ -389,9 +394,12 @@ export function ChatInterface({
 
       // At REVIEW/DEEPEN stage, "good enough, move on" signals submission intent.
       // For video projects, require storyboard reviewed first.
+      // For website projects, structure (layout sections) doesn't need a separate review gate.
+      const isWebsiteProject = deliverableCategory === 'website'
+      const isVideoReady = !storyboardScenes || storyboardReviewed
       if (
         (briefingStage === 'REVIEW' || briefingStage === 'DEEPEN') &&
-        (!storyboardScenes || storyboardReviewed) &&
+        (isWebsiteProject || isVideoReady) &&
         /\b(good enough|move on|submit|let'?s go|ready to submit|done|ship it)\b/i.test(lower)
       ) {
         handleRequestTaskSummary()
@@ -437,6 +445,7 @@ export function ChatInterface({
       storyboardReviewed,
       handleApproveStoryboard,
       briefingStage,
+      deliverableCategory,
     ]
   )
 
@@ -448,83 +457,103 @@ export function ChatInterface({
     }
   }, [isLoading, isFullRegeneration, setIsFullRegeneration])
 
-  // Build structure panel props as a single passthrough object
+  // Build structure panel props — grouped by deliverable type
   const structurePanelProps = useMemo(
     () => ({
+      // Core shared props (read from BriefingContext when available, these are fallbacks)
       structureType: structureType ?? null,
       structureData: storyboardScenes ?? null,
       briefingStage: briefingStage ?? undefined,
-      sceneImageData,
+      websitePhase,
       isChatLoading: isLoading,
       isRegenerating: isFullRegeneration,
-      changedScenes,
-      onUndo: undo,
-      onRedo: redo,
-      canUndo,
-      canRedo,
-      onSceneClick: handleSceneClick,
-      onSelectionChange: handleSceneSelectionChange,
-      onSceneEdit: handleSceneEdit,
-      onSceneReorder: handleSceneReorder,
-      onRegenerateStoryboard: showSubmissionSuccess ? undefined : handleRegenerateStoryboard,
-      onRegenerateScene: showSubmissionSuccess ? undefined : handleRegenerateScene,
-      onRegenerateField: showSubmissionSuccess ? undefined : handleRegenerateField,
-      targetDurationSeconds,
-      onSectionReorder: handleSectionReorder,
-      onSectionEdit: handleSectionEdit,
-      websiteGlobalStyles,
-      websiteInspirations,
-      websiteInspirationIds,
-      inspirationGallery,
-      isGalleryLoading,
-      isCapturingScreenshot,
-      onInspirationSelect: (item: {
-        id: string
-        name: string
-        url: string
-        screenshotUrl: string
-      }) =>
-        addWebsiteInspiration({
-          id: item.id,
-          url: item.url,
-          screenshotUrl: item.screenshotUrl,
-          name: item.name,
-        }),
-      onRemoveInspiration: removeWebsiteInspiration,
-      onCaptureScreenshot: captureWebsiteScreenshot,
-      onFindSimilar: findSimilarWebsites,
-      similarResults: similarWebsiteResults,
-      isFindingSimilar,
-      canFindSimilar,
-      onUpdateInspirationNotes: updateInspirationNotes,
-      videoNarrative,
-      narrativeApproved,
-      storyboardReviewed,
-      onApproveNarrative: handleApproveNarrative,
-      onApproveStoryboard: handleApproveStoryboard,
-      onNarrativeFieldEdit: handleNarrativeFieldEdit,
-      lastSendError,
-      onRetryGeneration: handleRetryGeneration,
-      onEditNarrative: handleEditNarrative,
-      imageGenerationProgress,
-      isGeneratingImages,
-      onRegenerateImage: handleRegenerateImage,
-      styleSelectionStyles: latestDeliverableStyles,
-      confirmedStyleIds: moodboardStyleIds,
-      onStyleConfirmSelection: handleConfirmStyleSelection,
-      onStyleShowMore: handleShowMoreStyles,
-      onStyleShowDifferent: handleShowDifferentStyles,
-      // Style change from storyboard toolbar
-      currentStyles,
-      onChangeVisualStyle: handleChangeVisualStyle,
-      onOpenStyleSheet: handleFetchStylesForChange,
-      isStyleLoading: isLoading,
+      // Video-specific props
+      videoProps:
+        deliverableCategory === 'video' || structureType === 'storyboard'
+          ? {
+              sceneImageData,
+              changedScenes,
+              onUndo: undo,
+              onRedo: redo,
+              canUndo,
+              canRedo,
+              onSceneClick: handleSceneClick,
+              onSelectionChange: handleSceneSelectionChange,
+              onSceneEdit: handleSceneEdit,
+              onSceneReorder: handleSceneReorder,
+              onRegenerateStoryboard: showSubmissionSuccess
+                ? undefined
+                : handleRegenerateStoryboard,
+              onRegenerateScene: showSubmissionSuccess ? undefined : handleRegenerateScene,
+              onRegenerateField: showSubmissionSuccess ? undefined : handleRegenerateField,
+              targetDurationSeconds,
+              videoNarrative,
+              narrativeApproved,
+              storyboardReviewed,
+              onApproveNarrative: handleApproveNarrative,
+              onApproveStoryboard: handleApproveStoryboard,
+              onNarrativeFieldEdit: handleNarrativeFieldEdit,
+              lastSendError,
+              onRetryGeneration: handleRetryGeneration,
+              onEditNarrative: handleEditNarrative,
+              imageGenerationProgress,
+              isGeneratingImages,
+              onRegenerateImage: handleRegenerateImage,
+            }
+          : undefined,
+      // Website-specific props
+      websiteProps:
+        deliverableCategory === 'website' || structureType === 'layout'
+          ? {
+              websiteGlobalStyles,
+              websiteInspirations,
+              websiteInspirationIds,
+              inspirationGallery,
+              isGalleryLoading,
+              isCapturingScreenshot,
+              onInspirationSelect: (item: {
+                id: string
+                name: string
+                url: string
+                screenshotUrl: string
+              }) =>
+                addWebsiteInspiration({
+                  id: item.id,
+                  url: item.url,
+                  screenshotUrl: item.screenshotUrl,
+                  name: item.name,
+                }),
+              onRemoveInspiration: removeWebsiteInspiration,
+              onCaptureScreenshot: captureWebsiteScreenshot,
+              onFindSimilar: findSimilarWebsites,
+              similarResults: similarWebsiteResults,
+              isFindingSimilar,
+              canFindSimilar,
+              onUpdateInspirationNotes: updateInspirationNotes,
+              onSectionReorder: handleSectionReorder,
+              onSectionEdit: handleSectionEdit,
+            }
+          : undefined,
+      // Style selection props (shared, always available)
+      styleProps: {
+        styleSelectionStyles: latestDeliverableStyles,
+        confirmedStyleIds: moodboardStyleIds,
+        onStyleConfirmSelection: handleConfirmStyleSelection,
+        onStyleShowMore: handleShowMoreStyles,
+        onStyleShowDifferent: handleShowDifferentStyles,
+        currentStyles,
+        onChangeVisualStyle: handleChangeVisualStyle,
+        onOpenStyleSheet: handleFetchStylesForChange,
+        isStyleLoading: isLoading,
+      },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable handlers from hooks
     [
       structureType,
       storyboardScenes,
       briefingStage,
+      websitePhase,
+      deliverableCategory,
       sceneImageData,
       isLoading,
       changedScenes,
@@ -555,280 +584,286 @@ export function ChatInterface({
 
   return (
     <MotionConfig reducedMotion="user">
-      <ChatLayout
-        currentStage={progressState.currentStage}
-        completedStages={progressState.completedStages}
-        progressPercentage={progressState.progressPercentage}
-        stageDescription={
-          'stageDescription' in progressState
-            ? (progressState.stageDescription as string)
-            : undefined
-        }
-        moodboardItems={moodboardItems}
-        onRemoveMoodboardItem={removeMoodboardItem}
-        onClearMoodboard={clearMoodboard}
+      <BriefingProvider
+        deliverableCategory={deliverableCategory ?? null}
+        briefingState={briefingState}
         brief={brief}
-        onBriefUpdate={updateBrief}
-        onExportBrief={exportBrief}
-        briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
-        onRequestSubmit={handleOpenSubmissionModal}
-        isReadyForDesigner={brief ? isBriefReadyForDesigner(brief) : false}
-        showProgress={messages.some((m) => m.role === 'assistant')}
-        showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
-        showBrief={seamlessTransition && !isTaskMode && showRightPanel}
-        deliverableCategory={deliverableCategory}
-        storyboardScenes={
-          storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes : undefined
-        }
-        onSceneClick={handleSceneClick}
-        onMultiSceneFeedback={handleMultiSceneFeedback}
-        onSceneSelectionChange={handleSceneSelectionChange}
-        structurePanelVisible={structurePanelVisible}
-        structurePanelProps={structurePanelProps}
-        onApplyMoodboardToScene={(item, sceneNumber) =>
-          handleSceneImageReplace(sceneNumber, item.imageUrl)
-        }
-        storyboardSceneCount={
-          storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes.length : 0
-        }
-        viewStructureRef={viewStructureRef}
-        isLoading={isLoading}
-        className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
       >
-        <div
-          className="flex flex-col h-full relative"
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
+        <ChatLayout
+          currentStage={progressState.currentStage}
+          completedStages={progressState.completedStages}
+          progressPercentage={progressState.progressPercentage}
+          stageDescription={
+            'stageDescription' in progressState
+              ? (progressState.stageDescription as string)
+              : undefined
+          }
+          moodboardItems={moodboardItems}
+          onRemoveMoodboardItem={removeMoodboardItem}
+          onClearMoodboard={clearMoodboard}
+          brief={brief}
+          onBriefUpdate={updateBrief}
+          onExportBrief={exportBrief}
+          briefCompletion={Math.max(briefCompletion, progressState.progressPercentage)}
+          onRequestSubmit={handleOpenSubmissionModal}
+          isReadyForDesigner={brief ? isBriefReadyForDesigner(brief, deliverableCategory) : false}
+          showProgress={messages.some((m) => m.role === 'assistant')}
+          showMoodboard={seamlessTransition && !isTaskMode && showRightPanel}
+          showBrief={seamlessTransition && !isTaskMode && showRightPanel}
+          deliverableCategory={deliverableCategory}
+          storyboardScenes={
+            storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes : undefined
+          }
+          onSceneClick={handleSceneClick}
+          onMultiSceneFeedback={handleMultiSceneFeedback}
+          onSceneSelectionChange={handleSceneSelectionChange}
+          structurePanelVisible={structurePanelVisible}
+          structurePanelProps={structurePanelProps}
+          onApplyMoodboardToScene={(item, sceneNumber) =>
+            handleSceneImageReplace(sceneNumber, item.imageUrl)
+          }
+          storyboardSceneCount={
+            storyboardScenes?.type === 'storyboard' ? storyboardScenes.scenes.length : 0
+          }
+          viewStructureRef={viewStructureRef}
+          isLoading={isLoading}
+          className={cn(seamlessTransition ? 'h-full' : 'h-[calc(100vh-12rem)]')}
         >
-          {/* Drag overlay */}
-          <AnimatePresence>
-            {isDragging && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary rounded-xl flex items-center justify-center"
-              >
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                    <ImageIcon className="h-8 w-8 text-primary" />
+          <div
+            className="flex flex-col h-full relative"
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            {/* Drag overlay */}
+            <AnimatePresence>
+              {isDragging && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary rounded-xl flex items-center justify-center"
+                >
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                      <ImageIcon className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-lg font-medium text-foreground">Drop files here</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Images, videos, PDFs, and more
+                    </p>
                   </div>
-                  <p className="text-lg font-medium text-foreground">Drop files here</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Images, videos, PDFs, and more
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* Chat header - removed Start Over and delete buttons per user request */}
+            {/* Chat header - removed Start Over and delete buttons per user request */}
 
-          {/* Delete confirmation dialog */}
-          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <AlertDialogContent className="bg-card border-border max-w-md">
-              <AlertDialogHeader>
-                <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
-                  <Trash2 className="h-6 w-6 text-destructive" />
-                </div>
-                <AlertDialogTitle className="text-center text-foreground">
-                  Delete this chat?
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-center text-muted-foreground">
-                  This will permanently delete this conversation and all its messages. This action
-                  cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
-                <AlertDialogCancel className="bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground">
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteChat}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            {/* Delete confirmation dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogContent className="bg-card border-border max-w-md">
+                <AlertDialogHeader>
+                  <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+                    <Trash2 className="h-6 w-6 text-destructive" />
+                  </div>
+                  <AlertDialogTitle className="text-center text-foreground">
+                    Delete this chat?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-center text-muted-foreground">
+                    This will permanently delete this conversation and all its messages. This action
+                    cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
+                  <AlertDialogCancel className="bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteChat}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-          {/* Start Over confirmation dialog */}
-          <AlertDialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
-            <AlertDialogContent className="bg-card border-border max-w-md">
-              <AlertDialogHeader>
-                <div className="mx-auto w-12 h-12 rounded-full bg-ds-warning/10 flex items-center justify-center mb-2">
-                  <RotateCcw className="h-6 w-6 text-ds-warning" />
-                </div>
-                <AlertDialogTitle className="text-center text-foreground">
-                  Start fresh?
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-center text-muted-foreground">
-                  This will clear the current conversation and start a new one. Your moodboard and
-                  brief will also be reset.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
-                <AlertDialogCancel className="bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground">
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleStartOver}
-                  className="bg-ds-warning text-white hover:bg-ds-warning/90 border-0"
-                >
-                  Start Over
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            {/* Start Over confirmation dialog */}
+            <AlertDialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
+              <AlertDialogContent className="bg-card border-border max-w-md">
+                <AlertDialogHeader>
+                  <div className="mx-auto w-12 h-12 rounded-full bg-ds-warning/10 flex items-center justify-center mb-2">
+                    <RotateCcw className="h-6 w-6 text-ds-warning" />
+                  </div>
+                  <AlertDialogTitle className="text-center text-foreground">
+                    Start fresh?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-center text-muted-foreground">
+                    This will clear the current conversation and start a new one. Your moodboard and
+                    brief will also be reset.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
+                  <AlertDialogCancel className="bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleStartOver}
+                    className="bg-ds-warning text-white hover:bg-ds-warning/90 border-0"
+                  >
+                    Start Over
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-          {/* Messages - scrollable area */}
-          <ChatMessageList
-            messages={messages}
-            isLoading={isLoading}
-            seamlessTransition={seamlessTransition}
-            animatingMessageId={animatingMessageId}
-            setAnimatingMessageId={setAnimatingMessageId}
-            completedTypingIds={completedTypingIds}
-            setCompletedTypingIds={setCompletedTypingIds}
-            selectedStyles={selectedStyles}
-            hoveredStyleName={hoveredStyleName}
-            setHoveredStyleName={setHoveredStyleName}
-            lastStyleMessageIndex={lastStyleMessageIndex}
-            moodboardStyleIds={moodboardStyleIds}
-            moodboardItems={moodboardItems}
-            pendingTask={pendingTask}
-            isTaskMode={isTaskMode}
-            showManualSubmit={showManualSubmit}
-            userCredits={userCredits}
-            lastUserMessageIndex={lastUserMessageIndex}
-            scrollAreaRef={scrollAreaRef}
-            requestStartTimeRef={requestStartTimeRef}
-            handleStyleSelect={handleStyleSelect}
-            handleSubmitStyles={handleSubmitStyles}
-            handleAddToCollection={handleAddToCollection}
-            handleRemoveFromCollection={handleRemoveFromCollection}
-            handleConfirmStyleSelection={handleConfirmStyleSelection}
-            handleShowMoreStyles={handleShowMoreStyles}
-            handleShowDifferentStyles={handleShowDifferentStyles}
-            handleSubmitDeliverableStyles={handleSubmitDeliverableStyles}
-            removeMoodboardItem={removeMoodboardItem}
-            handleClearStyleCollection={handleClearStyleCollection}
-            handleSelectVideo={handleSelectVideo}
-            handleOpenSubmissionModal={handleOpenSubmissionModal}
-            handleRejectTask={handleRejectTask}
-            handleRequestTaskSummary={handleRequestTaskSummary}
-            onStrategicReviewAction={handleStrategicReviewAction}
-            briefingStage={briefingStage}
-            structureType={structureType}
-            onSceneClick={handleSceneClick}
-            onMultiSceneFeedback={handleMultiSceneFeedback}
-            onViewStoryboard={handleViewStoryboard}
-            structurePanelVisible={structurePanelVisible}
-            latestStoryboardScenes={latestStoryboardScenesMemo}
-            onInlineUpload={uploadFiles}
-            isUploading={isUploading}
-            uploadedFiles={uploadedFiles}
-            onRemoveUploadedFile={removeFile}
-            onAddExternalLink={addExternalLink}
-            lastSendError={lastSendError}
-            onRetry={handleRetry}
-            isGeneratingImages={isGeneratingImages}
-          />
-
-          {/* Input area / Submit action bar — hidden after successful submission */}
-          {!showSubmissionSuccess && (
-            <ChatInputArea
-              messageCount={messages.length}
-              hasInlineStylePicker={hasInlineStylePicker}
-              input={input}
-              setInput={setInput}
+            {/* Messages - scrollable area */}
+            <ChatMessageList
+              messages={messages}
               isLoading={isLoading}
-              pendingFiles={pendingFiles}
-              hasFiles={hasFiles}
+              seamlessTransition={seamlessTransition}
+              animatingMessageId={animatingMessageId}
+              setAnimatingMessageId={setAnimatingMessageId}
+              completedTypingIds={completedTypingIds}
+              setCompletedTypingIds={setCompletedTypingIds}
+              selectedStyles={selectedStyles}
+              hoveredStyleName={hoveredStyleName}
+              setHoveredStyleName={setHoveredStyleName}
+              lastStyleMessageIndex={lastStyleMessageIndex}
+              moodboardStyleIds={moodboardStyleIds}
+              moodboardItems={moodboardItems}
               pendingTask={pendingTask}
               isTaskMode={isTaskMode}
-              seamlessTransition={seamlessTransition}
-              ghostText={ghostText}
-              smartCompletion={smartCompletion}
-              setSmartCompletion={setSmartCompletion}
-              fileInputRef={fileInputRef}
-              inputRef={inputRef}
+              showManualSubmit={showManualSubmit}
               userCredits={userCredits}
-              briefingStage={briefingStage}
-              moodboardItems={moodboardItems}
-              onConfirmTask={handleConfirmTask}
-              onMakeChanges={handleRejectTask}
-              onInsufficientCredits={handleInsufficientCredits}
-              isSubmitting={isSubmissionLoading}
-              brief={brief}
-              stateMachineQuickOptions={resolvedQuickOptions}
-              onQuickOptionClick={handleQuickOptionClick}
-              hasStrategicReviewCTA={hasStrategicReviewCTA}
-              animatingMessageId={animatingMessageId}
-              handleSend={handleSend}
-              handleFileUpload={handleFileUpload}
+              lastUserMessageIndex={lastUserMessageIndex}
+              scrollAreaRef={scrollAreaRef}
+              requestStartTimeRef={requestStartTimeRef}
+              handleStyleSelect={handleStyleSelect}
+              handleSubmitStyles={handleSubmitStyles}
+              handleAddToCollection={handleAddToCollection}
+              handleRemoveFromCollection={handleRemoveFromCollection}
+              handleConfirmStyleSelection={handleConfirmStyleSelection}
+              handleShowMoreStyles={handleShowMoreStyles}
+              handleShowDifferentStyles={handleShowDifferentStyles}
+              handleSubmitDeliverableStyles={handleSubmitDeliverableStyles}
+              removeMoodboardItem={removeMoodboardItem}
+              handleClearStyleCollection={handleClearStyleCollection}
+              handleSelectVideo={handleSelectVideo}
+              handleOpenSubmissionModal={handleOpenSubmissionModal}
+              handleRejectTask={handleRejectTask}
               handleRequestTaskSummary={handleRequestTaskSummary}
-              removeFile={removeFile}
-              sceneReferences={sceneReferences}
-              onRemoveSceneReference={(sceneNumber: number) =>
-                setSceneReferences((prev) => prev.filter((s) => s.sceneNumber !== sceneNumber))
-              }
-              deliverableCategory={deliverableCategory}
-              estimatedCredits={estimatedCredits}
-              lastSavedAt={lastSavedAt}
-              hasStoryboard={
-                !!(
-                  storyboardScenes &&
-                  storyboardScenes.type === 'storyboard' &&
-                  storyboardScenes.scenes.length > 0
-                )
-              }
-              needsAutoContinueConfirmation={needsAutoContinueConfirmation}
-              onConfirmAutoContinue={handleConfirmAutoContinue}
-              onDismissAutoContinue={handleDismissAutoContinue}
-              onCategoryDetected={setDeliverableCategory}
+              onStrategicReviewAction={handleStrategicReviewAction}
+              briefingStage={briefingStage}
+              structureType={structureType}
+              onSceneClick={handleSceneClick}
+              onMultiSceneFeedback={handleMultiSceneFeedback}
+              onViewStoryboard={handleViewStoryboard}
+              structurePanelVisible={structurePanelVisible}
+              latestStoryboardScenes={latestStoryboardScenesMemo}
+              onInlineUpload={uploadFiles}
+              isUploading={isUploading}
+              uploadedFiles={uploadedFiles}
+              onRemoveUploadedFile={removeFile}
+              onAddExternalLink={addExternalLink}
+              lastSendError={lastSendError}
+              onRetry={handleRetry}
+              isGeneratingImages={isGeneratingImages}
             />
-          )}
 
-          {/* Submission success celebration overlay */}
-          <AnimatePresence>
-            {showSubmissionSuccess && submittedTaskId && (
-              <SubmissionSuccess
-                taskId={submittedTaskId}
-                assignedArtist={submittedAssignedArtist}
-                onViewProject={handleViewProject}
+            {/* Input area / Submit action bar — hidden after successful submission */}
+            {!showSubmissionSuccess && (
+              <ChatInputArea
+                messageCount={messages.length}
+                hasInlineStylePicker={hasInlineStylePicker}
+                input={input}
+                setInput={setInput}
+                isLoading={isLoading}
+                pendingFiles={pendingFiles}
+                hasFiles={hasFiles}
+                pendingTask={pendingTask}
+                isTaskMode={isTaskMode}
+                seamlessTransition={seamlessTransition}
+                ghostText={ghostText}
+                smartCompletion={smartCompletion}
+                setSmartCompletion={setSmartCompletion}
+                fileInputRef={fileInputRef}
+                inputRef={inputRef}
+                userCredits={userCredits}
+                briefingStage={briefingStage}
+                moodboardItems={moodboardItems}
+                onConfirmTask={handleConfirmTask}
+                onMakeChanges={handleRejectTask}
+                onInsufficientCredits={handleInsufficientCredits}
+                isSubmitting={isSubmissionLoading}
+                brief={brief}
+                stateMachineQuickOptions={resolvedQuickOptions}
+                onQuickOptionClick={handleQuickOptionClick}
+                hasStrategicReviewCTA={hasStrategicReviewCTA}
+                animatingMessageId={animatingMessageId}
+                handleSend={handleSend}
+                handleFileUpload={handleFileUpload}
+                handleRequestTaskSummary={handleRequestTaskSummary}
+                removeFile={removeFile}
+                sceneReferences={sceneReferences}
+                onRemoveSceneReference={(sceneNumber: number) =>
+                  setSceneReferences((prev) => prev.filter((s) => s.sceneNumber !== sceneNumber))
+                }
+                deliverableCategory={deliverableCategory}
+                estimatedCredits={estimatedCredits}
+                lastSavedAt={lastSavedAt}
+                hasStoryboard={
+                  !!(
+                    storyboardScenes &&
+                    storyboardScenes.type === 'storyboard' &&
+                    storyboardScenes.scenes.length > 0
+                  )
+                }
+                needsAutoContinueConfirmation={needsAutoContinueConfirmation}
+                onConfirmAutoContinue={handleConfirmAutoContinue}
+                onDismissAutoContinue={handleDismissAutoContinue}
+                onCategoryDetected={setDeliverableCategory}
               />
             )}
-          </AnimatePresence>
-        </div>
 
-        {/* Style Detail Modal */}
-        <StyleDetailModal
-          style={selectedStyleForModal}
-          isOpen={!!selectedStyleForModal}
-          onClose={() => setSelectedStyleForModal(null)}
-          isInCollection={
-            selectedStyleForModal ? hasMoodboardItem(selectedStyleForModal.id) : false
-          }
-          onAddToCollection={handleAddToCollection}
-          onRemoveFromCollection={handleRemoveFromCollection}
-        />
+            {/* Submission success celebration overlay */}
+            <AnimatePresence>
+              {showSubmissionSuccess && submittedTaskId && (
+                <SubmissionSuccess
+                  taskId={submittedTaskId}
+                  assignedArtist={submittedAssignedArtist}
+                  onViewProject={handleViewProject}
+                />
+              )}
+            </AnimatePresence>
+          </div>
 
-        {/* Task Submission Modal (kept for backward compat, no longer rendered) */}
+          {/* Style Detail Modal */}
+          <StyleDetailModal
+            style={selectedStyleForModal}
+            isOpen={!!selectedStyleForModal}
+            onClose={() => setSelectedStyleForModal(null)}
+            isInCollection={
+              selectedStyleForModal ? hasMoodboardItem(selectedStyleForModal.id) : false
+            }
+            onAddToCollection={handleAddToCollection}
+            onRemoveFromCollection={handleRemoveFromCollection}
+          />
 
-        {/* Credit Purchase Dialog */}
-        <CreditPurchaseDialog
-          open={showCreditDialog}
-          onOpenChange={setShowCreditDialog}
-          requiredCredits={pendingTask?.creditsRequired || 0}
-          currentCredits={userCredits}
-          pendingTaskState={pendingTask ? { taskProposal: pendingTask, draftId } : undefined}
-        />
-      </ChatLayout>
+          {/* Task Submission Modal (kept for backward compat, no longer rendered) */}
+
+          {/* Credit Purchase Dialog */}
+          <CreditPurchaseDialog
+            open={showCreditDialog}
+            onOpenChange={setShowCreditDialog}
+            requiredCredits={pendingTask?.creditsRequired || 0}
+            currentCredits={userCredits}
+            pendingTaskState={pendingTask ? { taskProposal: pendingTask, draftId } : undefined}
+          />
+        </ChatLayout>
+      </BriefingProvider>
     </MotionConfig>
   )
 }

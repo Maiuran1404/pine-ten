@@ -10,11 +10,11 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { type ChatStage, type MoodboardItem } from './types'
 import { type LiveBrief } from './brief-panel/types'
 import { LabeledProgressBar } from './progress-stepper'
+import { getDeliverableConfig } from '@/lib/deliverables/registry'
 import { MoodboardPanel } from './moodboard/moodboard-panel'
 import { UnifiedPanel } from './unified-panel'
 import { StructurePanel, type StructurePanelProps } from './structure-panel'
 import type { StoryboardScene } from '@/lib/ai/briefing-state-machine'
-import { WEBSITE_STAGE_DESCRIPTIONS } from '@/lib/chat-progress'
 
 interface ChatLayoutProps {
   children: ReactNode
@@ -109,7 +109,7 @@ export function ChatLayout({
   // synchronous setState inside the effect body (react-hooks/set-state-in-effect).
   const canvasShowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    if (structurePanelProps?.videoNarrative || structurePanelProps?.structureData) {
+    if (structurePanelProps?.videoProps?.videoNarrative || structurePanelProps?.structureData) {
       if (canvasShowTimerRef.current) clearTimeout(canvasShowTimerRef.current)
       if (canvasActiveTimerRef.current) clearTimeout(canvasActiveTimerRef.current)
       canvasShowTimerRef.current = setTimeout(() => setCanvasActive(true), 0)
@@ -119,7 +119,7 @@ export function ChatLayout({
       if (canvasShowTimerRef.current) clearTimeout(canvasShowTimerRef.current)
       if (canvasActiveTimerRef.current) clearTimeout(canvasActiveTimerRef.current)
     }
-  }, [structurePanelProps?.videoNarrative, structurePanelProps?.structureData])
+  }, [structurePanelProps?.videoProps?.videoNarrative, structurePanelProps?.structureData])
 
   // Expose imperative handle so children can open the structure view
   useEffect(() => {
@@ -138,16 +138,10 @@ export function ChatLayout({
     ? STRUCTURE_ICONS[structurePanelProps.structureType] || Film
     : Film
 
-  // Website-specific progress labels
-  const websiteStageLabels =
-    deliverableCategory === 'website'
-      ? {
-          brief: WEBSITE_STAGE_DESCRIPTIONS.brief,
-          style: WEBSITE_STAGE_DESCRIPTIONS.style,
-          storyboard: WEBSITE_STAGE_DESCRIPTIONS.storyboard,
-          review: WEBSITE_STAGE_DESCRIPTIONS.review,
-        }
-      : undefined
+  // Deliverable-specific progress labels and stages via config registry
+  const config = deliverableCategory ? getDeliverableConfig(deliverableCategory) : null
+  const websiteStageLabels = config ? config.stageLabels : undefined
+  const websiteStages = config ? config.chatStages : undefined
 
   return (
     <div className={cn('flex flex-col h-full relative', className)}>
@@ -205,6 +199,7 @@ export function ChatLayout({
                         progressPercentage={progressPercentage}
                         stageDescription={stageDescription}
                         stageLabels={websiteStageLabels}
+                        stages={websiteStages}
                       />
                     )}
                     {structurePanelProps && <StructurePanel {...structurePanelProps} />}
@@ -309,6 +304,7 @@ export function ChatLayout({
                         progressPercentage={progressPercentage}
                         stageDescription={stageDescription}
                         stageLabels={websiteStageLabels}
+                        stages={websiteStages}
                       />
                     )}
 

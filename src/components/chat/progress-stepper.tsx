@@ -49,6 +49,8 @@ interface LabeledProgressBarProps {
   stageDescription?: string
   /** Override per-stage labels (e.g. website-specific "Blueprint", "Studio") */
   stageLabels?: Record<string, string>
+  /** Override the stages list (e.g. WEBSITE_CHAT_STAGES for website flows) */
+  stages?: ChatStage[]
   className?: string
 }
 
@@ -57,11 +59,14 @@ export function LabeledProgressBar({
   completedStages,
   stageDescription,
   stageLabels,
+  stages,
   className,
 }: LabeledProgressBarProps) {
+  const effectiveStages = stages ?? BRIEFING_CHAT_STAGES
   const effectiveLabels = stageLabels ?? STAGE_LABELS
-  const currentIndex = BRIEFING_CHAT_STAGES.indexOf(currentStage)
-  const progress = (currentIndex / Math.max(BRIEFING_CHAT_STAGES.length - 1, 1)) * 100
+  const rawIndex = effectiveStages.indexOf(currentStage)
+  const currentIndex = Math.max(0, rawIndex)
+  const progress = (currentIndex / Math.max(effectiveStages.length - 1, 1)) * 100
 
   return (
     <div className={cn('w-full', className)}>
@@ -77,11 +82,11 @@ export function LabeledProgressBar({
 
       {/* Horizontal labeled stepper — desktop */}
       <div className="hidden sm:flex items-center justify-between px-4 py-1.5 border-b border-border/30">
-        {BRIEFING_CHAT_STAGES.map((stage, index) => {
+        {effectiveStages.map((stage, index) => {
           const completed = isStageCompleted(stage, completedStages)
           const current = isCurrentStage(stage, currentStage)
           const Icon = STAGE_ICONS[stage] ?? Circle
-          const isLast = index === BRIEFING_CHAT_STAGES.length - 1
+          const isLast = index === effectiveStages.length - 1
 
           return (
             <div key={stage} className="flex items-center">
@@ -126,7 +131,7 @@ export function LabeledProgressBar({
           {stageDescription ?? STAGE_DESCRIPTIONS[currentStage]}
         </span>
         <div className="flex items-center gap-1 ml-auto">
-          {BRIEFING_CHAT_STAGES.map((stage) => {
+          {effectiveStages.map((stage) => {
             const completed = isStageCompleted(stage, completedStages)
             const current = isCurrentStage(stage, currentStage)
             return (

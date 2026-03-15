@@ -10,6 +10,7 @@
 import type { QuickOptions } from '@/components/chat/types'
 import type { BriefingState, BriefingStage, DeliverableCategory } from './briefing-state-machine'
 import { STALL_CONFIG } from './briefing-state-machine'
+import { getDeliverableConfig } from '@/lib/deliverables/registry'
 
 // =============================================================================
 // MAIN EXPORT
@@ -121,30 +122,9 @@ const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOption
   },
 
   INSPIRATION: (state) => {
-    // Website-specific inspiration options
-    if (state.deliverableCategory === 'website') {
-      const hasInspirations = (state.websiteInspirations?.length ?? 0) > 0
-      const styleConfirmed = state.websiteStyleConfirmed === true
-
-      if (!hasInspirations) {
-        return {
-          question: 'Find inspiration',
-          options: ['Browse gallery', 'I have a reference URL', 'Skip inspirations'],
-        }
-      }
-
-      if (!styleConfirmed) {
-        return {
-          question: 'Ready for styles?',
-          options: ['Pick a style', 'Show me variants', 'Add more references'],
-        }
-      }
-
-      return {
-        question: 'What do you think?',
-        options: ['I like this direction', 'Show me more', 'Something different'],
-      }
-    }
+    // Delegate to config for type-specific options
+    const configResult = getDeliverableConfig(state.deliverableCategory).getQuickOptions(state)
+    if (configResult !== undefined) return configResult
 
     // Default for non-website deliverables
     return {
@@ -154,13 +134,9 @@ const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOption
   },
 
   STRUCTURE: (state) => {
-    // Website-specific structure options (goal chips)
-    if (state.deliverableCategory === 'website') {
-      return {
-        question: "What's the primary goal?",
-        options: ['Book consultations', 'Build authority', 'Generate leads'],
-      }
-    }
+    // Delegate to config for type-specific options
+    const configResult = getDeliverableConfig(state.deliverableCategory).getQuickOptions(state)
+    if (configResult !== undefined) return configResult
 
     // Default for non-website deliverables
     return {
@@ -185,8 +161,11 @@ const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOption
   }),
 
   DEEPEN: (state) => {
-    const category = state.deliverableCategory
-    const contextOptions = getDeepenQuickOptions(category)
+    // Delegate to config for type-specific deepen options
+    const configResult = getDeliverableConfig(state.deliverableCategory).getQuickOptions(state)
+    if (configResult !== undefined) return configResult
+
+    const contextOptions = getDeepenQuickOptions(state.deliverableCategory)
     return {
       question: 'What would add the most value?',
       options: [...contextOptions, 'Done, submit now'],
@@ -194,46 +173,20 @@ const STAGE_OPTIONS: Record<BriefingStage, (state: BriefingState) => QuickOption
   },
 
   ELABORATE: (state) => {
-    const isFirstTurn = state.turnsInCurrentStage === 0
-    const category = state.deliverableCategory
+    // Delegate to config for type-specific elaborate options
+    const configResult = getDeliverableConfig(state.deliverableCategory).getQuickOptions(state)
+    if (configResult !== undefined) return configResult
 
-    // Website-specific elaborate options (Section Studio)
-    if (category === 'website') {
-      if (isFirstTurn) {
-        return {
-          question: 'Section studio',
-          options: ['Generate all copy', 'Edit specific section', 'Good enough, review'],
-        }
-      }
-      return {
-        question: 'What needs work?',
-        options: ['Generate all copy', 'Edit specific section', 'Good enough, review'],
-      }
-    }
-
-    if (isFirstTurn) {
+    // Fallback for unknown categories
+    if (state.turnsInCurrentStage === 0) {
       return {
         question: 'How does the detail look?',
         options: ['Looks great, continue', 'Adjust specific sections', 'Different approach'],
       }
     }
-    // Subsequent turns: deliverable-specific refinement
-    switch (category) {
-      case 'video':
-        return {
-          question: 'What needs work?',
-          options: ['Rewrite a scene script', 'Adjust director notes', 'Good enough, move on'],
-        }
-      case 'content':
-        return {
-          question: 'What needs work?',
-          options: ['Rewrite post captions', 'Adjust pillar identity', 'Good enough, move on'],
-        }
-      default:
-        return {
-          question: 'What needs work?',
-          options: ['Refine the copy', 'Adjust the layout', 'Good enough, move on'],
-        }
+    return {
+      question: 'What needs work?',
+      options: ['Refine the copy', 'Adjust the layout', 'Good enough, move on'],
     }
   },
 

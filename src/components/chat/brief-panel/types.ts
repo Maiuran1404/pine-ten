@@ -342,21 +342,33 @@ export function calculateBriefCompletion(brief: LiveBrief): number {
   return Math.round(completion)
 }
 
-export function isBriefReadyForDesigner(brief: LiveBrief): boolean {
+export function isBriefReadyForDesigner(
+  brief: LiveBrief,
+  deliverableCategory?: string | null
+): boolean {
+  const isWebsite = deliverableCategory === 'website'
+
   // Required fields must be confirmed or high-confidence inferred
   const hasTaskSummary = brief.taskSummary.value && brief.taskSummary.confidence >= 0.7
   const hasIntent = brief.intent.value && brief.intent.confidence >= 0.7
   const hasPlatform = brief.platform.value && brief.platform.confidence >= 0.7
   const hasAudience = brief.audience.value && brief.audience.confidence >= 0.7
-  const hasDimensions = brief.dimensions.length > 0
 
-  // Content outline is required for multi-asset, optional for single
+  // Websites don't need predefined pixel dimensions — layout sections serve that role
+  const hasDimensions = isWebsite ? true : brief.dimensions.length > 0
+
+  // Content outline is required for multi-asset, optional for single and websites
   const hasContent =
+    isWebsite ||
     brief.taskType.value === 'single_asset' ||
     (brief.contentOutline && brief.contentOutline.weekGroups.length > 0)
 
-  // Visual direction is required
-  const hasVisual = brief.visualDirection && brief.visualDirection.selectedStyles.length > 0
+  // Websites use websiteStyleConfirmed instead of deliverable style cards.
+  // When deliverableCategory is 'website', skip the selectedStyles check —
+  // the caller is responsible for gating on websiteStyleConfirmed separately.
+  const hasVisual = isWebsite
+    ? true
+    : brief.visualDirection && brief.visualDirection.selectedStyles.length > 0
 
   return !!(
     hasTaskSummary &&

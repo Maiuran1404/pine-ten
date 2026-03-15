@@ -19,9 +19,9 @@ import {
   calculateChatStage,
   calculateChatStageFromBriefing,
   getContextualStageDescription,
-  BRIEFING_CHAT_STAGES,
-  WEBSITE_CHAT_STAGES,
 } from '@/lib/chat-progress'
+import { deriveWebsitePhase } from '@/lib/ai/briefing-state-machine'
+import { getDeliverableConfig } from '@/lib/deliverables/registry'
 import { useBriefingStateMachine } from '@/hooks/use-briefing-state-machine'
 import { useChatMessages } from '@/hooks/use-chat-messages'
 import { useFileUpload } from '@/hooks/use-file-upload'
@@ -137,7 +137,10 @@ export function useChatInterfaceData({
   // ─── Brief (derived from _briefingState — single source of truth) ─
   const brief = _briefingState.brief
   const briefCompletion = useMemo(() => calculateBriefCompletion(brief), [brief])
-  const isBriefReady = useMemo(() => isBriefReadyForDesigner(brief), [brief])
+  const isBriefReady = useMemo(
+    () => isBriefReadyForDesigner(brief, _briefingState?.deliverableCategory),
+    [brief, _briefingState?.deliverableCategory]
+  )
 
   // Auto-save brief to server
   useBriefAutoSave(brief, draftId)
@@ -518,7 +521,7 @@ export function useChatInterfaceData({
     if (_briefingState) {
       const delCat = _briefingState.deliverableCategory
       const result = calculateChatStageFromBriefing(_briefingState.stage, delCat)
-      const activeStages = delCat === 'website' ? WEBSITE_CHAT_STAGES : BRIEFING_CHAT_STAGES
+      const activeStages = getDeliverableConfig(delCat).chatStages
       const stageIndex = activeStages.indexOf(result.currentStage)
 
       // Clamp: never go below the high-water mark
@@ -597,14 +600,8 @@ export function useChatInterfaceData({
   const estimatedCredits = useMemo(() => {
     const category = _briefingState?.deliverableCategory
     if (!category) return lastKnownCreditsRef.current
-    const CREDIT_ESTIMATES: Record<string, number> = {
-      video: 30,
-      website: 30,
-      content: 15,
-      design: 20,
-      brand: 60,
-    }
-    const estimate = CREDIT_ESTIMATES[category] ?? null
+    const config = getDeliverableConfig(category)
+    const estimate = config.creditEstimate
     if (estimate !== null) lastKnownCreditsRef.current = estimate
     return estimate
   }, [_briefingState?.deliverableCategory])
@@ -1338,6 +1335,7 @@ export function useChatInterfaceData({
     progressState,
     briefingStage: _briefingState?.stage ?? null,
     deliverableCategory: _briefingState?.deliverableCategory ?? null,
+    websitePhase: _briefingState ? deriveWebsitePhase(_briefingState) : null,
     setDeliverableCategory,
     estimatedCredits,
     targetDurationSeconds: _briefingState?.targetDurationSeconds ?? null,
@@ -1479,5 +1477,8 @@ export function useChatInterfaceData({
     uploadFiles: fileUpload.uploadFiles,
     refreshCredits: task.refreshCredits,
     scrollToBottom,
+
+    // Briefing state (for BriefingProvider)
+    briefingState: _briefingState,
   }
 }

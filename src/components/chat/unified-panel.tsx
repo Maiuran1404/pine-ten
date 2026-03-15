@@ -487,7 +487,8 @@ export function UnifiedPanel({
     [brief, onBriefUpdate]
   )
 
-  const isReady = isReadyForDesigner ?? (brief ? isBriefReadyForDesigner(brief) : false)
+  const isReady =
+    isReadyForDesigner ?? (brief ? isBriefReadyForDesigner(brief, deliverableCategory) : false)
   const nextActionText = getNextActionText(currentStage, isReady)
 
   // Section renderer

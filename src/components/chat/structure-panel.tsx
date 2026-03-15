@@ -35,19 +35,16 @@ import { DesignSpecView } from './design-spec-view'
 import { WebsiteStructurePanel } from './website-structure-panel'
 import { NarrativePanel } from './narrative-panel'
 import { StyleSelectionPanel } from './style-selection-panel'
+import { useBriefingOptional } from '@/hooks/use-briefing'
 
 // =============================================================================
-// TYPES
+// TYPES — split into shared + video + website
 // =============================================================================
 
-export interface StructurePanelProps {
-  structureType: StructureData['type'] | null
-  structureData: StructureData | null
-  briefingStage?: string
+/** Video-specific structure panel props */
+export interface VideoStructureProps {
   sceneImageData?: Map<number, SceneImageData>
-  isRegenerating?: boolean
   changedScenes?: Map<number, { field: string; oldValue: string; newValue: string }[]>
-  // Undo/Redo (#20)
   onUndo?: () => void
   onRedo?: () => void
   canUndo?: boolean
@@ -59,12 +56,23 @@ export interface StructurePanelProps {
   onRegenerateStoryboard?: () => void
   onRegenerateScene?: (scene: StoryboardScene) => void
   onRegenerateField?: (scene: StoryboardScene, field: string) => void
-  // User-specified target duration for storyboard header
   targetDurationSeconds?: number | null
-  onSectionReorder?: (sections: LayoutSection[]) => void
-  onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
-  // Website-specific props
-  websitePhase?: WebsitePhase | null
+  videoNarrative?: VideoNarrative | null
+  narrativeApproved?: boolean
+  storyboardReviewed?: boolean
+  onApproveNarrative?: (editedNarrative?: VideoNarrative) => void
+  onApproveStoryboard?: () => void
+  onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
+  lastSendError?: string | null
+  onRetryGeneration?: () => void
+  onEditNarrative?: () => void
+  imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
+  isGeneratingImages?: boolean
+  onRegenerateImage?: (scene: StoryboardScene) => void
+}
+
+/** Website-specific structure panel props */
+export interface WebsiteStructureProps {
   websiteGlobalStyles?: WebsiteGlobalStyles | null
   websiteInspirations?: WebsiteInspiration[]
   websiteInspirationIds?: string[]
@@ -86,7 +94,6 @@ export interface StructurePanelProps {
   }) => void
   onRemoveInspiration?: (id: string) => void
   onCaptureScreenshot?: (url: string) => Promise<WebsiteInspiration>
-  // Visual similarity & notes
   onFindSimilar?: () => void
   similarResults?: Array<{
     inspiration: {
@@ -103,34 +110,43 @@ export interface StructurePanelProps {
   isFindingSimilar?: boolean
   canFindSimilar?: boolean
   onUpdateInspirationNotes?: (id: string, notes: string) => void
-  // Video narrative props
-  videoNarrative?: VideoNarrative | null
-  narrativeApproved?: boolean
-  storyboardReviewed?: boolean
-  onApproveNarrative?: (editedNarrative?: VideoNarrative) => void
-  onApproveStoryboard?: () => void
-  onNarrativeFieldEdit?: (field: 'concept' | 'narrative' | 'hook', value: string) => void
-  // Error recovery for storyboard generation after narrative approval
-  isChatLoading?: boolean
-  lastSendError?: string | null
-  onRetryGeneration?: () => void
-  onEditNarrative?: () => void
-  // Scene image generation
-  imageGenerationProgress?: Map<number, 'pending' | 'generating' | 'done' | 'error'>
-  isGeneratingImages?: boolean
-  onRegenerateImage?: (scene: StoryboardScene) => void
-  // Style selection props (shown during INSPIRATION stage)
+  onSectionReorder?: (sections: LayoutSection[]) => void
+  onSectionEdit?: (sectionIndex: number, field: string, value: string) => void
+}
+
+/** Style selection props (shared across types during INSPIRATION) */
+export interface StyleSelectionProps {
   styleSelectionStyles?: DeliverableStyle[]
   confirmedStyleIds?: string[]
   onStyleConfirmSelection?: (selectedStyles: DeliverableStyle[]) => void
   onStyleShowMore?: (styleAxis: string) => void
   onStyleShowDifferent?: () => void
-  // Style change from storyboard toolbar
   currentStyles?: DeliverableStyle[]
   onChangeVisualStyle?: (styles: DeliverableStyle[], regenerateImages: boolean) => void
   onOpenStyleSheet?: () => void
   isStyleLoading?: boolean
+}
+
+/**
+ * StructurePanelProps — slimmed interface.
+ *
+ * Core shared props + optional type-specific groups.
+ * `structureType`, `briefingStage`, and `websitePhase` are read from
+ * BriefingContext via useBriefing() when available, with prop fallbacks.
+ */
+export interface StructurePanelProps {
+  // Core (shared by all types)
+  structureType: StructureData['type'] | null
+  structureData: StructureData | null
+  briefingStage?: string
+  websitePhase?: WebsitePhase | null
+  isChatLoading?: boolean
+  isRegenerating?: boolean
   className?: string
+  // Type-specific groups (only populated for the active type)
+  videoProps?: VideoStructureProps
+  websiteProps?: WebsiteStructureProps
+  styleProps?: StyleSelectionProps
 }
 
 // =============================================================================
@@ -476,74 +492,33 @@ function getElaborationProgress(data: StructureData): { done: number; total: num
 }
 
 // =============================================================================
-// MAIN STRUCTURE PANEL
+// MAIN STRUCTURE PANEL — context-aware router
 // =============================================================================
 
-export function StructurePanel({
-  structureType,
-  structureData,
-  briefingStage,
-  sceneImageData,
-  isRegenerating,
-  changedScenes,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
-  onSceneClick,
-  onSelectionChange,
-  onSceneEdit,
-  onSceneReorder,
-  onRegenerateStoryboard,
-  onRegenerateScene,
-  onRegenerateField,
-  targetDurationSeconds,
-  onSectionReorder,
-  onSectionEdit,
-  websitePhase,
-  websiteGlobalStyles,
-  websiteInspirations,
-  websiteInspirationIds,
-  inspirationGallery,
-  isGalleryLoading,
-  isCapturingScreenshot,
-  onInspirationSelect,
-  onRemoveInspiration,
-  onCaptureScreenshot,
-  onFindSimilar,
-  similarResults,
-  isFindingSimilar,
-  canFindSimilar,
-  onUpdateInspirationNotes,
-  videoNarrative,
-  narrativeApproved,
-  storyboardReviewed,
-  onApproveNarrative,
-  onApproveStoryboard,
-  onNarrativeFieldEdit,
-  isChatLoading,
-  lastSendError,
-  onRetryGeneration,
-  onEditNarrative,
-  imageGenerationProgress,
-  isGeneratingImages: _isGeneratingImages,
-  onRegenerateImage,
-  styleSelectionStyles,
-  confirmedStyleIds,
-  onStyleConfirmSelection,
-  onStyleShowMore,
-  onStyleShowDifferent,
-  currentStyles,
-  onChangeVisualStyle,
-  onOpenStyleSheet,
-  isStyleLoading,
-  className,
-}: StructurePanelProps) {
+export function StructurePanel(props: StructurePanelProps) {
+  const {
+    structureData,
+    isChatLoading,
+    isRegenerating,
+    className,
+    videoProps,
+    websiteProps,
+    styleProps,
+  } = props
+
+  // Read config + stage from BriefingContext when available, with prop fallbacks
+  const briefing = useBriefingOptional()
+  const structureType = briefing?.config.structureType ?? props.structureType
+  const briefingStage =
+    briefing?.briefingStage ?? (props.briefingStage as BriefingStage | undefined)
+  const websitePhase = briefing?.websitePhase ?? props.websitePhase
+
   // Track when user confirms a style — used to show cinematic loading instead of skeleton cards.
   // Derived from state + stage: auto-clears when stage advances past INSPIRATION.
   const [styleConfirmingRaw, setStyleConfirming] = useState(false)
   const styleConfirming = styleConfirmingRaw && briefingStage === 'INSPIRATION'
 
+  const onStyleConfirmSelection = styleProps?.onStyleConfirmSelection
   const wrappedStyleConfirm = useCallback(
     (selectedStyles: DeliverableStyle[]) => {
       setStyleConfirming(true)
@@ -560,7 +535,9 @@ export function StructurePanel({
   // with inspiration gallery + wireframe + style variants.
   const isInspirationPhase =
     briefingStage === 'INSPIRATION' ||
-    (narrativeApproved && briefingStage === 'STRUCTURE' && structureType === 'storyboard')
+    (videoProps?.narrativeApproved &&
+      briefingStage === 'STRUCTURE' &&
+      structureType === 'storyboard')
   if (isInspirationPhase && structureType !== 'layout') {
     // After style confirmation, show cinematic loading while AI generates structure
     if (styleConfirming && isChatLoading && structureType) {
@@ -573,11 +550,11 @@ export function StructurePanel({
 
     return (
       <StyleSelectionPanel
-        styles={styleSelectionStyles ?? []}
-        confirmedStyleIds={confirmedStyleIds}
+        styles={styleProps?.styleSelectionStyles ?? []}
+        confirmedStyleIds={styleProps?.confirmedStyleIds}
         onConfirmSelection={wrappedStyleConfirm}
-        onShowMore={onStyleShowMore}
-        onShowDifferent={onStyleShowDifferent}
+        onShowMore={styleProps?.onStyleShowMore}
+        onShowDifferent={styleProps?.onStyleShowDifferent}
         isLoading={isRegenerating}
         className={className}
       />
@@ -588,29 +565,29 @@ export function StructurePanel({
   if (!structureType) return null
 
   // Website projects: use WebsiteStructurePanel for both placeholder and data states
-  if (structureType === 'layout') {
+  if (structureType === 'layout' && websiteProps) {
     return (
       <div className={cn('flex flex-col h-full bg-background', className)}>
         <WebsiteStructurePanel
           sections={structureData?.type === 'layout' ? structureData.sections : null}
           briefingStage={(briefingStage as BriefingStage) ?? undefined}
-          globalStyles={websiteGlobalStyles}
+          globalStyles={websiteProps.websiteGlobalStyles}
           websitePhase={websitePhase}
-          onSectionReorder={onSectionReorder}
-          onSectionEdit={onSectionEdit}
-          websiteInspirations={websiteInspirations ?? []}
-          websiteInspirationIds={websiteInspirationIds ?? []}
-          inspirationGallery={inspirationGallery ?? []}
-          isGalleryLoading={isGalleryLoading}
-          isCapturingScreenshot={isCapturingScreenshot}
-          onInspirationSelect={onInspirationSelect ?? (() => {})}
-          onRemoveInspiration={onRemoveInspiration ?? (() => {})}
-          onCaptureScreenshot={onCaptureScreenshot}
-          onFindSimilar={onFindSimilar}
-          similarResults={similarResults}
-          isFindingSimilar={isFindingSimilar}
-          canFindSimilar={canFindSimilar}
-          onUpdateInspirationNotes={onUpdateInspirationNotes}
+          onSectionReorder={websiteProps.onSectionReorder}
+          onSectionEdit={websiteProps.onSectionEdit}
+          websiteInspirations={websiteProps.websiteInspirations ?? []}
+          websiteInspirationIds={websiteProps.websiteInspirationIds ?? []}
+          inspirationGallery={websiteProps.inspirationGallery ?? []}
+          isGalleryLoading={websiteProps.isGalleryLoading}
+          isCapturingScreenshot={websiteProps.isCapturingScreenshot}
+          onInspirationSelect={websiteProps.onInspirationSelect ?? (() => {})}
+          onRemoveInspiration={websiteProps.onRemoveInspiration ?? (() => {})}
+          onCaptureScreenshot={websiteProps.onCaptureScreenshot}
+          onFindSimilar={websiteProps.onFindSimilar}
+          similarResults={websiteProps.similarResults}
+          isFindingSimilar={websiteProps.isFindingSimilar}
+          canFindSimilar={websiteProps.canFindSimilar}
+          onUpdateInspirationNotes={websiteProps.onUpdateInspirationNotes}
         />
       </div>
     )
@@ -618,18 +595,19 @@ export function StructurePanel({
 
   // Video narrative phase: show NarrativePanel until narrative is approved,
   // then show loading skeleton while storyboard is being generated.
-  // Guard on !narrativeApproved (not !structureData) so that premature AI storyboard
-  // generation doesn't bypass the narrative review and style selection steps.
-  if (structureType === 'storyboard' && videoNarrative && !narrativeApproved) {
-    // Narrative not yet approved — show the narrative panel for review
-    if (onApproveNarrative && onNarrativeFieldEdit) {
+  if (
+    structureType === 'storyboard' &&
+    videoProps?.videoNarrative &&
+    !videoProps.narrativeApproved
+  ) {
+    if (videoProps.onApproveNarrative && videoProps.onNarrativeFieldEdit) {
       return (
         <div className={cn('flex flex-col h-full bg-background', className)}>
           <NarrativePanel
-            narrative={videoNarrative}
-            onApprove={onApproveNarrative}
-            onFieldEdit={onNarrativeFieldEdit}
-            isApproved={narrativeApproved}
+            narrative={videoProps.videoNarrative}
+            onApprove={videoProps.onApproveNarrative}
+            onFieldEdit={videoProps.onNarrativeFieldEdit}
+            isApproved={videoProps.narrativeApproved}
             isLoading={isChatLoading}
           />
         </div>
@@ -638,19 +616,17 @@ export function StructurePanel({
   }
 
   // Video: narrative approved, styles selected, but storyboard not yet generated — show loading/error/retry
-  // Guard: skip this when at INSPIRATION stage (style selection) or when styles haven't been
-  // selected yet — the user must pick visual styles before storyboard generation begins.
-  const hasSelectedStyles = (confirmedStyleIds?.length ?? 0) > 0
+  const hasSelectedStyles = (styleProps?.confirmedStyleIds?.length ?? 0) > 0
   if (
     structureType === 'storyboard' &&
-    videoNarrative &&
-    narrativeApproved &&
+    videoProps?.videoNarrative &&
+    videoProps.narrativeApproved &&
     !structureData &&
     briefingStage !== 'INSPIRATION' &&
     hasSelectedStyles
   ) {
     // If storyboard generation failed, show error + retry UI
-    if (lastSendError && onRetryGeneration) {
+    if (videoProps.lastSendError && videoProps.onRetryGeneration) {
       return (
         <div className={cn('flex flex-col h-full bg-background', className)}>
           <div className="shrink-0 px-4 py-3 border-b border-border/40">
@@ -665,20 +641,20 @@ export function StructurePanel({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-foreground">Storyboard generation failed</p>
-              <p className="text-xs text-muted-foreground">{lastSendError}</p>
+              <p className="text-xs text-muted-foreground">{videoProps.lastSendError}</p>
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onEditNarrative}
-                disabled={!onEditNarrative}
+                onClick={videoProps.onEditNarrative}
+                disabled={!videoProps.onEditNarrative}
                 className="gap-1.5"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Edit Narrative
               </Button>
-              <Button size="sm" onClick={onRetryGeneration} className="gap-1.5">
+              <Button size="sm" onClick={videoProps.onRetryGeneration} className="gap-1.5">
                 <RefreshCw className="h-3.5 w-3.5" />
                 Retry
               </Button>
@@ -687,9 +663,8 @@ export function StructurePanel({
         </div>
       )
     }
-    // If chat is not loading and no error, the auto-trigger may have failed silently
-    // Show a generate button so the user can manually kick off storyboard generation
-    if (!isChatLoading && !isRegenerating && onRetryGeneration) {
+    // If chat is not loading and no error, show generate button
+    if (!isChatLoading && !isRegenerating && videoProps.onRetryGeneration) {
       return (
         <div className={cn('flex flex-col h-full bg-background', className)}>
           <div className="shrink-0 px-4 py-3 border-b border-border/40">
@@ -708,7 +683,7 @@ export function StructurePanel({
                 Your narrative is approved. Generate the storyboard to continue.
               </p>
             </div>
-            <Button size="sm" onClick={onRetryGeneration} className="gap-1.5">
+            <Button size="sm" onClick={videoProps.onRetryGeneration} className="gap-1.5">
               <Sparkles className="h-3.5 w-3.5" />
               Generate Storyboard
             </Button>
@@ -731,9 +706,6 @@ export function StructurePanel({
       </div>
     )
   }
-
-  // Storyboard: show real storyboard content while images generate in background
-  // The RichStoryboardPanel handles per-scene loading states via imageGenerationProgress
 
   // Active — render the appropriate view
   return (
@@ -768,50 +740,52 @@ export function StructurePanel({
           )
         })()}
 
-      {structureData.type === 'storyboard' && (
+      {structureData.type === 'storyboard' && videoProps && (
         <>
           <RichStoryboardPanel
             scenes={structureData.scenes}
-            sceneImageData={sceneImageData}
+            sceneImageData={videoProps.sceneImageData}
             isRegenerating={isRegenerating}
-            changedScenes={changedScenes}
-            onSceneClick={onSceneClick}
-            onSelectionChange={onSelectionChange}
-            onSceneEdit={onSceneEdit}
-            onSceneReorder={onSceneReorder}
-            onRegenerateStoryboard={onRegenerateStoryboard}
-            onRegenerateScene={onRegenerateScene}
-            onRegenerateField={onRegenerateField}
-            onUndo={onUndo}
-            onRedo={onRedo}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            imageGenerationProgress={imageGenerationProgress}
-            onRegenerateImage={onRegenerateImage}
-            targetDurationSeconds={targetDurationSeconds}
-            currentStyles={currentStyles}
-            onChangeStyle={onChangeVisualStyle}
-            styleSelectionStyles={styleSelectionStyles}
-            confirmedStyleIds={confirmedStyleIds}
-            onStyleShowMore={onStyleShowMore}
-            onStyleShowDifferent={onStyleShowDifferent}
-            isStyleLoading={isStyleLoading}
-            onOpenStyleSheet={onOpenStyleSheet}
+            changedScenes={videoProps.changedScenes}
+            onSceneClick={videoProps.onSceneClick}
+            onSelectionChange={videoProps.onSelectionChange}
+            onSceneEdit={videoProps.onSceneEdit}
+            onSceneReorder={videoProps.onSceneReorder}
+            onRegenerateStoryboard={videoProps.onRegenerateStoryboard}
+            onRegenerateScene={videoProps.onRegenerateScene}
+            onRegenerateField={videoProps.onRegenerateField}
+            onUndo={videoProps.onUndo}
+            onRedo={videoProps.onRedo}
+            canUndo={videoProps.canUndo}
+            canRedo={videoProps.canRedo}
+            imageGenerationProgress={videoProps.imageGenerationProgress}
+            onRegenerateImage={videoProps.onRegenerateImage}
+            targetDurationSeconds={videoProps.targetDurationSeconds}
+            currentStyles={styleProps?.currentStyles}
+            onChangeStyle={styleProps?.onChangeVisualStyle}
+            styleSelectionStyles={styleProps?.styleSelectionStyles}
+            confirmedStyleIds={styleProps?.confirmedStyleIds}
+            onStyleShowMore={styleProps?.onStyleShowMore}
+            onStyleShowDifferent={styleProps?.onStyleShowDifferent}
+            isStyleLoading={styleProps?.isStyleLoading}
+            onOpenStyleSheet={styleProps?.onOpenStyleSheet}
           />
           {/* Approve storyboard CTA — matches narrative panel pattern */}
-          {briefingStage === 'ELABORATE' && !storyboardReviewed && onApproveStoryboard && (
-            <div className="shrink-0 px-4 py-3 border-t border-border/40">
-              <Button
-                size="lg"
-                className="gap-2 w-full bg-crafted-green hover:bg-crafted-forest text-white rounded-xl h-11 font-medium shadow-sm shadow-crafted-green/15"
-                onClick={onApproveStoryboard}
-                disabled={isChatLoading}
-              >
-                <ArrowRight className="h-4 w-4" />
-                Looks great — let&apos;s continue
-              </Button>
-            </div>
-          )}
+          {briefingStage === 'ELABORATE' &&
+            !videoProps.storyboardReviewed &&
+            videoProps.onApproveStoryboard && (
+              <div className="shrink-0 px-4 py-3 border-t border-border/40">
+                <Button
+                  size="lg"
+                  className="gap-2 w-full bg-crafted-green hover:bg-crafted-forest text-white rounded-xl h-11 font-medium shadow-sm shadow-crafted-green/15"
+                  onClick={videoProps.onApproveStoryboard}
+                  disabled={isChatLoading}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Looks great — let&apos;s continue
+                </Button>
+              </div>
+            )}
         </>
       )}
       {structureData.type === 'layout' && (
@@ -820,8 +794,8 @@ export function StructurePanel({
             <LayoutPreview
               sections={structureData.sections}
               mode="interactive"
-              onSectionReorder={onSectionReorder}
-              onSectionEdit={onSectionEdit}
+              onSectionReorder={websiteProps?.onSectionReorder}
+              onSectionEdit={websiteProps?.onSectionEdit}
             />
           </div>
         </ScrollArea>
