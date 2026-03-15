@@ -17,7 +17,7 @@ Sentry.init({
     return 0.1
   },
 
-  // Filter noise from expected errors
+  // Filter noise from expected errors + strip PII
   beforeSend(event) {
     const message = event.exception?.values?.[0]?.value || ''
 
@@ -25,9 +25,21 @@ Sentry.init({
       return null
     }
 
+    // GDPR: do not send PII to Sentry (US-based)
+    if (event.request) {
+      delete event.request.cookies;
+      delete event.request.headers;
+      if (event.request.env) delete event.request.env;
+    }
+    if (event.user) {
+      delete event.user.ip_address;
+      delete event.user.email;
+    }
+
     return event
   },
 
   enableLogs: true,
-  sendDefaultPii: true,
+  // GDPR: do not send PII to Sentry (US-based)
+  sendDefaultPii: false,
 })
